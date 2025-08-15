@@ -1,0 +1,73 @@
+# Production Dockerfile for Backend
+
+FROM python:3.11-slim as builder
+
+# Set working directory
+WORKDIR /app
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY backend/pyproject.toml /app/
+COPY backend/README.md /app/README.md
+
+# Create empty backend package for installation
+RUN mkdir -p /app/backend && touch /app/backend/__init__.py
+
+# Install Python dependencies
+RUN pip install --upgrade pip setuptools wheel
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -e .
+
+# Final stage
+FROM python:3.11-slim
+
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Set working directory
+WORKDIR /app
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    libpq-dev \
+    ffmpeg \
+    libsm6 \
+    libxext6 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy wheels from builder
+COPY --from=builder /app/wheels /wheels
+COPY --from=builder /app/pyproject.toml /app/
+COPY --from=builder /app/README.md /app/
+
+# Install the application
+RUN pip install --upgrade pip && \
+    pip install --no-cache /wheels/* && \
+    pip install -e .
+
+# Copy application code
+COPY backend /app
+
+# Create storage directory and set permissions
+RUN mkdir -p /app/storage/uploads && \
+    chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
+EXPOSE 8000
+
+# Run with gunicorn for production
+CMD ["gunicorn", "main:app", \
+     "--worker-class", "uvicorn.workers.UvicornWorker", \
+     "--workers", "4", \
+     "--bind", "0.0.0.0:8000", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-"]

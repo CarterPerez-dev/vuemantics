@@ -1,0 +1,234 @@
+/* 
+ * PG-VENV Register Page - Additional Glass Enhancements
+ * Extends Login.css with registration-specific styles
+ */
+
+/* Import shared auth styles */
+@import '../Login/Login.css';
+
+/* === FIELD VALIDATION STATES === */
+.input-error {
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  background: rgba(239, 68, 68, 0.05) !important;
+}
+
+.input-error:focus {
+  border-color: #ef4444 !important;
+  box-shadow: 
+    0 0 0 3px rgba(239, 68, 68, 0.1),
+    0 0 20px rgba(239, 68, 68, 0.1) !important;
+}
+
+.field-error {
+  font-size: 0.75rem;
+  color: #ef4444;
+  margin-top: var(--pgv-space-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--pgv-space-xs);
+  animation: pgv-error-shake var(--pgv-transition-fast);
+}
+
+@keyframes pgv-error-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+/* === PASSWORD REQUIREMENTS === */
+.password-requirements {
+  margin-top: var(--pgv-space-md);
+  padding: var(--pgv-space-lg);
+  background: var(--pgv-glass-overlay);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--pgv-glass-border);
+  border-radius: var(--pgv-radius-md);
+  font-size: 0.75rem;
+  transition: all var(--pgv-transition-base);
+}
+
+.form-group:focus-within .password-requirements {
+  border-color: rgba(6, 84, 101, 0.3);
+  background: rgba(6, 84, 101, 0.05);
+}
+
+.requirement-label {
+  display: block;
+  font-weight: 600;
+  color: var(--pgv-text-secondary);
+  margin-bottom: var(--pgv-space-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.requirement-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pgv-space-xs);
+}
+
+.requirement-list li {
+  color: var(--pgv-text-muted);
+  transition: all var(--pgv-transition-fast);
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+/* Checkmark icon */
+.requirement-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  opacity: 0.3;
+  transition: all var(--pgv-transition-fast);
+}
+
+/* Met requirement state */
+.requirement-list li.met {
+  color: var(--pgv-accent-turquoise);
+  font-weight: 500;
+}
+
+.requirement-list li.met::before {
+  opacity: 1;
+  color: var(--pgv-accent-turquoise);
+  transform: scale(1.2);
+  text-shadow: 0 0 10px var(--pgv-accent-turquoise-glow);
+}
+
+/* === ENHANCED FORM INTERACTIONS === */
+.form-group {
+  position: relative;
+}
+
+/* Floating label effect */
+.form-group .form-label {
+  transition: all var(--pgv-transition-base);
+}
+
+.form-group:focus-within .form-label,
+.form-group:has(.form-input:not(:placeholder-shown)) .form-label {
+  color: var(--pgv-accent-turquoise);
+  font-size: 0.75rem;
+  transform: translateY(-2px);
+}
+
+/* Password strength indicator */
+.password-strength {
+  display: flex;
+  gap: var(--pgv-space-xs);
+  margin-top: var(--pgv-space-sm);
+  height: 3px;
+}
+
+.strength-bar {
+  flex: 1;
+  background: var(--pgv-glass-border);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.strength-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0;
+  transition: all var(--pgv-transition-base);
+}
+
+/* Strength levels */
+.password-weak .strength-bar:first-child::after {
+  width: 100%;
+  background: #ef4444;
+}
+
+.password-medium .strength-bar:nth-child(-n+2)::after {
+  width: 100%;
+  background: #f59e0b;
+}
+
+.password-strong .strength-bar::after {
+  width: 100%;
+  background: var(--pgv-accent-turquoise);
+}
+
+/* === CONFIRM PASSWORD FIELD === */
+.confirm-password-match {
+  position: absolute;
+  right: calc(var(--pgv-space-md) * 3);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.25rem;
+  opacity: 0;
+  transition: all var(--pgv-transition-fast);
+}
+
+.confirm-password-match.show {
+  opacity: 1;
+}
+
+.confirm-password-match.match {
+  color: var(--pgv-accent-turquoise);
+  animation: pgv-check-bounce var(--pgv-transition-base);
+}
+
+@keyframes pgv-check-bounce {
+  0%, 100% { transform: translateY(-50%) scale(1); }
+  50% { transform: translateY(-50%) scale(1.2); }
+}
+
+.confirm-password-match.no-match {
+  color: #ef4444;
+  animation: pgv-error-shake var(--pgv-transition-fast);
+}
+
+/* === REGISTRATION SUCCESS STATE === */
+.registration-success {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  background: rgba(30, 30, 30, 0.98);
+  backdrop-filter: blur(var(--pgv-glass-blur-heavy));
+  border: 1px solid var(--pgv-accent-turquoise);
+  border-radius: var(--pgv-radius-lg);
+  padding: var(--pgv-space-2xl);
+  text-align: center;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.5),
+    0 0 60px var(--pgv-accent-turquoise-glow);
+  animation: pgv-success-pop var(--pgv-transition-liquid);
+  z-index: var(--pgv-z-modal);
+}
+
+@keyframes pgv-success-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* === RESPONSIVE ADJUSTMENTS === */
+@media (max-width: 480px) {
+  .password-requirements {
+    padding: var(--pgv-space-md);
+    font-size: 0.7rem;
+  }
+
+  .requirement-list li {
+    padding-left: 1.25rem;
+  }
+}

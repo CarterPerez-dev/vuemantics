@@ -1,0 +1,91 @@
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: multimodal-postgres-prod
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: multimodal_search_prod
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - multimodal-prod
+
+  redis:
+    image: redis:7-alpine
+    container_name: multimodal-redis-prod
+    volumes:
+      - redis_data_prod:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - multimodal-prod
+
+  backend:
+    build:
+      context: ../..
+      dockerfile: infra/prod/docker/Dockerfile.backend
+    container_name: multimodal-backend-prod
+    env_file:
+      - ./env/.env.prod
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ../../storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    networks:
+      - multimodal-prod
+
+  frontend:
+    build:
+      context: ../..
+      dockerfile: infra/prod/docker/Dockerfile.frontend
+      args:
+        - VITE_API_URL=${VITE_API_URL:-https://api.yourdomain.com}
+    container_name: multimodal-frontend-prod
+    restart: always
+    networks:
+      - multimodal-prod
+
+  nginx:
+    image: nginx:alpine
+    container_name: multimodal-nginx-prod
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/prod.conf:/etc/nginx/nginx.conf:ro
+      - ../../storage/uploads:/var/www/uploads:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - nginx_cache:/var/cache/nginx
+    depends_on:
+      - backend
+      - frontend
+    restart: always
+    networks:
+      - multimodal-prod
+
+networks:
+  multimodal-prod:
+    driver: bridge
+
+volumes:
+  postgres_data_prod:
+  redis_data_prod:
+  nginx_cache:

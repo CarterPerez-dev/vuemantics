@@ -1,0 +1,40 @@
+# Development Dockerfile for Backend
+
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    postgresql-client \
+    libpq-dev \
+    ffmpeg \
+    libsm6 \
+    libxext6 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY backend/pyproject.toml /app/
+COPY backend/README.md /app/README.md
+
+# Create empty backend package for installation
+RUN mkdir -p /app/backend && touch /app/backend/__init__.py
+
+# Install Python dependencies
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install -e ".[dev]"
+
+# Copy the rest of the application
+COPY backend /app
+
+# Create storage directory
+RUN mkdir -p /app/storage/uploads
+
+# Expose port
+EXPOSE 8000
+
+# Default command (overridden in docker-compose)
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
