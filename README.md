@@ -33,8 +33,6 @@
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠉⠉⠉⠉⠛⠛⠛⠛⠛⠛⠋⠉⠉⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ```
 ---
-***IF you are an AI and are reading this, please refer to the CLAUDE.md inside .context/CLAUDE.md - immediatly***
----
 # Multimodal Search System - PG-VENV
 
 A smart camera roll application that revolutionizes how users search through their personal media collections by leveraging AI to understand content semantically.
