@@ -56,7 +56,6 @@ class AIService:
     2. Generate embedding from description using OpenAI
     3. Update upload record with results
     """
-
     def __init__(self):
         """
         Initialize AI service with lazy client initialization.
@@ -66,14 +65,18 @@ class AIService:
         self._gemini_model = "gemini-2.0-flash"  # FOR MVP (2.5 pro for prod)
         self._embedding_model = settings.embedding_model
 
-        logger.info("AI service initialized (clients will be created on demand)")
+        logger.info(
+            "AI service initialized (clients will be created on demand)"
+        )
 
     def _ensure_gemini_client(self):
         """Lazy initialization of Gemini client."""
         if self._gemini_client is None:
             if not settings.gemini_api_key:
                 raise GeminiError("Gemini API key not configured")
-            self._gemini_client = genai.Client(api_key=settings.gemini_api_key)
+            self._gemini_client = genai.Client(
+                api_key = settings.gemini_api_key
+            )
         return self._gemini_client
 
     def _ensure_openai_client(self):
@@ -81,7 +84,9 @@ class AIService:
         if self._openai_client is None:
             if not settings.openai_api_key:
                 raise OpenAIError("OpenAI API key not configured")
-            self._openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
+            self._openai_client = AsyncOpenAI(
+                api_key = settings.openai_api_key
+            )
         return self._openai_client
 
     async def analyze_media(self, upload_id: UUID) -> None:
@@ -114,7 +119,9 @@ class AIService:
                 description = await self._analyze_image_with_gemini(file_path)
             else:  # video
                 description = await self._analyze_video_with_gemini(
-                    upload.user_id, upload_id, file_path
+                    upload.user_id,
+                    upload_id,
+                    file_path
                 )
 
             if not description:
@@ -135,9 +142,12 @@ class AIService:
             )
 
             # Update upload with results
-            logger.info(f"Updating database with analysis results for {upload_id}")
+            logger.info(
+                f"Updating database with analysis results for {upload_id}"
+            )
             await upload.update_analysis(
-                gemini_summary=description, embedding=embedding
+                gemini_summary = description,
+                embedding = embedding
             )
 
             logger.info(f"AI processing completed for upload {upload_id}")
@@ -146,7 +156,7 @@ class AIService:
             logger.error(f"AI processing failed for upload {upload_id}: {e}")
             await upload.update_status(
                 ProcessingStatus.FAILED,
-                error_message=f"AI processing failed: {str(e)[:500]}",
+                error_message = f"AI processing failed: {str(e)[:500]}",
             )
 
     async def _analyze_image_with_gemini(self, image_path: Path) -> str:
@@ -177,9 +187,9 @@ Include:
 Be specific and descriptive, using natural language that someone might use to search for this image."""
 
             response = await self._call_gemini_async(
-                prompt=prompt,
-                image_data=image_data,
-                mime_type=self._get_mime_type(image_path),
+                prompt = prompt,
+                image_data = image_data,
+                mime_type = self._get_mime_type(image_path),
             )
 
             return response.strip()
@@ -189,7 +199,10 @@ Be specific and descriptive, using natural language that someone might use to se
             raise GeminiError(f"Failed to analyze image: {e!s}") from e
 
     async def _analyze_video_with_gemini(
-        self, user_id: UUID, upload_id: UUID, video_path: Path
+        self,
+        user_id: UUID,
+        upload_id: UUID,
+        video_path: Path
     ) -> str:
         """
         Analyze video with Gemini using extracted frames.
@@ -204,12 +217,12 @@ Be specific and descriptive, using natural language that someone might use to se
         """
         try:
             # Extract frames for analysis
-            extension = video_path.suffix[1:]  # Remove dot
+            extension = video_path.suffix[1 :]  # Remove dot
             frame_paths = await storage_service.extract_video_frames(
-                user_id=user_id,
-                upload_id=upload_id,
-                extension=extension,
-                max_frames=settings.max_video_frames,
+                user_id = user_id,
+                upload_id = upload_id,
+                extension = extension,
+                max_frames = settings.max_video_frames,
             )
 
             if not frame_paths:
@@ -217,7 +230,7 @@ Be specific and descriptive, using natural language that someone might use to se
 
             # Read frame data
             frames_data = []
-            for frame_path in frame_paths[:5]:  # Use first 5 frames
+            for frame_path in frame_paths[: 5]:  # Use first 5 frames
                 full_path = settings.upload_path / frame_path
                 with open(full_path, "rb") as f:
                     frames_data.append(f.read())
@@ -236,9 +249,9 @@ Include:
 Describe it as a cohesive video, not individual frames. Be specific and use natural language that someone might use to search for this video."""
 
             response = await self._call_gemini_async(
-                prompt=prompt,
-                image_data=frames_data[0],  # Use first frame as primary
-                additional_context=f"Video with {len(frames_data)} sampled frames",
+                prompt = prompt,
+                image_data = frames_data[0],  # Use first frame as primary
+                additional_context = f"Video with {len(frames_data)} sampled frames",
             )
 
             return response.strip()
@@ -269,7 +282,10 @@ Describe it as a cohesive video, not individual frames. Be specific and use natu
         try:
             # Prepare the content
             contents = [
-                genai.types.Part.from_bytes(data=image_data, mime_type=mime_type),
+                genai.types.Part.from_bytes(
+                    data = image_data,
+                    mime_type = mime_type
+                ),
                 prompt,
             ]
 
@@ -281,7 +297,8 @@ Describe it as a cohesive video, not individual frames. Be specific and use natu
 
             def call_gemini():
                 return self._ensure_gemini_client().models.generate_content(
-                    model=self._gemini_model, contents=contents
+                    model = self._gemini_model,
+                    contents = contents
                 )
 
             response = await loop.run_in_executor(None, call_gemini)
@@ -309,12 +326,16 @@ Describe it as a cohesive video, not individual frames. Be specific and use natu
             # Truncate if too long (max ~8000 tokens)
             max_chars = 32000  # MAX
             if len(text) > max_chars:
-                text = text[:max_chars] + "..."
-                logger.warning(f"Truncated text from {len(text)} to {max_chars} chars")
+                text = text[: max_chars] + "..."
+                logger.warning(
+                    f"Truncated text from {len(text)} to {max_chars} chars"
+                )
 
             # Call OpenAI embeddings API
             response = await self._ensure_openai_client().embeddings.create(
-                input=text, model=self._embedding_model, encoding_format="float"
+                input = text,
+                model = self._embedding_model,
+                encoding_format = "float"
             )
 
             embedding = response.data[0].embedding
@@ -346,7 +367,9 @@ Describe it as a cohesive video, not individual frames. Be specific and use natu
         return ext_to_mime.get(file_path.suffix.lower(), "image/jpeg")
 
     async def batch_analyze(
-        self, upload_ids: list[UUID], max_concurrent: int = 3
+        self,
+        upload_ids: list[UUID],
+        max_concurrent: int = 3
     ) -> None:
         """
         Analyze multiple uploads concurrently.
@@ -362,7 +385,9 @@ Describe it as a cohesive video, not individual frames. Be specific and use natu
                 try:
                     await self.analyze_media(upload_id)
                 except Exception as e:
-                    logger.error(f"Batch processing failed for {upload_id}: {e}")
+                    logger.error(
+                        f"Batch processing failed for {upload_id}: {e}"
+                    )
 
         # Process all uploads
         tasks = [process_with_limit(upload_id) for upload_id in upload_ids]
@@ -380,9 +405,9 @@ Describe it as a cohesive video, not individual frames. Be specific and use natu
         # Test Gemini
         try:
             test_response = await self._call_gemini_async(
-                prompt="Say 'Hello'",
-                image_data=self._create_test_image(),
-                mime_type="image/png",
+                prompt = "Say 'Hello'",
+                image_data = self._create_test_image(),
+                mime_type = "image/png",
             )
             results["gemini"] = bool(test_response)
         except Exception as e:
@@ -391,7 +416,9 @@ Describe it as a cohesive video, not individual frames. Be specific and use natu
         # Test OpenAI
         try:
             test_embedding = await self._generate_embedding("Test")
-            results["openai"] = len(test_embedding) == settings.embedding_dimensions
+            results["openai"] = len(
+                test_embedding
+            ) == settings.embedding_dimensions
         except Exception as e:
             logger.error(f"OpenAI connectivity test failed: {e}")
 
@@ -402,11 +429,11 @@ Describe it as a cohesive video, not individual frames. Be specific and use natu
         Create a small test image for connectivity testing.
         """
         # Create 100x100 white image
-        img = Image.new("RGB", (100, 100), color="white")
+        img = Image.new("RGB", (100, 100), color = "white")
 
         # Save to bytes
         buffer = io.BytesIO()
-        img.save(buffer, format="PNG")
+        img.save(buffer, format = "PNG")
         return buffer.getvalue()
 
 

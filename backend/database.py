@@ -27,7 +27,6 @@ class DatabasePool:
     Provides methods for executing queries, managing transactions,
     and handling vector operations efficiently.
     """
-
     def __init__(self) -> None:
         """Initialize database pool instance."""
         self._pool: Pool | None = None
@@ -47,18 +46,18 @@ class DatabasePool:
             try:
                 self._pool = await asyncpg.create_pool(
                     settings.database_url,
-                    min_size=settings.db_pool_min_size,
-                    max_size=settings.db_pool_max_size,
-                    command_timeout=settings.db_command_timeout,
-                    timeout=settings.db_pool_timeout,
-                    init=self._init_connection,
+                    min_size = settings.db_pool_min_size,
+                    max_size = settings.db_pool_max_size,
+                    command_timeout = settings.db_command_timeout,
+                    timeout = settings.db_pool_timeout,
+                    init = self._init_connection,
                 )
 
                 await self._verify_pgvector()
 
                 logger.info(
                     "Database pool created successfully",
-                    extra={
+                    extra = {
                         "min_size": settings.db_pool_min_size,
                         "max_size": settings.db_pool_max_size,
                     },
@@ -91,7 +90,9 @@ class DatabasePool:
         """
         async with self.acquire() as conn:
             try:
-                await conn.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
+                await conn.execute(
+                    'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
+                )
                 logger.info("uuid-ossp extension created successfully")
             except asyncpg.PostgresError as e:
                 raise RuntimeError(
@@ -108,7 +109,9 @@ class DatabasePool:
 
             if not result:
                 try:
-                    await conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+                    await conn.execute(
+                        "CREATE EXTENSION IF NOT EXISTS vector;"
+                    )
                     logger.info("pgvector extension created successfully")
                 except asyncpg.PostgresError as e:
                     raise RuntimeError(
@@ -127,9 +130,9 @@ class DatabasePool:
         async with self.acquire() as conn:
             await conn.set_type_codec(
                 "vector",
-                encoder=lambda v: f"[{','.join(map(str, v))}]",
-                decoder=lambda v: list(map(float, v[1:-1].split(","))),
-                schema="public",
+                encoder = lambda v: f"[{','.join(map(str, v))}]",
+                decoder = lambda v: list(map(float, v[1 :-1].split(","))),
+                schema = "public",
             )
 
     @asynccontextmanager
@@ -154,13 +157,16 @@ class DatabasePool:
             yield conn
 
     async def execute(
-        self, query: str, *args: Any, timeout: float | None = None
+        self,
+        query: str,
+        *args: Any,
+        timeout: float | None = None
     ) -> str:
         """
         Execute a query without returning results.
         """
         async with self.acquire() as conn:
-            return await conn.execute(query, *args, timeout=timeout)
+            return await conn.execute(query, *args, timeout = timeout)
 
     async def executemany(self, query: str, args: list[list[Any]]) -> str:
         """
@@ -170,31 +176,46 @@ class DatabasePool:
             return await conn.executemany(query, args)
 
     async def fetch(
-        self, query: str, *args: Any, timeout: float | None = None
+        self,
+        query: str,
+        *args: Any,
+        timeout: float | None = None
     ) -> list[Record]:
         """
         Execute a query and return all results.
         """
         async with self.acquire() as conn:
-            return await conn.fetch(query, *args, timeout=timeout)
+            return await conn.fetch(query, *args, timeout = timeout)
 
     async def fetchrow(
-        self, query: str, *args: Any, timeout: float | None = None
+        self,
+        query: str,
+        *args: Any,
+        timeout: float | None = None
     ) -> Record | None:
         """
         Execute a query and return first result.
         """
         async with self.acquire() as conn:
-            return await conn.fetchrow(query, *args, timeout=timeout)
+            return await conn.fetchrow(query, *args, timeout = timeout)
 
     async def fetchval(
-        self, query: str, *args: Any, column: int = 0, timeout: float | None = None
+        self,
+        query: str,
+        *args: Any,
+        column: int = 0,
+        timeout: float | None = None
     ) -> Any:
         """
         Execute a query and return single value.
         """
         async with self.acquire() as conn:
-            return await conn.fetchval(query, *args, column=column, timeout=timeout)
+            return await conn.fetchval(
+                query,
+                *args,
+                column = column,
+                timeout = timeout
+            )
 
     async def vector_similarity_search(
         self,
@@ -202,7 +223,8 @@ class DatabasePool:
         embedding_column: str,
         query_embedding: list[float],
         limit: int = 10,
-        filters: dict[str, Any] | None = None,
+        filters: dict[str,
+                      Any] | None = None,
     ) -> list[Record]:
         """
         Perform vector similarity search using pgvector.
@@ -219,7 +241,8 @@ class DatabasePool:
                 params.append(value)
 
         where_clause = (
-            f"WHERE {' AND '.join(where_conditions)}" if where_conditions else ""
+            f"WHERE {' AND '.join(where_conditions)}"
+            if where_conditions else ""
         )
 
         query = f"""

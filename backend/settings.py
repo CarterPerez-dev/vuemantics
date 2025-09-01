@@ -11,7 +11,11 @@ from typing import Final
 from passlib.context import CryptContext
 
 # Password hashing configuration
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=14)
+pwd_context = CryptContext(
+    schemes = ["bcrypt"],
+    deprecated = "auto",
+    bcrypt__rounds = 14
+)
 
 # Password validation constants
 MIN_PASSWORD_LENGTH: Final[int] = 8

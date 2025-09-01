@@ -21,7 +21,6 @@ class TestUserModel:
     """
     Test User model functionality.
     """
-
     async def test_user_init(self):
         """
         Test User initialization.
@@ -33,15 +32,19 @@ class TestUserModel:
 
         # With arguments
         user = User(
-            email="test@example.com",
-            password_hash="hashed",
-            is_active=False,
+            email = "test@example.com",
+            password_hash = "hashed",
+            is_active = False,
         )
         assert user.email == "test@example.com"
         assert user.password_hash == "hashed"
         assert user.is_active is False
 
-    async def test_create_user(self, db_connection: Connection, clean_tables: None):
+    async def test_create_user(
+        self,
+        db_connection: Connection,
+        clean_tables: None
+    ):
         """
         Test creating a new user.
         """
@@ -49,9 +52,9 @@ class TestUserModel:
         password_hash = hash_password("ValidPass123!")
 
         user = await User.create(
-            email=email,
-            password_hash=password_hash,
-            is_active=True,
+            email = email,
+            password_hash = password_hash,
+            is_active = True,
         )
 
         assert user.id is not None
@@ -63,7 +66,9 @@ class TestUserModel:
         assert user.updated_at is not None
 
     async def test_create_user_email_case_insensitive(
-        self, db_connection: Connection, clean_tables: None
+        self,
+        db_connection: Connection,
+        clean_tables: None
     ):
         """
         Test email is stored lowercase.
@@ -72,32 +77,38 @@ class TestUserModel:
         password_hash = hash_password("ValidPass123!")
 
         user = await User.create(
-            email=email,
-            password_hash=password_hash,
+            email = email,
+            password_hash = password_hash,
         )
 
         assert user.email == "testuser@example.com"
 
     async def test_create_duplicate_user(
-        self, db_connection: Connection, test_user: User
+        self,
+        db_connection: Connection,
+        test_user: User
     ):
         """
         Test creating duplicate user raises error.
         """
-        with pytest.raises(ValueError, match="already exists"):
+        with pytest.raises(ValueError, match = "already exists"):
             await User.create(
-                email=test_user.email,
-                password_hash="anotherhash",
+                email = test_user.email,
+                password_hash = "anotherhash",
             )
 
         # Also test case-insensitive duplicate
-        with pytest.raises(ValueError, match="already exists"):
+        with pytest.raises(ValueError, match = "already exists"):
             await User.create(
-                email=test_user.email.upper(),
-                password_hash="anotherhash",
+                email = test_user.email.upper(),
+                password_hash = "anotherhash",
             )
 
-    async def test_find_by_email(self, db_connection: Connection, test_user: User):
+    async def test_find_by_email(
+        self,
+        db_connection: Connection,
+        test_user: User
+    ):
         """
         Test finding user by email.
         """
@@ -117,7 +128,10 @@ class TestUserModel:
         assert found is None
 
     async def test_find_active_by_email(
-        self, db_connection: Connection, test_user: User, inactive_user: User
+        self,
+        db_connection: Connection,
+        test_user: User,
+        inactive_user: User
     ):
         """
         Test finding only active users by email.
@@ -132,7 +146,11 @@ class TestUserModel:
         found = await User.find_active_by_email(inactive_user.email)
         assert found is None
 
-    async def test_get_all_active(self, db_connection: Connection, clean_tables: None):
+    async def test_get_all_active(
+        self,
+        db_connection: Connection,
+        clean_tables: None
+    ):
         """
         Test getting all active users.
         """
@@ -149,18 +167,22 @@ class TestUserModel:
             )
 
         # Get active users
-        users = await User.get_all_active(limit=10)
+        users = await User.get_all_active(limit = 10)
         assert len(users) == 3
         assert all(u.is_active for u in users)
 
         # Test pagination
-        users = await User.get_all_active(limit=2)
+        users = await User.get_all_active(limit = 2)
         assert len(users) == 2
 
-        users_page2 = await User.get_all_active(limit=2, offset=2)
+        users_page2 = await User.get_all_active(limit = 2, offset = 2)
         assert len(users_page2) == 1
 
-    async def test_email_exists(self, db_connection: Connection, test_user: User):
+    async def test_email_exists(
+        self,
+        db_connection: Connection,
+        test_user: User
+    ):
         """
         Test checking if email exists.
         """
@@ -176,7 +198,11 @@ class TestUserModel:
         exists = await User.email_exists("nonexistent@example.com")
         assert exists is False
 
-    async def test_update_password(self, db_connection: Connection, test_user: User):
+    async def test_update_password(
+        self,
+        db_connection: Connection,
+        test_user: User
+    ):
         """
         Test updating user password.
         """
@@ -200,12 +226,17 @@ class TestUserModel:
         """
         Test updating password on unsaved user raises error.
         """
-        user = User(email="test@example.com", password_hash="hash")
+        user = User(email = "test@example.com", password_hash = "hash")
 
-        with pytest.raises(ValueError, match="Cannot update password for unsaved user"):
+        with pytest.raises(ValueError,
+                           match = "Cannot update password for unsaved user"):
             await user.update_password("newhash")
 
-    async def test_deactivate_user(self, db_connection: Connection, test_user: User):
+    async def test_deactivate_user(
+        self,
+        db_connection: Connection,
+        test_user: User
+    ):
         """
         Test deactivating user account.
         """
@@ -224,7 +255,9 @@ class TestUserModel:
         assert is_active is False
 
     async def test_reactivate_user(
-        self, db_connection: Connection, inactive_user: User
+        self,
+        db_connection: Connection,
+        inactive_user: User
     ):
         """
         Test reactivating user account.
@@ -248,10 +281,10 @@ class TestUserModel:
         Test password_hash is excluded from serialization.
         """
         user = User(
-            id=uuid4(),
-            email="test@example.com",
-            password_hash="supersecret",
-            is_active=True,
+            id = uuid4(),
+            email = "test@example.com",
+            password_hash = "supersecret",
+            is_active = True,
         )
 
         result = user.to_dict()
@@ -261,17 +294,21 @@ class TestUserModel:
         assert "password_hash" not in result
 
         # Can still explicitly include if needed (though not recommended)
-        result = user.to_dict(exclude=set())
+        result = user.to_dict(exclude = set())
         assert "password_hash" in result
 
-    async def test_save_new_user(self, db_connection: Connection, clean_tables: None):
+    async def test_save_new_user(
+        self,
+        db_connection: Connection,
+        clean_tables: None
+    ):
         """
         Test saving a new user.
         """
         user = User(
-            email="savetest@example.com",
-            password_hash=hash_password("ValidPass123!"),
-            is_active=True,
+            email = "savetest@example.com",
+            password_hash = hash_password("ValidPass123!"),
+            is_active = True,
         )
 
         assert user.id is None
@@ -290,7 +327,11 @@ class TestUserModel:
         assert found is not None
         assert found["email"] == "savetest@example.com"
 
-    async def test_save_existing_user(self, db_connection: Connection, test_user: User):
+    async def test_save_existing_user(
+        self,
+        db_connection: Connection,
+        test_user: User
+    ):
         """
         Test updating an existing user via save.
         """
@@ -312,7 +353,7 @@ class TestUserModel:
         """
         Test string representation of User.
         """
-        user = User(email="test@example.com")
+        user = User(email = "test@example.com")
         assert str(user) == "<User id=None email=test@example.com>"
 
         user.id = UUID("550e8400-e29b-41d4-a716-446655440000")
@@ -320,7 +361,9 @@ class TestUserModel:
         assert "test@example.com" in str(user)
 
     async def test_password_verification_flow(
-        self, db_connection: Connection, clean_tables: None
+        self,
+        db_connection: Connection,
+        clean_tables: None
     ):
         """
         Test complete password flow: hash, store, verify.
@@ -330,8 +373,8 @@ class TestUserModel:
 
         # Create user with hashed password
         user = await User.create(
-            email=email,
-            password_hash=hash_password(password),
+            email = email,
+            password_hash = hash_password(password),
         )
 
         # Verify correct password

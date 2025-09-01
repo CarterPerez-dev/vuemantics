@@ -19,18 +19,21 @@ class LoginRequest(BaseModel):
     """
 
     model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields for MVP
-        str_strip_whitespace=True,
-        json_schema_extra={
+        extra = "ignore",  # Allow extra fields for MVP
+        str_strip_whitespace = True,
+        json_schema_extra = {
             "example": {"email": "user@example.com", "password": "MyStr0ng!Pass123"}
         },
     )
 
     email: EmailStr = Field(
-        description="User's email address", examples=["user@example.com"]
+        description = "User's email address",
+        examples = ["user@example.com"]
     )
     password: str = Field(
-        description="User's password", min_length=1, examples=["MyStr0ng!Pass123"]
+        description = "User's password",
+        min_length = 1,
+        examples = ["MyStr0ng!Pass123"]
     )
 
 
@@ -40,8 +43,8 @@ class TokenResponse(BaseModel):
     """
 
     model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields for MVP
-        json_schema_extra={
+        extra = "ignore",  # Allow extra fields for MVP
+        json_schema_extra = {
             "example": {
                 "access_token": "eyJhbGciOiJIUzI1NiIs...",
                 "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
@@ -50,10 +53,13 @@ class TokenResponse(BaseModel):
         },
     )
 
-    access_token: str = Field(description="JWT access token (30 min expiry)")
-    refresh_token: str = Field(description="JWT refresh token (30 day expiry)")
+    access_token: str = Field(description = "JWT access token (30 min expiry)")
+    refresh_token: str = Field(
+        description = "JWT refresh token (30 day expiry)"
+    )
     token_type: str = Field(
-        default="bearer", description="Token type (always 'bearer')"
+        default = "bearer",
+        description = "Token type (always 'bearer')"
     )
 
 
@@ -63,12 +69,15 @@ class RefreshRequest(BaseModel):
     """
 
     model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields for MVP
-        str_strip_whitespace=True,
-        json_schema_extra={"example": {"refresh_token": "eyJhbGciOiJIUzI1NiIs..."}},
+        extra = "ignore",  # Allow extra fields for MVP
+        str_strip_whitespace = True,
+        json_schema_extra = {"example": {"refresh_token": "eyJhbGciOiJIUzI1NiIs..."}},
     )
 
-    refresh_token: str = Field(description="Valid refresh token", min_length=1)
+    refresh_token: str = Field(
+        description = "Valid refresh token",
+        min_length = 1
+    )
 
 
 class PasswordResetRequest(BaseModel):
@@ -77,11 +86,11 @@ class PasswordResetRequest(BaseModel):
     """
 
     model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields for MVP
-        str_strip_whitespace=True,
+        extra = "ignore",  # Allow extra fields for MVP
+        str_strip_whitespace = True,
     )
 
-    email: EmailStr = Field(description="Email to send reset link")
+    email: EmailStr = Field(description = "Email to send reset link")
 
 
 class PasswordResetConfirm(BaseModel):
@@ -90,9 +99,13 @@ class PasswordResetConfirm(BaseModel):
     """
 
     model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields for MVP
-        str_strip_whitespace=True,
+        extra = "ignore",  # Allow extra fields for MVP
+        str_strip_whitespace = True,
     )
 
-    token: str = Field(description="Password reset token")
-    new_password: str = Field(description="New password", min_length=8, max_length=69)
+    token: str = Field(description = "Password reset token")
+    new_password: str = Field(
+        description = "New password",
+        min_length = 8,
+        max_length = 69
+    )

@@ -27,9 +27,9 @@ class UploadResponse(TimestampMixin):
     """
 
     model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields for MVP flexibility
-        from_attributes=True,
-        json_schema_extra={
+        extra = "ignore",  # Allow extra fields for MVP flexibility
+        from_attributes = True,
+        json_schema_extra = {
             "example": {
                 "id": "550e8400-e29b-41d4-a716-446655440000",
                 "user_id": "660e8400-e29b-41d4-a716-446655440000",
@@ -50,41 +50,53 @@ class UploadResponse(TimestampMixin):
         },
     )
 
-    id: UUID = Field(description="Upload's unique identifier")
-    user_id: UUID = Field(description="Owner's user ID")
-    filename: str = Field(description="Original filename")
-    file_path: str = Field(description="Storage path")
-    file_type: Literal["image", "video"] = Field(description="Type of media")
-    file_size: int = Field(gt=0, description="File size in bytes")
-    mime_type: str = Field(description="MIME type")
-    processing_status: Literal[
-        "pending", "analyzing", "embedding", "completed", "failed"
-    ] = Field(description="Current processing status")
+    id: UUID = Field(description = "Upload's unique identifier")
+    user_id: UUID = Field(description = "Owner's user ID")
+    filename: str = Field(description = "Original filename")
+    file_path: str = Field(description = "Storage path")
+    file_type: Literal["image", "video"] = Field(description = "Type of media")
+    file_size: int = Field(gt = 0, description = "File size in bytes")
+    mime_type: str = Field(description = "MIME type")
+    processing_status: Literal["pending",
+                               "analyzing",
+                               "embedding",
+                               "completed",
+                               "failed"] = Field(
+                                   description = "Current processing status"
+                               )
     gemini_summary: str | None = Field(
-        default=None, description="AI-generated description from Gemini"
+        default = None,
+        description = "AI-generated description from Gemini"
     )
     embedding: list[float] | None = Field(
-        default=None,
-        description="1536-dimensional embedding vector from OpenAI",
-        min_length=1536,
-        max_length=1536,
+        default = None,
+        description = "1536-dimensional embedding vector from OpenAI",
+        min_length = 1536,
+        max_length = 1536,
     )
     has_embedding: bool = Field(
-        default=False, description="Whether this upload has an embedding generated"
+        default = False,
+        description = "Whether this upload has an embedding generated"
     )
     thumbnail_path: str | None = Field(
-        default=None, description="Path to generated thumbnail"
+        default = None,
+        description = "Path to generated thumbnail"
     )
     error_message: str | None = Field(
-        default=None, description="Error details if processing failed"
+        default = None,
+        description = "Error details if processing failed"
     )
-    metadata: dict[str, Any] | None = Field(
-        default=None, description="Additional file metadata"
-    )
+    metadata: dict[str,
+                   Any] | None = Field(
+                       default = None,
+                       description = "Additional file metadata"
+                   )
 
     @field_validator("embedding")
     @classmethod
-    def validate_embedding_dimensions(cls, v: list[float] | None) -> list[float] | None:
+    def validate_embedding_dimensions(cls,
+                                      v: list[float] | None
+                                      ) -> list[float] | None:
         """
         Ensure embedding has exactly required dimensions.
         """
@@ -100,16 +112,33 @@ class UploadListParams(PaginationParams):
     Parameters for listing uploads with filters.
     """
 
-    file_type: Literal["image", "video"] | None = Field(
-        default=None, description="Filter by file type"
-    )
+    file_type: Literal["image",
+                       "video"] | None = Field(
+                           default = None,
+                           description = "Filter by file type"
+                       )
     processing_status: (
-        Literal["pending", "analyzing", "embedding", "completed", "failed"] | None
-    ) = Field(default=None, description="Filter by processing status")
-    sort_by: Literal["created_at", "updated_at", "file_size", "filename"] = Field(
-        default="created_at", description="Sort field"
+        Literal["pending",
+                "analyzing",
+                "embedding",
+                "completed",
+                "failed"] | None
+    ) = Field(
+        default = None,
+        description = "Filter by processing status"
     )
-    sort_order: Literal["asc", "desc"] = Field(default="desc", description="Sort order")
+    sort_by: Literal["created_at",
+                     "updated_at",
+                     "file_size",
+                     "filename"] = Field(
+                         default = "created_at",
+                         description = "Sort field"
+                     )
+    sort_order: Literal["asc",
+                        "desc"] = Field(
+                            default = "desc",
+                            description = "Sort order"
+                        )
 
 
 class UploadStats(BaseModel):
@@ -118,22 +147,35 @@ class UploadStats(BaseModel):
     """
 
     model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields for MVP flexibility
+        extra = "ignore",  # Allow extra fields for MVP flexibility
     )
 
-    total_count: int = Field(ge=0, description="Total uploads")
-    total_size_bytes: int = Field(ge=0, description="Total size in bytes")
+    total_count: int = Field(ge = 0, description = "Total uploads")
+    total_size_bytes: int = Field(ge = 0, description = "Total size in bytes")
 
-    by_type: dict[str, int] = Field(
-        description="Counts by file type", examples=[{"image": 150, "video": 50}]
-    )
-    by_status: dict[str, int] = Field(
-        description="Counts by processing status",
-        examples=[{"completed": 180, "failed": 5, "pending": 15}],
-    )
+    by_type: dict[str,
+                  int] = Field(
+                      description = "Counts by file type",
+                      examples = [{
+                          "image": 150,
+                          "video": 50
+                      }]
+                  )
+    by_status: dict[str,
+                    int] = Field(
+                        description = "Counts by processing status",
+                        examples = [
+                            {
+                                "completed": 180,
+                                "failed": 5,
+                                "pending": 15
+                            }
+                        ],
+                    )
 
     average_processing_time_seconds: float | None = Field(
-        ge=0, description="Average time to process uploads"
+        ge = 0,
+        description = "Average time to process uploads"
     )
 
 
@@ -143,14 +185,27 @@ class BulkUploadResponse(BaseModel):
     """
 
     model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields for MVP flexibility
+        extra = "ignore",  # Allow extra fields for MVP flexibility
     )
 
-    successful: list[UploadResponse] = Field(description="Successfully created uploads")
-    failed: list[dict[str, str]] = Field(
-        description="Failed uploads with error messages",
-        examples=[[{"filename": "bad.txt", "error": "Unsupported file type"}]],
+    successful: list[UploadResponse] = Field(
+        description = "Successfully created uploads"
     )
-    total_processed: int = Field(ge=0, description="Total files processed")
-    total_successful: int = Field(ge=0, description="Total successful uploads")
-    total_failed: int = Field(ge=0, description="Total failed uploads")
+    failed: list[dict[str,
+                      str]] = Field(
+                          description = "Failed uploads with error messages",
+                          examples = [
+                              [
+                                  {
+                                      "filename": "bad.txt",
+                                      "error": "Unsupported file type"
+                                  }
+                              ]
+                          ],
+                      )
+    total_processed: int = Field(ge = 0, description = "Total files processed")
+    total_successful: int = Field(
+        ge = 0,
+        description = "Total successful uploads"
+    )
+    total_failed: int = Field(ge = 0, description = "Total failed uploads")

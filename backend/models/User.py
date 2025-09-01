@@ -62,7 +62,10 @@ class User(BaseModel):
 
     @classmethod
     async def create(
-        cls, email: str, password_hash: str, is_active: bool = True
+        cls,
+        email: str,
+        password_hash: str,
+        is_active: bool = True
     ) -> "User":
         """
         Create a new user.
@@ -77,7 +80,10 @@ class User(BaseModel):
 
         try:
             record = await database.db.fetchrow(
-                query, email.lower(), password_hash, is_active
+                query,
+                email.lower(),
+                password_hash,
+                is_active
             )
             return cls.from_record(record)
         except UniqueViolationError as e:
@@ -114,7 +120,9 @@ class User(BaseModel):
         return cls.from_record(record)
 
     @classmethod
-    async def get_all_active(cls, limit: int = 100, offset: int = 0) -> list["User"]:
+    async def get_all_active(cls,
+                             limit: int = 100,
+                             offset: int = 0) -> list["User"]:
         """
         Get all active users with pagination.
         """
@@ -141,7 +149,10 @@ class User(BaseModel):
         """
 
         record = await database.db.fetchrow(
-            query, self.email.lower(), self.password_hash, self.is_active
+            query,
+            self.email.lower(),
+            self.password_hash,
+            self.is_active
         )
 
         for key, value in dict(record).items():
@@ -162,7 +173,11 @@ class User(BaseModel):
         """
 
         record = await database.db.fetchrow(
-            query, self.email.lower(), self.password_hash, self.is_active, self.id
+            query,
+            self.email.lower(),
+            self.password_hash,
+            self.is_active,
+            self.id
         )
 
         if record:
@@ -184,7 +199,11 @@ class User(BaseModel):
             RETURNING updated_at
         """
 
-        updated_at = await database.db.fetchval(query, new_password_hash, self.id)
+        updated_at = await database.db.fetchval(
+            query,
+            new_password_hash,
+            self.id
+        )
         if updated_at:
             self.password_hash = new_password_hash
             self.updated_at = updated_at

@@ -47,16 +47,24 @@ from services import (
 logger = logging.getLogger(__name__)
 
 # Rate limiting
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func = get_remote_address)
 
 router = APIRouter(
-    prefix="/uploads",
-    tags=["uploads"],
-    responses={
-        401: {"description": "Unauthorized"},
-        413: {"description": "File too large"},
-        415: {"description": "Unsupported media type"},
-        429: {"description": "Too many requests"},
+    prefix = "/uploads",
+    tags = ["uploads"],
+    responses = {
+        401: {
+            "description": "Unauthorized"
+        },
+        413: {
+            "description": "File too large"
+        },
+        415: {
+            "description": "Unsupported media type"
+        },
+        429: {
+            "description": "Too many requests"
+        },
     },
 )
 
@@ -76,10 +84,10 @@ async def process_upload_background(
     try:
         # Generate thumbnail
         thumbnail_path = await storage_service.generate_thumbnail(
-            user_id=user_id,
-            upload_id=upload_id,
-            file_type=file_type,
-            extension=extension,
+            user_id = user_id,
+            upload_id = upload_id,
+            file_type = file_type,
+            extension = extension,
         )
 
         if thumbnail_path:
@@ -94,30 +102,37 @@ async def process_upload_background(
         logger.info(f"AI processing completed for upload {upload_id}")
 
     except Exception as e:
-        logger.error(f"Background processing failed for upload {upload_id}: {e}")
+        logger.error(
+            f"Background processing failed for upload {upload_id}: {e}"
+        )
         try:
             upload = await Upload.find_by_id(upload_id)
-            if upload and upload.processing_status not in ["completed", "failed"]:
+            if upload and upload.processing_status not in ["completed",
+                                                           "failed"]:
                 await upload.update_status(
                     ProcessingStatus.FAILED,
-                    error_message=f"Processing failed: {str(e)[:200]}",
+                    error_message = f"Processing failed: {str(e)[:200]}",
                 )
         except Exception as update_error:
-            logger.error(f"Failed to update status for {upload_id}: {update_error}")
+            logger.error(
+                f"Failed to update status for {upload_id}: {update_error}"
+            )
 
 
 @router.post(
     "",
-    response_model=UploadResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="Upload a file",
-    description="Upload an image or video file for processing",
+    response_model = UploadResponse,
+    status_code = status.HTTP_201_CREATED,
+    summary = "Upload a file",
+    description = "Upload an image or video file for processing",
 )
 @limiter.limit("100/minute")
 async def upload_file(
     request: Request,
-    file: Annotated[UploadFile, File(description="File to upload")],
-    current_user: Annotated[User, Depends(get_current_user)],
+    file: Annotated[UploadFile,
+                    File(description = "File to upload")],
+    current_user: Annotated[User,
+                            Depends(get_current_user)],
 ) -> UploadResponse:
     """
     Upload a new file.
@@ -143,43 +158,44 @@ async def upload_file(
             )
         except FileTooLargeError as err:
             raise HTTPException(
-                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                detail=f"File too large. Maximum size is {storage_service.base_path} bytes",
+                status_code = status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail =
+                f"File too large. Maximum size is {storage_service.base_path} bytes",
             ) from err
         except UnsupportedFileTypeError as e:
             raise HTTPException(
-                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-                detail=str(e),
+                status_code = status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                detail = str(e),
             ) from e
 
         file_path = await storage_service.save_upload(
-            file_content=file.file,
-            user_id=current_user.id,
-            upload_id=upload_id,
-            extension=extension,
+            file_content = file.file,
+            user_id = current_user.id,
+            upload_id = upload_id,
+            extension = extension,
         )
 
         upload = await Upload.create(
-            user_id=current_user.id,
-            filename=file.filename or f"upload.{extension}",
-            file_path=file_path,
-            file_type=file_type,
-            file_size=file_size,
-            mime_type=file.content_type or "application/octet-stream",
-            metadata={
+            user_id = current_user.id,
+            filename = file.filename or f"upload.{extension}",
+            file_path = file_path,
+            file_type = file_type,
+            file_size = file_size,
+            mime_type = file.content_type or "application/octet-stream",
+            metadata = {
                 "original_filename": file.filename,
                 "upload_source": "web",
             },
-            upload_id=upload_id,
+            upload_id = upload_id,
         )
 
         # Queue background processing (fire and forget)
         task = asyncio.create_task(
             process_upload_background(
-                upload_id=upload_id,
-                user_id=current_user.id,
-                file_type=file_type,
-                extension=extension,
+                upload_id = upload_id,
+                user_id = current_user.id,
+                file_type = file_type,
+                extension = extension,
             )
         )
         # Store reference to prevent task from being garbage collected
@@ -193,28 +209,30 @@ async def upload_file(
     except StorageError as e:
         logger.error(f"Storage error during upload: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to save upload",
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = "Failed to save upload",
         ) from e
     except Exception as e:
         logger.error(f"Unexpected error during upload: {e}")
         with contextlib.suppress(Exception):
             await storage_service.delete_upload(current_user.id, upload_id)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Upload failed",
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = "Upload failed",
         ) from e
 
 
 @router.get(
     "",
-    response_model=PaginatedResponse[UploadResponse],
-    summary="List uploads",
-    description="Get paginated list of user's uploads with optional filters",
+    response_model = PaginatedResponse[UploadResponse],
+    summary = "List uploads",
+    description = "Get paginated list of user's uploads with optional filters",
 )
 async def list_uploads(
-    current_user: Annotated[User, Depends(get_current_user)],
-    params: Annotated[UploadListParams, Depends()],
+    current_user: Annotated[User,
+                            Depends(get_current_user)],
+    params: Annotated[UploadListParams,
+                      Depends()],
 ) -> PaginatedResponse[UploadResponse]:
     """
     List user's uploads with pagination and filters.
@@ -227,11 +245,11 @@ async def list_uploads(
     """
     # Get uploads from db
     uploads = await Upload.find_by_user(
-        user_id=current_user.id,
-        limit=params.limit,
-        offset=params.offset,
-        file_type=params.file_type,
-        status=params.processing_status,
+        user_id = current_user.id,
+        limit = params.limit,
+        offset = params.offset,
+        file_type = params.file_type,
+        status = params.processing_status,
     )
 
     filters = {"user_id": current_user.id}
@@ -243,25 +261,28 @@ async def list_uploads(
     total = await Upload.count(filters)
 
     # Convert to response models
-    upload_responses = [UploadResponse.model_validate(upload) for upload in uploads]
+    upload_responses = [
+        UploadResponse.model_validate(upload) for upload in uploads
+    ]
 
     return PaginatedResponse[UploadResponse].create(
-        items=upload_responses,
-        total=total,
-        page=params.page,
-        page_size=params.page_size,
+        items = upload_responses,
+        total = total,
+        page = params.page,
+        page_size = params.page_size,
     )
 
 
 @router.get(
     "/{upload_id}",
-    response_model=UploadResponse,
-    summary="Get upload details",
-    description="Get details of a specific upload",
+    response_model = UploadResponse,
+    summary = "Get upload details",
+    description = "Get details of a specific upload",
 )
 async def get_upload(
     upload_id: UUID,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User,
+                            Depends(get_current_user)],
 ) -> UploadResponse:
     """
     Get details of a specific upload.
@@ -272,14 +293,14 @@ async def get_upload(
 
     if not upload:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Upload not found",
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Upload not found",
         )
 
     if upload.user_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Upload not found",
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Upload not found",
         )
 
     return UploadResponse.model_validate(upload)
@@ -287,13 +308,14 @@ async def get_upload(
 
 @router.delete(
     "/{upload_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Delete upload",
-    description="Delete an upload and all associated files",
+    status_code = status.HTTP_204_NO_CONTENT,
+    summary = "Delete upload",
+    description = "Delete an upload and all associated files",
 )
 async def delete_upload(
     upload_id: UUID,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User,
+                            Depends(get_current_user)],
 ) -> None:
     """
     Delete an upload and all associated files.
@@ -308,14 +330,14 @@ async def delete_upload(
 
     if not upload:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Upload not found",
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Upload not found",
         )
 
     if upload.user_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Upload not found",
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Upload not found",
         )
 
     try:
@@ -328,20 +350,21 @@ async def delete_upload(
     except Exception as e:
         logger.error(f"Failed to delete upload {upload_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete upload",
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = "Failed to delete upload",
         ) from e
 
 
 @router.get(
     "/{upload_id}/metadata",
-    summary="Get upload metadata",
-    description="Get additional metadata extracted from file",
-    response_model=dict,
+    summary = "Get upload metadata",
+    description = "Get additional metadata extracted from file",
+    response_model = dict,
 )
 async def get_upload_metadata(
     upload_id: UUID,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User,
+                            Depends(get_current_user)],
 ) -> dict:
     """
     Get additional metadata for upload.
@@ -352,22 +375,25 @@ async def get_upload_metadata(
 
     if not upload:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Upload not found",
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Upload not found",
         )
 
     if upload.user_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Upload not found",
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Upload not found",
         )
 
-    metadata = await storage_service.get_upload_metadata(current_user.id, upload_id)
+    metadata = await storage_service.get_upload_metadata(
+        current_user.id,
+        upload_id
+    )
 
     if not metadata:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Metadata not available",
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Metadata not available",
         )
 
     return metadata

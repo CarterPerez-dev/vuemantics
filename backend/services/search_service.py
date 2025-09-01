@@ -50,17 +50,18 @@ class SearchService:
     3. Apply additional filters
     4. Format and return results
     """
-
     def __init__(self):
         """
         Initialize search service with OpenAI client.
         """
-        self._openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
+        self._openai_client = AsyncOpenAI(api_key = settings.openai_api_key)
         self._embedding_model = settings.embedding_model
         logger.info("Search service initialized")
 
     async def search(
-        self, request: SearchRequest, user_id: UUID | None = None
+        self,
+        request: SearchRequest,
+        user_id: UUID | None = None
     ) -> SearchResponse:
         """
         Perform semantic search on uploads.
@@ -76,15 +77,19 @@ class SearchService:
 
         try:
             # Generate embedding for search query
-            logger.info(f"Generating embedding for query: {request.query[:50]}...")
-            query_embedding = await self._generate_query_embedding(request.query)
+            logger.info(
+                f"Generating embedding for query: {request.query[:50]}..."
+            )
+            query_embedding = await self._generate_query_embedding(
+                request.query
+            )
 
             # Perform vector similarity search
             results = await self._search_uploads(
-                query_embedding=query_embedding,
-                user_id=user_id if request.user_id is None else request.user_id,
-                limit=request.limit * 2,  # Get extra for post-filtering
-                similarity_threshold=request.similarity_threshold,
+                query_embedding = query_embedding,
+                user_id = user_id if request.user_id is None else request.user_id,
+                limit = request.limit * 2,  # Get extra for post-filtering
+                similarity_threshold = request.similarity_threshold,
             )
 
             # Apply additional filters
@@ -97,13 +102,13 @@ class SearchService:
             search_time_ms = (time.time() - start_time) * 1000
 
             response = SearchResponse(
-                results=final_results,
-                total_found=len(filtered_results),
-                returned_count=len(final_results),
-                search_time_ms=search_time_ms,
-                query=request.query,
-                query_embedding_generated=True,
-                applied_filters=self._get_applied_filters(request),
+                results = final_results,
+                total_found = len(filtered_results),
+                returned_count = len(final_results),
+                search_time_ms = search_time_ms,
+                query = request.query,
+                query_embedding_generated = True,
+                applied_filters = self._get_applied_filters(request),
             )
 
             logger.info(
@@ -116,13 +121,13 @@ class SearchService:
             # Return empty results with error indication
             search_time_ms = (time.time() - start_time) * 1000
             return SearchResponse(
-                results=[],
-                total_found=0,
-                returned_count=0,
-                search_time_ms=search_time_ms,
-                query=request.query,
-                query_embedding_generated=False,
-                applied_filters=None,
+                results = [],
+                total_found = 0,
+                returned_count = 0,
+                search_time_ms = search_time_ms,
+                query = request.query,
+                query_embedding_generated = False,
+                applied_filters = None,
             )
 
     async def _generate_query_embedding(self, query: str) -> list[float]:
@@ -147,9 +152,9 @@ class SearchService:
 
             # Generate embedding
             response = await self._openai_client.embeddings.create(
-                input=enhanced_query,
-                model=self._embedding_model,
-                encoding_format="float",
+                input = enhanced_query,
+                model = self._embedding_model,
+                encoding_format = "float",
             )
 
             embedding = response.data[0].embedding
@@ -163,7 +168,9 @@ class SearchService:
 
         except Exception as e:
             logger.error(f"Query embedding generation failed: {e}")
-            raise QueryEmbeddingError(f"Failed to generate embedding: {e!s}") from e
+            raise QueryEmbeddingError(
+                f"Failed to generate embedding: {e!s}"
+            ) from e
 
     async def _search_uploads(
         self,
@@ -186,10 +193,10 @@ class SearchService:
         """
         # Perform vector search
         upload_results = await Upload.search_by_embedding(
-            query_embedding=query_embedding,
-            user_id=user_id,
-            limit=limit,
-            similarity_threshold=similarity_threshold,
+            query_embedding = query_embedding,
+            user_id = user_id,
+            limit = limit,
+            similarity_threshold = similarity_threshold,
         )
 
         # Convert to SearchResult objects
@@ -199,17 +206,19 @@ class SearchService:
             distance = 1.0 - similarity
 
             result = SearchResult(
-                upload=upload.to_dict(),
-                similarity_score=similarity,
-                distance=distance,
-                rank=rank,
+                upload = upload.to_dict(),
+                similarity_score = similarity,
+                distance = distance,
+                rank = rank,
             )
             search_results.append(result)
 
         return search_results
 
     def _apply_filters(
-        self, results: list[SearchResult], request: SearchRequest
+        self,
+        results: list[SearchResult],
+        request: SearchRequest
     ) -> list[SearchResult]:
         """
         Apply additional filters to search results.
@@ -226,24 +235,23 @@ class SearchService:
         # Filter by file types
         if request.file_types:
             filtered = [
-                r for r in filtered if r.upload.get("file_type") in request.file_types
+                r for r in filtered
+                if r.upload.get("file_type") in request.file_types
             ]
 
         # Filter by date range
         if request.date_from:
             filtered = [
-                r
-                for r in filtered
-                if datetime.fromisoformat(r.upload.get("created_at", ""))
-                >= request.date_from
+                r for r in filtered
+                if datetime.fromisoformat(r.upload.get("created_at", "")) >=
+                request.date_from
             ]
 
         if request.date_to:
             filtered = [
-                r
-                for r in filtered
-                if datetime.fromisoformat(r.upload.get("created_at", ""))
-                <= request.date_to
+                r for r in filtered
+                if datetime.fromisoformat(r.upload.get("created_at", "")) <=
+                request.date_to
             ]
 
         # Re-rank after filtering
@@ -252,7 +260,9 @@ class SearchService:
 
         return filtered
 
-    def _get_applied_filters(self, request: SearchRequest) -> dict[str, Any] | None:
+    def _get_applied_filters(self,
+                             request: SearchRequest) -> dict[str,
+                                                             Any] | None:
         """
         Get summary of applied filters.
 
@@ -309,20 +319,26 @@ class SearchService:
         # Search using the upload's embedding
         search_user_id = None if include_same_user else user_id
         results = await self._search_uploads(
-            query_embedding=upload.embedding,
-            user_id=search_user_id,
-            limit=limit + 1,  # Get extra to exclude self
-            similarity_threshold=0.5,
+            query_embedding = upload.embedding,
+            user_id = search_user_id,
+            limit = limit + 1,  # Get extra to exclude self
+            similarity_threshold = 0.5,
         )
 
         # Exclude the source upload
-        filtered_results = [r for r in results if r.upload.get("id") != str(upload_id)]
+        filtered_results = [
+            r for r in results if r.upload.get("id") != str(upload_id)
+        ]
 
-        return filtered_results[:limit]
+        return filtered_results[: limit]
 
     async def batch_search(
-        self, queries: list[str], user_id: UUID | None = None, max_concurrent: int = 3
-    ) -> dict[str, SearchResponse]:
+        self,
+        queries: list[str],
+        user_id: UUID | None = None,
+        max_concurrent: int = 3
+    ) -> dict[str,
+              SearchResponse]:
         """
         Perform multiple searches concurrently.
 
@@ -338,7 +354,7 @@ class SearchService:
 
         async def search_with_limit(query: str) -> tuple[str, SearchResponse]:
             async with semaphore:
-                request = SearchRequest(query=query, limit=10)
+                request = SearchRequest(query = query, limit = 10)
                 result = await self.search(request, user_id)
                 return query, result
 
@@ -378,12 +394,16 @@ class SearchService:
         ]
 
         # Filter relevant templates
-        suggestions = [t for t in templates if partial_query.lower() in t.lower()]
+        suggestions = [
+            t for t in templates if partial_query.lower() in t.lower()
+        ]
 
-        return suggestions[:limit]
+        return suggestions[: limit]
 
     def calculate_embedding_similarity(
-        self, embedding1: list[float], embedding2: list[float]
+        self,
+        embedding1: list[float],
+        embedding2: list[float]
     ) -> float:
         """
         Calculate cosine similarity between two embeddings.
@@ -397,7 +417,9 @@ class SearchService:
         """
         # Simple dot product for normalized vectors
         # (OpenAI embeddings are pre-normalized)
-        similarity = sum(a * b for a, b in zip(embedding1, embedding2, strict=False))
+        similarity = sum(
+            a * b for a, b in zip(embedding1, embedding2, strict = False)
+        )
         return max(0.0, min(1.0, similarity))
 
 

@@ -21,7 +21,6 @@ class TestBaseModel:
     """
     Test BaseModel functionality.
     """
-
     async def test_init(self):
         """
         Test BaseModel initialization.
@@ -37,9 +36,9 @@ class TestBaseModel:
         test_time = datetime.now()
 
         model = BaseModel(
-            id=test_id,
-            created_at=test_time,
-            updated_at=test_time,
+            id = test_id,
+            created_at = test_time,
+            updated_at = test_time,
         )
 
         assert model.id == test_id
@@ -77,9 +76,13 @@ class TestBaseModel:
 
         # Test with None values filtered out
         record_data = [
-            {"id": UUID("550e8400-e29b-41d4-a716-446655440000")},
+            {
+                "id": UUID("550e8400-e29b-41d4-a716-446655440000")
+            },
             None,
-            {"id": UUID("660e8400-e29b-41d4-a716-446655440000")},
+            {
+                "id": UUID("660e8400-e29b-41d4-a716-446655440000")
+            },
         ]
 
         # Since we can't mock asyncpg Records easily, we'll test the logic
@@ -93,9 +96,9 @@ class TestBaseModel:
         test_time = datetime.now()
 
         model = BaseModel(
-            id=test_id,
-            created_at=test_time,
-            updated_at=test_time,
+            id = test_id,
+            created_at = test_time,
+            updated_at = test_time,
         )
 
         # Test basic serialization
@@ -107,7 +110,7 @@ class TestBaseModel:
         assert isinstance(result["updated_at"], str)
 
         # Test with exclude
-        result = model.to_dict(exclude={"created_at", "updated_at"})
+        result = model.to_dict(exclude = {"created_at", "updated_at"})
 
         assert "id" in result
         assert "created_at" not in result
@@ -120,14 +123,18 @@ class TestBaseModel:
         assert "_private" not in result
 
     async def test_find_by_id_requires_table(
-        self, db_connection: Connection, clean_tables: None
+        self,
+        db_connection: Connection,
+        clean_tables: None
     ):
         """
         Test find_by_id creates table if needed.
         """
         # Using User as concrete implementation
         # This should create the table automatically
-        result = await User.find_by_id(UUID("550e8400-e29b-41d4-a716-446655440000"))
+        result = await User.find_by_id(
+            UUID("550e8400-e29b-41d4-a716-446655440000")
+        )
 
         assert result is None  # No user exists
 
@@ -143,7 +150,9 @@ class TestBaseModel:
         assert exists is True
 
     async def test_find_by_id_with_string_uuid(
-        self, db_connection: Connection, test_user: User
+        self,
+        db_connection: Connection,
+        test_user: User
     ):
         """
         Test find_by_id accepts string UUID.
@@ -184,7 +193,9 @@ class TestBaseModel:
         assert count == 2
 
     async def test_find_all_pagination(
-        self, db_connection: Connection, clean_tables: None
+        self,
+        db_connection: Connection,
+        clean_tables: None
     ):
         """
         Test finding all records with pagination.
@@ -201,15 +212,15 @@ class TestBaseModel:
             )
 
         # Test limit
-        users = await User.find_all(limit=3)
+        users = await User.find_all(limit = 3)
         assert len(users) == 3
 
         # Test offset
-        users_page2 = await User.find_all(limit=3, offset=3)
+        users_page2 = await User.find_all(limit = 3, offset = 3)
         assert len(users_page2) == 2
 
         # Test order by
-        users = await User.find_all(order_by="email ASC")
+        users = await User.find_all(order_by = "email ASC")
         emails = [u.email for u in users]
         assert emails == sorted(emails)
 
@@ -301,13 +312,16 @@ class TestBaseModel:
         """
         Test refreshing unsaved model raises error.
         """
-        model = User(email="test@example.com", password_hash="hash")
+        model = User(email = "test@example.com", password_hash = "hash")
 
-        with pytest.raises(ValueError, match="Cannot refresh record without id"):
+        with pytest.raises(ValueError,
+                           match = "Cannot refresh record without id"):
             await model.refresh()
 
     async def test_refresh_deleted_record(
-        self, db_connection: Connection, test_user: User
+        self,
+        db_connection: Connection,
+        test_user: User
     ):
         """
         Test refreshing deleted record raises error.
@@ -319,5 +333,5 @@ class TestBaseModel:
         )
 
         # Try to refresh
-        with pytest.raises(ValueError, match="Record with id .* not found"):
+        with pytest.raises(ValueError, match = "Record with id .* not found"):
             await test_user.refresh()

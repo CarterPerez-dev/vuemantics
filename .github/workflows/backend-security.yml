@@ -1,0 +1,216 @@
+name: Backend Security Scan
+
+on:
+  pull_request:
+    branches: [ '*' ]
+    paths: 
+      - 'backend/**'
+      - '.github/workflows/backend-security.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  security-scan:
+    name: Backend Security Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+      pull-requests: write
+    
+    defaults:
+      run:
+        working-directory: backend
+    
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Python with caching
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: 'backend/pyproject.toml'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run Bandit Security Scan
+        run: |
+          echo "Running Bandit security scan..."
+          
+          if bandit -r . -f json -o bandit-results.json --configfile pyproject.toml; then
+            echo "BANDIT_PASSED=true" >> $GITHUB_ENV
+            echo "✅ No security issues found by Bandit"
+          else
+            echo "BANDIT_PASSED=false" >> $GITHUB_ENV
+            echo "⚠️ Bandit found security issues"
+          fi
+          
+          # Generate SARIF for GitHub Security tab
+          bandit -r . -f sarif -o bandit-results.sarif --configfile pyproject.toml || true
+          
+          # Generate human-readable output for PR comments
+          bandit -r . -f txt --configfile pyproject.toml > bandit-human.txt 2>&1 || true
+        continue-on-error: true
+
+      - name: Upload Bandit SARIF to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: backend/bandit-results.sarif
+        continue-on-error: true
+      
+      - name: Create Security Summary
+        if: github.event_name == 'pull_request'
+        run: |
+          cat > ../backend-security-report.md << 'EOL'
+          ## 🔒 Backend Security Scan Results
+          
+          EOL
+          
+          if [[ "${{ env.BANDIT_PASSED }}" == "true" ]]; then
+            cat >> ../backend-security-report.md << 'EOL'
+          ### ✅ Bandit: **Passed**
+          
+          No security issues found in your backend code! Your code passed all security checks. 🎉
+          
+          **What was checked:**
+          - Hard-coded passwords and secrets
+          - SQL injection vulnerabilities  
+          - Shell injection risks
+          - Insecure cryptographic practices
+          - Unsafe deserialization patterns
+          
+          EOL
+          else
+            cat >> ../backend-security-report.md << 'EOL'
+          ### ⚠️ Bandit: **Security Issues Found**
+          
+          EOL
+            
+            # Parse and display results if file exists
+            if [ -f bandit-results.json ]; then
+              echo '<details><summary>📋 Click to view security findings</summary>' >> ../backend-security-report.md
+              echo '' >> ../backend-security-report.md
+              echo '```' >> ../backend-security-report.md
+              
+              python3 << 'PYTHON_SCRIPT' >> ../backend-security-report.md 2>/dev/null || echo "Could not parse results" >> ../backend-security-report.md
+          import json
+          import sys
+          
+          try:
+              with open('bandit-results.json', 'r') as f:
+                  data = json.load(f)
+              
+              # Print metrics
+              metrics = data.get('metrics', {})
+              total_issues = sum([
+                  metrics.get('SEVERITY.HIGH', 0),
+                  metrics.get('SEVERITY.MEDIUM', 0),
+                  metrics.get('SEVERITY.LOW', 0)
+              ])
+              
+              print(f'📊 Security Scan Summary:')
+              print(f'Total issues found: {total_issues}')
+              print(f'Files with security issues: {metrics.get("files_with_issues", 0)}')
+              print('')
+              print(f'🔴 High severity: {metrics.get("SEVERITY.HIGH", 0)}')
+              print(f'🟡 Medium severity: {metrics.get("SEVERITY.MEDIUM", 0)}')
+              print(f'🟢 Low severity: {metrics.get("SEVERITY.LOW", 0)}')
+              print()
+              
+              # Group results by severity
+              results = data.get('results', [])
+              high = [r for r in results if r['issue_severity'] == 'HIGH']
+              medium = [r for r in results if r['issue_severity'] == 'MEDIUM']
+              low = [r for r in results if r['issue_severity'] == 'LOW']
+              
+              # Display high severity first (up to 5)
+              if high:
+                  print('🔴 HIGH SEVERITY ISSUES:')
+                  for i, result in enumerate(high[:5], 1):
+                      print(f"{i}. {result['issue_text']}")
+                      print(f"   📍 Location: {result['filename']}:{result['line_number']}")
+                      print(f"   🏷️  Test ID: {result['test_id']}")
+                      if 'issue_cwe' in result and result['issue_cwe']:
+                          print(f"   🔗 CWE: {result['issue_cwe']['id']} - {result['issue_cwe']['link']}")
+                      print()
+                  if len(high) > 5:
+                      print(f"   ... and {len(high) - 5} more high severity issues")
+                  print()
+              
+              # Display medium severity (up to 3)
+              if medium:
+                  print('🟡 MEDIUM SEVERITY ISSUES:')
+                  for i, result in enumerate(medium[:3], 1):
+                      print(f"{i}. {result['issue_text']}")
+                      print(f"   📍 Location: {result['filename']}:{result['line_number']}")
+                      print(f"   🏷️  Test ID: {result['test_id']}")
+                      print()
+                  if len(medium) > 3:
+                      print(f"   ... and {len(medium) - 3} more medium severity issues")
+                  print()
+              
+              # Display low severity count only
+              if low:
+                  print(f'🟢 LOW SEVERITY: {len(low)} issues found (review when possible)')
+          
+          except Exception as e:
+              print(f'Error parsing bandit results: {str(e)}')
+          PYTHON_SCRIPT
+              
+              echo '```' >> ../backend-security-report.md
+              echo '</details>' >> ../backend-security-report.md
+              echo '' >> ../backend-security-report.md
+              
+              # Add human-readable sample if available
+              if [ -f bandit-human.txt ] && [ -s bandit-human.txt ]; then
+                echo '<details><summary>📄 Human-readable report (sample)</summary>' >> ../backend-security-report.md
+                echo '' >> ../backend-security-report.md
+                echo '```' >> ../backend-security-report.md
+                head -50 bandit-human.txt >> ../backend-security-report.md
+                echo '```' >> ../backend-security-report.md
+                echo '</details>' >> ../backend-security-report.md
+                echo '' >> ../backend-security-report.md
+              fi
+              
+              echo '**🚨 Action Required:** Please review and fix the security issues before merging.' >> ../backend-security-report.md
+              echo '' >> ../backend-security-report.md
+              echo '**Common fixes:**' >> ../backend-security-report.md
+              echo '- Replace hard-coded secrets with environment variables' >> ../backend-security-report.md
+              echo '- Use parameterized queries instead of string concatenation' >> ../backend-security-report.md
+              echo '- Validate and sanitize all user inputs' >> ../backend-security-report.md
+              echo '- Use secure random generators for cryptographic operations' >> ../backend-security-report.md
+            else
+              echo '❌ Could not find detailed results file.' >> ../backend-security-report.md
+            fi
+          fi
+          
+          cat >> ../backend-security-report.md << 'EOL'
+          
+          ---
+          
+          **About Security Scans:**
+          - Bandit analyzes Python code for common security issues
+          - Results are also uploaded to GitHub's Security tab for tracking
+          - False positives can be suppressed with `# nosec` comments (use carefully!)
+          - Learn more: [Bandit Documentation](https://bandit.readthedocs.io/)
+          
+          <!-- backend-security-scan-comment-marker -->
+          EOL
+      
+      - name: Post PR Comment
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: backend-security-report.md
+          comment-marker: backend-security-scan-comment-marker
