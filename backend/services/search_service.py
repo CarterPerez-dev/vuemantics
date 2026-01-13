@@ -29,16 +29,11 @@ class SearchServiceError(Exception):
     Base exception for search service errors.
     """
 
-    pass
-
 
 class QueryEmbeddingError(SearchServiceError):
     """
     Raised when query embedding generation fails.
     """
-
-    pass
-
 
 class SearchService:
     """
@@ -118,7 +113,6 @@ class SearchService:
 
         except Exception as e:
             logger.error(f"Search failed: {e}")
-            # Return empty results with error indication
             search_time_ms = (time.time() - start_time) * 1000
             return SearchResponse(
                 results = [],

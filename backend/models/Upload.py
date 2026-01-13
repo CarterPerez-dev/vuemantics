@@ -23,7 +23,6 @@ class ProcessingStatus(str, Enum):
     """
     Processing status states for uploads.
     """
-
     PENDING = "pending"  # Just uploaded, not processed
     ANALYZING = "analyzing"  # Gemini is analyzing the media
     EMBEDDING = "embedding"  # Creating embeddings with OpenAI
@@ -35,7 +34,6 @@ class FileType(str, Enum):
     """
     Supported file types.
     """
-
     IMAGE = "image"
     VIDEO = "video"
 

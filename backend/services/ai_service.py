@@ -28,24 +28,15 @@ class AIServiceError(Exception):
     Base exception for AI service errors.
     """
 
-    pass
-
-
 class GeminiError(AIServiceError):
     """
     Raised when Gemini API fails.
     """
 
-    pass
-
-
 class OpenAIError(AIServiceError):
     """
     Raised when OpenAI API fails.
     """
-
-    pass
-
 
 class AIService:
     """
@@ -62,7 +53,7 @@ class AIService:
         """
         self._gemini_client = None
         self._openai_client = None
-        self._gemini_model = "gemini-2.0-flash"  # FOR MVP (2.5 pro for prod)
+        self._gemini_model = "gemini-2.0-flash"  # FOR MVP (3 pro for prod)
         self._embedding_model = settings.embedding_model
 
         logger.info(
@@ -70,7 +61,9 @@ class AIService:
         )
 
     def _ensure_gemini_client(self):
-        """Lazy initialization of Gemini client."""
+        """
+        Lazy initialization of Gemini client
+        """
         if self._gemini_client is None:
             if not settings.gemini_api_key:
                 raise GeminiError("Gemini API key not configured")
@@ -80,7 +73,9 @@ class AIService:
         return self._gemini_client
 
     def _ensure_openai_client(self):
-        """Lazy initialization of OpenAI client."""
+        """
+        Lazy initialization of OpenAI client
+        """
         if self._openai_client is None:
             if not settings.openai_api_key:
                 raise OpenAIError("OpenAI API key not configured")
