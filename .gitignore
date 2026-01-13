@@ -219,3 +219,4 @@ infra/prod/ssl/
 backend/PG_VENV.egg-info
 coverage.xml
 htmlcov/
+.vite
