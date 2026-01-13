@@ -68,7 +68,7 @@ A smart camera roll application that revolutionizes how users search through the
 
 4. **Start the development environment**
    ```bash
-   make dev
+   just dev-up
    ```
 
 5. **Access the application**
@@ -76,14 +76,52 @@ A smart camera roll application that revolutionizes how users search through the
 
 ## Available Commands
 
+Run `just` to see all available commands grouped by category.
+
 ```bash
-make dev      # Start development environment
-make prod     # Start production environment
-make down     # Stop all containers
-make logs     # View container logs
-make test     # Run tests
-make format   # Format code
-make lint     # Lint code
+# Development
+just dev-up              # Start dev environment (attached)
+just dev-start           # Start dev environment (detached)
+just dev-down            # Stop dev containers
+just dev-logs            # View dev container logs
+just dev-shell           # Shell into backend container
+
+# Production
+just up                  # Start prod environment (attached)
+just start               # Start prod environment (detached)
+just down                # Stop prod containers
+just logs                # View prod container logs
+
+# Local (no Docker)
+just run-backend         # Run backend with uvicorn
+just run-frontend        # Run frontend with pnpm
+
+# Linting & Formatting
+just lint                # Run ruff linter (backend)
+just ruff-fix            # Auto-fix and format backend
+just biome               # Run biome linter (frontend)
+just biome-fix           # Auto-fix frontend
+
+# Type Checking
+just mypy                # Run mypy on backend
+just tsc                 # Run TypeScript check on frontend
+
+# Testing
+just test                # Run pytest
+just test-cov            # Run tests with coverage
+
+# Database
+just dev-migrate head    # Run migrations (dev)
+just dev-migration "msg" # Create new migration (dev)
+
+# Setup
+just setup               # Run setup script
+just install-frontend    # Install frontend deps
+just install-backend     # Install backend deps
+
+# Utilities
+just clean               # Clean cache directories
+just info                # Show project info
 ```
 
 ## Architecture
