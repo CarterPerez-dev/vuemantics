@@ -110,11 +110,17 @@ class TestUploadModel:
         assert len(uploads) == 3
 
         # Test file type filter
-        images = await Upload.find_by_user(test_user.id, file_type = "image")
+        images = await Upload.find_by_user(
+            test_user.id,
+            file_type = "image"
+        )
         assert len(images) == 3
         assert all(u.file_type == "image" for u in images)
 
-        videos = await Upload.find_by_user(test_user.id, file_type = "video")
+        videos = await Upload.find_by_user(
+            test_user.id,
+            file_type = "video"
+        )
         assert len(videos) == 2
         assert all(u.file_type == "video" for u in videos)
 
@@ -283,7 +289,8 @@ class TestUploadModel:
 
         assert len(pending) == 3
         assert all(
-            u.processing_status == ProcessingStatus.PENDING for u in pending
+            u.processing_status == ProcessingStatus.PENDING
+            for u in pending
         )
 
         # Should be ordered by created_at ASC (oldest first)

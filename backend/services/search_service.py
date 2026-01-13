@@ -21,6 +21,7 @@ from config import settings
 from models import Upload
 from schemas import SearchRequest, SearchResponse, SearchResult
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,6 +35,7 @@ class QueryEmbeddingError(SearchServiceError):
     """
     Raised when query embedding generation fails.
     """
+
 
 class SearchService:
     """
@@ -49,7 +51,9 @@ class SearchService:
         """
         Initialize search service with OpenAI client.
         """
-        self._openai_client = AsyncOpenAI(api_key = settings.openai_api_key)
+        self._openai_client = AsyncOpenAI(
+            api_key = settings.openai_api_key
+        )
         self._embedding_model = settings.embedding_model
         logger.info("Search service initialized")
 
@@ -237,15 +241,15 @@ class SearchService:
         if request.date_from:
             filtered = [
                 r for r in filtered
-                if datetime.fromisoformat(r.upload.get("created_at", "")) >=
-                request.date_from
+                if datetime.fromisoformat(r.upload.get("created_at", ""))
+                >= request.date_from
             ]
 
         if request.date_to:
             filtered = [
                 r for r in filtered
-                if datetime.fromisoformat(r.upload.get("created_at", "")) <=
-                request.date_to
+                if datetime.fromisoformat(r.upload.get("created_at", ""))
+                <= request.date_to
             ]
 
         # Re-rank after filtering
@@ -346,7 +350,8 @@ class SearchService:
         """
         semaphore = asyncio.Semaphore(max_concurrent)
 
-        async def search_with_limit(query: str) -> tuple[str, SearchResponse]:
+        async def search_with_limit(query: str) -> tuple[str,
+                                                         SearchResponse]:
             async with semaphore:
                 request = SearchRequest(query = query, limit = 10)
                 result = await self.search(request, user_id)

@@ -45,7 +45,9 @@ async def lifespan(_app: FastAPI):
     Handles startup and shutdown events for database connections
     and any other resources that need initialization/cleanup.
     """
-    logger.info(f"Starting {settings.app_name} in {settings.environment} mode")
+    logger.info(
+        f"Starting {settings.app_name} in {settings.environment} mode"
+    )
 
     try:
         await init_db()
@@ -75,7 +77,8 @@ async def lifespan(_app: FastAPI):
 # FastAPI instance
 app = FastAPI(
     title = settings.app_name,
-    description = "Vector multimodal search for your personal media collection",
+    description =
+    "Vector multimodal search for your personal media collection",
     version = "0.1.0",
     lifespan = lifespan,
     docs_url = "/docs" if settings.is_development else None,
@@ -152,7 +155,9 @@ async def add_request_id(request: Request, call_next):
     request.state.request_id = request_id
 
     start_time = time.time()
-    logger.info(f"Request {request_id}: {request.method} {request.url.path}")
+    logger.info(
+        f"Request {request_id}: {request.method} {request.url.path}"
+    )
 
     response = await call_next(request)
 

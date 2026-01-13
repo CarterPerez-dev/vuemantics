@@ -164,7 +164,11 @@ class TestBaseModel:
         assert found.id == test_user.id
         assert found.email == test_user.email
 
-    async def test_count(self, db_connection: Connection, clean_tables: None):
+    async def test_count(
+        self,
+        db_connection: Connection,
+        clean_tables: None
+    ):
         """
         Test counting records.
         """
@@ -224,7 +228,11 @@ class TestBaseModel:
         emails = [u.email for u in users]
         assert emails == sorted(emails)
 
-    async def test_delete(self, db_connection: Connection, test_user: User):
+    async def test_delete(
+        self,
+        db_connection: Connection,
+        test_user: User
+    ):
         """
         Test deleting a record.
         """
@@ -285,7 +293,11 @@ class TestBaseModel:
         await User.ensure_table_exists()
         assert User.__table_created__ is True
 
-    async def test_refresh(self, db_connection: Connection, test_user: User):
+    async def test_refresh(
+        self,
+        db_connection: Connection,
+        test_user: User
+    ):
         """
         Test refreshing model data from database.
         """
@@ -333,5 +345,6 @@ class TestBaseModel:
         )
 
         # Try to refresh
-        with pytest.raises(ValueError, match = "Record with id .* not found"):
+        with pytest.raises(ValueError,
+                           match = "Record with id .* not found"):
             await test_user.refresh()

@@ -17,6 +17,7 @@ from asyncpg import Connection, Pool, Record
 
 from config import settings
 
+
 logger = logging.getLogger(__name__)
 
 

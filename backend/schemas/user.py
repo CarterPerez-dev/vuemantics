@@ -198,7 +198,10 @@ class UserStats(BaseModel):
         extra = "ignore",  # Allow extra fields for MVP
     )
 
-    total_uploads: int = Field(ge = 0, description = "Total number of uploads")
+    total_uploads: int = Field(
+        ge = 0,
+        description = "Total number of uploads"
+    )
     uploads_by_status: dict[
         str,
         int] = Field(description = "Upload counts by processing status")

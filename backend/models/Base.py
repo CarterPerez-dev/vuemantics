@@ -15,6 +15,7 @@ from asyncpg import Record
 
 import database
 
+
 T = TypeVar("T", bound = "BaseModel")
 
 
@@ -47,7 +48,9 @@ class BaseModel:
 
         Must be implemented by subclasses with their specific schema.
         """
-        raise NotImplementedError("Subclasses must implement create_table()")
+        raise NotImplementedError(
+            "Subclasses must implement create_table()"
+        )
 
     @classmethod
     async def ensure_table_exists(cls) -> None:
@@ -74,7 +77,9 @@ class BaseModel:
         Create multiple model instances from asyncpg Records.
         """
         return [
-            cls.from_record(record) for record in records if record is not None
+            cls.from_record(record)
+            for record in records
+            if record is not None
         ]
 
     def to_dict(self, exclude: set[str] | None = None) -> dict[str, Any]:

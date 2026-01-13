@@ -32,6 +32,7 @@ from schemas import (
 )
 from services import search_service
 
+
 logger = logging.getLogger(__name__)
 
 # Rate limiting
@@ -177,7 +178,9 @@ async def find_similar_uploads(
             include_same_user = include_own,
         )
 
-        logger.info(f"Found {len(results)} similar uploads for {upload_id}")
+        logger.info(
+            f"Found {len(results)} similar uploads for {upload_id}"
+        )
 
         return results
 
@@ -200,11 +203,12 @@ async def get_search_suggestions(
     request: Request,
     current_user: Annotated[User,
                             Depends(get_current_user)],
-    q: Annotated[
-        str,
-        Query(min_length = 2,
-              max_length = 50,
-              description = "Partial query")] = "",
+    q: Annotated[str,
+                 Query(
+                     min_length = 2,
+                     max_length = 50,
+                     description = "Partial query"
+                 )] = "",
 ) -> list[str]:
     """
     Get search suggestions for autocomplete.
@@ -267,10 +271,12 @@ async def batch_search(
 
         # Validate queries
         for query in queries:
-            if len(query) < MIN_QUERY_LENGTH or len(query) > MAX_QUERY_LENGTH:
+            if len(query) < MIN_QUERY_LENGTH or len(query
+                                                    ) > MAX_QUERY_LENGTH:
                 raise HTTPException(
                     status_code = status.HTTP_400_BAD_REQUEST,
-                    detail = f"Query must be 1-500 characters: {query[:50]}...",
+                    detail =
+                    f"Query must be 1-500 characters: {query[:50]}...",
                 )
 
         # Perform batch search

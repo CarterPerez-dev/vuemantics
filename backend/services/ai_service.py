@@ -20,6 +20,7 @@ from config import settings
 from models import ProcessingStatus, Upload
 from services import storage_service
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -28,15 +29,18 @@ class AIServiceError(Exception):
     Base exception for AI service errors.
     """
 
+
 class GeminiError(AIServiceError):
     """
     Raised when Gemini API fails.
     """
 
+
 class OpenAIError(AIServiceError):
     """
     Raised when OpenAI API fails.
     """
+
 
 class AIService:
     """
@@ -111,7 +115,9 @@ class AIService:
 
             # Analyze with Gemini based on file type
             if upload.file_type == "image":
-                description = await self._analyze_image_with_gemini(file_path)
+                description = await self._analyze_image_with_gemini(
+                    file_path
+                )
             else:  # video
                 description = await self._analyze_video_with_gemini(
                     upload.user_id,
@@ -148,7 +154,9 @@ class AIService:
             logger.info(f"AI processing completed for upload {upload_id}")
 
         except Exception as e:
-            logger.error(f"AI processing failed for upload {upload_id}: {e}")
+            logger.error(
+                f"AI processing failed for upload {upload_id}: {e}"
+            )
             await upload.update_status(
                 ProcessingStatus.FAILED,
                 error_message = f"AI processing failed: {str(e)[:500]}",
@@ -291,7 +299,8 @@ Describe it as a cohesive video, not individual frames. Be specific and use natu
             loop = asyncio.get_event_loop()
 
             def call_gemini():
-                return self._ensure_gemini_client().models.generate_content(
+                return self._ensure_gemini_client(
+                ).models.generate_content(
                     model = self._gemini_model,
                     contents = contents
                 )
@@ -327,7 +336,8 @@ Describe it as a cohesive video, not individual frames. Be specific and use natu
                 )
 
             # Call OpenAI embeddings API
-            response = await self._ensure_openai_client().embeddings.create(
+            response = await self._ensure_openai_client(
+            ).embeddings.create(
                 input = text,
                 model = self._embedding_model,
                 encoding_format = "float"
@@ -345,7 +355,9 @@ Describe it as a cohesive video, not individual frames. Be specific and use natu
 
         except Exception as e:
             logger.error(f"OpenAI embedding generation failed: {e}")
-            raise OpenAIError(f"Failed to generate embedding: {e!s}") from e
+            raise OpenAIError(
+                f"Failed to generate embedding: {e!s}"
+            ) from e
 
     def _get_mime_type(self, file_path: Path) -> str:
         """

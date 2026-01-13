@@ -87,7 +87,9 @@ class User(BaseModel):
             )
             return cls.from_record(record)
         except UniqueViolationError as e:
-            raise ValueError(f"User with email {email} already exists") from e
+            raise ValueError(
+                f"User with email {email} already exists"
+            ) from e
 
     @classmethod
     async def find_by_email(cls, email: str) -> "User | None":

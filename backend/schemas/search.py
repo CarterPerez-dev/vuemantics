@@ -101,7 +101,11 @@ class SearchRequest(BaseModel):
 
     @field_validator("date_to")
     @classmethod
-    def validate_date_range(cls, v: datetime | None, info) -> datetime | None:
+    def validate_date_range(
+        cls,
+        v: datetime | None,
+        info
+    ) -> datetime | None:
         """
         Ensure date_to is after date_from if both provided.
         """
@@ -132,7 +136,10 @@ class SearchResult(BaseModel):
         ge = 0.0,
         description = "Vector distance (lower is more similar)"
     )
-    rank: int = Field(ge = 1, description = "Result rank (1 is best match)")
+    rank: int = Field(
+        ge = 1,
+        description = "Result rank (1 is best match)"
+    )
 
 
 class SearchResponse(BaseModel):
@@ -239,8 +246,13 @@ class SearchHistoryItem(BaseModel):
 
     id: UUID = Field(description = "Search history ID")
     query: str = Field(description = "Search query")
-    result_count: int = Field(ge = 0, description = "Number of results found")
-    searched_at: datetime = Field(description = "When search was performed")
+    result_count: int = Field(
+        ge = 0,
+        description = "Number of results found"
+    )
+    searched_at: datetime = Field(
+        description = "When search was performed"
+    )
     filters_applied: dict[str,
                           Any] | None = Field(
                               description = "Filters used in search"

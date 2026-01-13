@@ -37,6 +37,7 @@ from schemas import (
     UserResponse,
 )
 
+
 logger = logging.getLogger(__name__)
 
 # TODO: Lower limits when prod
@@ -67,7 +68,10 @@ router = APIRouter(
     description = "Create a new user account with email and password",
 )
 @limiter.limit("50/minute")
-async def register(request: Request, user_data: UserCreate) -> UserResponse:
+async def register(
+    request: Request,
+    user_data: UserCreate
+) -> UserResponse:
     """
     Register a new user.
 

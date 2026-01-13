@@ -16,6 +16,7 @@ from uuid import UUID
 import database
 from models import BaseModel
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -84,8 +85,8 @@ class Upload(BaseModel):
         if isinstance(embedding_raw, str):
             # Parse string format from database: "[0.1,0.2,0.3]"
             try:
-                if embedding_raw.startswith("[") and embedding_raw.endswith("]"
-                                                                            ):
+                if embedding_raw.startswith(
+                        "[") and embedding_raw.endswith("]"):
                     self.embedding = list(
                         map(float,
                             embedding_raw[1 :-1].split(","))
@@ -370,7 +371,8 @@ class Upload(BaseModel):
             self.embedding,
             self.thumbnail_path,
             self.error_message,
-            json.dumps(self.metadata) if self.metadata is not None else None,
+            json.dumps(self.metadata)
+            if self.metadata is not None else None,
         )
 
         for key, value in dict(record).items():
@@ -410,7 +412,8 @@ class Upload(BaseModel):
             self.embedding,
             self.thumbnail_path,
             self.error_message,
-            json.dumps(self.metadata) if self.metadata is not None else None,
+            json.dumps(self.metadata)
+            if self.metadata is not None else None,
             self.id,
         )
 
@@ -515,7 +518,11 @@ class Upload(BaseModel):
             RETURNING updated_at
         """
 
-        updated_at = await database.db.fetchval(query, thumbnail_path, self.id)
+        updated_at = await database.db.fetchval(
+            query,
+            thumbnail_path,
+            self.id
+        )
         if updated_at:
             self.thumbnail_path = thumbnail_path
             self.updated_at = updated_at

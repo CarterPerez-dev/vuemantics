@@ -44,6 +44,7 @@ from services import (
     storage_service,
 )
 
+
 logger = logging.getLogger(__name__)
 
 # Rate limiting
@@ -226,7 +227,8 @@ async def upload_file(
     "",
     response_model = PaginatedResponse[UploadResponse],
     summary = "List uploads",
-    description = "Get paginated list of user's uploads with optional filters",
+    description =
+    "Get paginated list of user's uploads with optional filters",
 )
 async def list_uploads(
     current_user: Annotated[User,

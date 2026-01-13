@@ -20,6 +20,7 @@ from PIL import Image
 
 from config import settings
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -211,9 +212,15 @@ class StorageService:
             thumb_path = upload_dir / "thumb_256.jpg"
 
             if file_type == "image":
-                await self._generate_image_thumbnail(original_path, thumb_path)
+                await self._generate_image_thumbnail(
+                    original_path,
+                    thumb_path
+                )
             else:
-                await self._generate_video_thumbnail(original_path, thumb_path)
+                await self._generate_video_thumbnail(
+                    original_path,
+                    thumb_path
+                )
 
             relative_path = thumb_path.relative_to(self.base_path)
             logger.info(f"Generated thumbnail: {relative_path}")
@@ -251,7 +258,13 @@ class StorageService:
         with Image.open(source_path) as original_img:
             # Convert RGBA to RGB if needed
             if original_img.mode in ("RGBA", "P"):
-                rgb_img = Image.new("RGB", original_img.size, (255, 255, 255))
+                rgb_img = Image.new(
+                    "RGB",
+                    original_img.size,
+                    (255,
+                     255,
+                     255)
+                )
                 rgb_img.paste(
                     original_img,
                     mask = original_img.split()[-1]
@@ -262,7 +275,10 @@ class StorageService:
                 img = original_img.copy()
 
             # Thumbnail with aspect ratio preserved
-            img.thumbnail(settings.thumbnail_size, Image.Resampling.LANCZOS)
+            img.thumbnail(
+                settings.thumbnail_size,
+                Image.Resampling.LANCZOS
+            )
 
             # Save as JPEG
             img.save(thumb_path, "JPEG", quality = 85, optimize = True)
@@ -349,7 +365,9 @@ class StorageService:
         )
 
         # Return relative paths
-        return [str(Path(p).relative_to(self.base_path)) for p in frame_paths]
+        return [
+            str(Path(p).relative_to(self.base_path)) for p in frame_paths
+        ]
 
     def _extract_video_frames_sync(
         self,
@@ -450,9 +468,15 @@ class StorageService:
             stats = file_path.stat()
 
             # Get image/video metadata
-            if file_path.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}:
+            if file_path.suffix.lower() in {".jpg",
+                                            ".jpeg",
+                                            ".png",
+                                            ".webp"}:
                 return await self._get_image_metadata(file_path, stats)
-            elif file_path.suffix.lower() in {".mp4", ".mov", ".avi", ".webm"}:
+            elif file_path.suffix.lower() in {".mp4",
+                                              ".mov",
+                                              ".avi",
+                                              ".webm"}:
                 return await self._get_video_metadata(file_path, stats)
 
         return None

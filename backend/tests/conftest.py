@@ -143,8 +143,10 @@ class TestDatabaseWrapper:
 
 
 @pytest_asyncio.fixture
-async def db_connection(test_settings: Settings) -> AsyncGenerator[Connection,
-                                                                   None]:
+async def db_connection(
+    test_settings: Settings
+) -> AsyncGenerator[Connection,
+                    None]:
     """
     Create a fresh database connection for each test.
     This avoids event loop conflicts by creating connections per test.
@@ -275,7 +277,10 @@ async def test_user(db_connection: Connection, clean_tables: None) -> User:
 
 
 @pytest_asyncio.fixture
-async def inactive_user(db_connection: Connection, clean_tables: None) -> User:
+async def inactive_user(
+    db_connection: Connection,
+    clean_tables: None
+) -> User:
     """
     Create an inactive test user.
     """

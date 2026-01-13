@@ -18,6 +18,7 @@ from pydantic import (
     Field,
 )
 
+
 T = TypeVar("T")
 
 

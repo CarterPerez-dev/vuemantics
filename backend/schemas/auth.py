@@ -53,7 +53,9 @@ class TokenResponse(BaseModel):
         },
     )
 
-    access_token: str = Field(description = "JWT access token (30 min expiry)")
+    access_token: str = Field(
+        description = "JWT access token (30 min expiry)"
+    )
     refresh_token: str = Field(
         description = "JWT refresh token (30 day expiry)"
     )

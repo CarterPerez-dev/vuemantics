@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from config import settings
 from database import db
 
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(

@@ -228,8 +228,9 @@ class TestUserModel:
         """
         user = User(email = "test@example.com", password_hash = "hash")
 
-        with pytest.raises(ValueError,
-                           match = "Cannot update password for unsaved user"):
+        with pytest.raises(
+                ValueError,
+                match = "Cannot update password for unsaved user"):
             await user.update_password("newhash")
 
     async def test_deactivate_user(
@@ -381,7 +382,10 @@ class TestUserModel:
         assert verify_password(password, user.password_hash) is True
 
         # Verify incorrect password
-        assert verify_password("WrongPass123!", user.password_hash) is False
+        assert verify_password(
+            "WrongPass123!",
+            user.password_hash
+        ) is False
 
         # Update password
         new_password = "EvenMoreSecure456!"

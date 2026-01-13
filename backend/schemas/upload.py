@@ -54,16 +54,16 @@ class UploadResponse(TimestampMixin):
     user_id: UUID = Field(description = "Owner's user ID")
     filename: str = Field(description = "Original filename")
     file_path: str = Field(description = "Storage path")
-    file_type: Literal["image", "video"] = Field(description = "Type of media")
+    file_type: Literal["image",
+                       "video"] = Field(description = "Type of media")
     file_size: int = Field(gt = 0, description = "File size in bytes")
     mime_type: str = Field(description = "MIME type")
-    processing_status: Literal["pending",
-                               "analyzing",
-                               "embedding",
-                               "completed",
-                               "failed"] = Field(
-                                   description = "Current processing status"
-                               )
+    processing_status: Literal[
+        "pending",
+        "analyzing",
+        "embedding",
+        "completed",
+        "failed"] = Field(description = "Current processing status")
     gemini_summary: str | None = Field(
         default = None,
         description = "AI-generated description from Gemini"
@@ -151,7 +151,10 @@ class UploadStats(BaseModel):
     )
 
     total_count: int = Field(ge = 0, description = "Total uploads")
-    total_size_bytes: int = Field(ge = 0, description = "Total size in bytes")
+    total_size_bytes: int = Field(
+        ge = 0,
+        description = "Total size in bytes"
+    )
 
     by_type: dict[str,
                   int] = Field(
@@ -192,18 +195,22 @@ class BulkUploadResponse(BaseModel):
         description = "Successfully created uploads"
     )
     failed: list[dict[str,
-                      str]] = Field(
-                          description = "Failed uploads with error messages",
-                          examples = [
-                              [
-                                  {
-                                      "filename": "bad.txt",
-                                      "error": "Unsupported file type"
-                                  }
-                              ]
-                          ],
-                      )
-    total_processed: int = Field(ge = 0, description = "Total files processed")
+                      str]
+                 ] = Field(
+                     description = "Failed uploads with error messages",
+                     examples = [
+                         [
+                             {
+                                 "filename": "bad.txt",
+                                 "error": "Unsupported file type"
+                             }
+                         ]
+                     ],
+                 )
+    total_processed: int = Field(
+        ge = 0,
+        description = "Total files processed"
+    )
     total_successful: int = Field(
         ge = 0,
         description = "Total successful uploads"

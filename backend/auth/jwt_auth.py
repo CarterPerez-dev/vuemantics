@@ -42,8 +42,9 @@ def create_access_token(user_id: UUID) -> str:
     Create a JWT access token for API requests.
     (expires in 30 minutes)
     """
-    expire = datetime.now(timezone.utc
-                          ) + timedelta(minutes = ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(
+        timezone.utc
+    ) + timedelta(minutes = ACCESS_TOKEN_EXPIRE_MINUTES)
 
     payload = {
         "sub": str(user_id),
@@ -172,7 +173,10 @@ async def refresh_access_token(refresh_token: str) -> dict[str, str]:
     """
     Use refresh token to get new access token.
     """
-    payload = decode_token(refresh_token, expected_type = TokenType.REFRESH)
+    payload = decode_token(
+        refresh_token,
+        expected_type = TokenType.REFRESH
+    )
 
     user_id = payload.get("sub")
     if user_id is None:
