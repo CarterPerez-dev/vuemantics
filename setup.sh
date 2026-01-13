@@ -30,26 +30,26 @@ if command -v python3 &> /dev/null; then
     PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
     
     if [ "$PYTHON_MAJOR" -ge 3 ] && [ "$PYTHON_MINOR" -ge 10 ]; then
-        echo "✅ Python $PYTHON_VERSION detected"
+        echo " Python $PYTHON_VERSION detected"
     else
-        echo "⚠️  Python $PYTHON_VERSION detected. Python 3.10+ recommended."
+        echo "  Python $PYTHON_VERSION detected. Python 3.10+ recommended."
     fi
 else
-    echo "❌ Python 3 not found. Please install Python 3.10+"
+    echo " Python 3 not found. Please install Python 3.10+"
     exit 1
 fi
 
 # Check Node.js
 if ! command -v node &> /dev/null; then
-    echo "❌ Node.js is not installed. Please install Node.js 18+"
+    echo " Node.js is not installed. Please install Node.js 18+"
     exit 1
 fi
 
 NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
 if [ "$NODE_VERSION" -ge 18 ]; then
-    echo "✅ Node.js $(node -v) detected"
+    echo " Node.js $(node -v) detected"
 else
-    echo "⚠️  Node.js $(node -v) detected. Node.js 18+ recommended."
+    echo "  Node.js $(node -v) detected. Node.js 18+ recommended."
 fi
 
 # Create Python virtual environment
@@ -57,9 +57,9 @@ echo ""
 echo "Setting up Python environment..."
 if [ ! -d "venv" ]; then
     python3 -m venv venv
-    echo "✅ Virtual environment created"
+    echo " Virtual environment created"
 else
-    echo "✅ Virtual environment already exists"
+    echo " Virtual environment already exists"
 fi
 
 # Activate virtual environment
@@ -74,9 +74,9 @@ echo "Installing backend dependencies..."
 cd backend
 if [ -f "pyproject.toml" ]; then
     pip install -e ".[dev]"
-    echo "✅ Backend dependencies installed"
+    echo " Backend dependencies installed"
 else
-    echo "⚠️  pyproject.toml not found, skipping backend dependencies"
+    echo "  pyproject.toml not found, skipping backend dependencies"
 fi
 cd ..
 
@@ -130,10 +130,10 @@ if [ ! -f "package.json" ]; then
   }
 }
 EOF
-    echo "✅ Frontend initialized"
+    echo " Frontend initialized"
 else
     npm install
-    echo "✅ Frontend dependencies installed"
+    echo " Frontend dependencies installed"
 fi
 
 cd ..
@@ -171,9 +171,9 @@ MAX_UPLOAD_SIZE=104857600
 # CORS
 CORS_ORIGINS=["http://localhost:3000", "http://localhost:5173"]
 EOF
-    echo "✅ Created infra/dev/env/.env.dev (add your API keys!)"
+    echo "Created infra/dev/env/.env.dev (add your API keys!)"
 else
-    echo "✅ infra/dev/env/.env.dev already exists"
+    echo "infra/dev/env/.env.dev already exists"
 fi
 
 # Prod environment
@@ -205,9 +205,9 @@ MAX_UPLOAD_SIZE=104857600
 # CORS
 CORS_ORIGINS=["https://yourdomain.com"]
 EOF
-    echo "✅ Created infra/prod/env/.env.prod (configure before deploying!)"
+    echo " Created infra/prod/env/.env.prod (configure before deploying!)"
 else
-    echo "✅ infra/prod/env/.env.prod already exists"
+    echo " infra/prod/env/.env.prod already exists"
 fi
 
 # Create .env.example
@@ -238,7 +238,7 @@ GEMINI_API_KEY="your-gemini-key"
 UPLOAD_PATH="./storage/uploads"
 MAX_UPLOAD_SIZE=104857600
 EOF
-    echo "✅ Created backend/.env.example"
+    echo " Created backend/.env.example"
 fi
 
 # Setup complete

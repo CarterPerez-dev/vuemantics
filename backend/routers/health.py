@@ -16,22 +16,25 @@ from fastapi.responses import JSONResponse
 from config import settings
 from database import db
 
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
-    prefix="/health",
-    tags=["system"],
-    responses={
-        503: {"description": "Service Unavailable"},
+    prefix = "/health",
+    tags = ["system"],
+    responses = {
+        503: {
+            "description": "Service Unavailable"
+        },
     },
 )
 
 
 @router.get(
     "",
-    summary="Health Check",
-    description="Check application and database health",
-    responses={
+    summary = "Health Check",
+    description = "Check application and database health",
+    responses = {
         200: {
             "description": "Service is healthy",
             "content": {
@@ -53,7 +56,9 @@ router = APIRouter(
                         "status": "unhealthy",
                         "environment": "development",
                         "version": "0.1.0",
-                        "checks": {"database": "unhealthy"},
+                        "checks": {
+                            "database": "unhealthy"
+                        },
                     }
                 }
             },
@@ -86,7 +91,8 @@ async def health_check() -> dict[str, Any]:
         health_status["checks"]["database"] = "unhealthy"
 
         return JSONResponse(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, content=health_status
+            status_code = status.HTTP_503_SERVICE_UNAVAILABLE,
+            content = health_status
         )
 
     # Future checks:
@@ -99,11 +105,15 @@ async def health_check() -> dict[str, Any]:
 
 @router.get(
     "/ready",
-    summary="Readiness Check",
-    description="Check if the service is ready to handle requests",
-    responses={
-        200: {"description": "Service is ready"},
-        503: {"description": "Service is not ready"},
+    summary = "Readiness Check",
+    description = "Check if the service is ready to handle requests",
+    responses = {
+        200: {
+            "description": "Service is ready"
+        },
+        503: {
+            "description": "Service is not ready"
+        },
     },
 )
 async def readiness_check() -> dict[str, Any]:
@@ -122,7 +132,8 @@ async def readiness_check() -> dict[str, Any]:
         ready_status["checks"]["database"] = f"error: {e!s}"
 
         return JSONResponse(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, content=ready_status
+            status_code = status.HTTP_503_SERVICE_UNAVAILABLE,
+            content = ready_status
         )
 
     # Future readiness checks:
@@ -136,10 +147,12 @@ async def readiness_check() -> dict[str, Any]:
 
 @router.get(
     "/live",
-    summary="Liveness Check",
-    description="Simple check to verify the service is alive",
-    responses={
-        200: {"description": "Service is alive"},
+    summary = "Liveness Check",
+    description = "Simple check to verify the service is alive",
+    responses = {
+        200: {
+            "description": "Service is alive"
+        },
     },
 )
 async def liveness_check() -> dict[str, str]:

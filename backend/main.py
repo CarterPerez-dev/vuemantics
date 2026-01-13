@@ -31,8 +31,8 @@ from routers import (
 
 # logging
 logging.basicConfig(
-    level=logging.INFO if not settings.debug else logging.DEBUG,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level = logging.INFO if not settings.debug else logging.DEBUG,
+    format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,9 @@ async def lifespan(_app: FastAPI):
     Handles startup and shutdown events for database connections
     and any other resources that need initialization/cleanup.
     """
-    logger.info(f"Starting {settings.app_name} in {settings.environment} mode")
+    logger.info(
+        f"Starting {settings.app_name} in {settings.environment} mode"
+    )
 
     try:
         await init_db()
@@ -57,7 +59,9 @@ async def lifespan(_app: FastAPI):
         if version:
             logger.info(f"pgvector {version} is ready")
         else:
-            logger.warning("pgvector extension not found - vector search will fail")
+            logger.warning(
+                "pgvector extension not found - vector search will fail"
+            )
 
     except Exception as e:
         logger.error(f"Startup failed: {e}")
@@ -72,13 +76,14 @@ async def lifespan(_app: FastAPI):
 
 # FastAPI instance
 app = FastAPI(
-    title=settings.app_name,
-    description="Vector multimodal search for your personal media collection",
-    version="0.1.0",
-    lifespan=lifespan,
-    docs_url="/docs" if settings.is_development else None,
-    redoc_url="/redoc" if settings.is_development else None,
-    openapi_url="/openapi.json" if settings.is_development else None,
+    title = settings.app_name,
+    description =
+    "Vector multimodal search for your personal media collection",
+    version = "0.1.0",
+    lifespan = lifespan,
+    docs_url = "/docs" if settings.is_development else None,
+    redoc_url = "/redoc" if settings.is_development else None,
+    openapi_url = "/openapi.json" if settings.is_development else None,
 )
 
 # Exception handlers
@@ -86,7 +91,10 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(_request: Request, exc: RequestValidationError):
+async def validation_exception_handler(
+    _request: Request,
+    exc: RequestValidationError
+):
     """
     Handle validation errors with clean error messages.
     """
@@ -94,15 +102,15 @@ async def validation_exception_handler(_request: Request, exc: RequestValidation
     for error in exc.errors():
         errors.append(
             {
-                "field": ".".join(str(loc) for loc in error["loc"][1:]),
+                "field": ".".join(str(loc) for loc in error["loc"][1 :]),
                 "message": error["msg"],
                 "type": error["type"],
             }
         )
 
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={
+        status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content = {
             "detail": "Validation error",
             "errors": errors,
         },
@@ -114,23 +122,26 @@ async def global_exception_handler(_request: Request, exc: Exception):
     """
     Catch-all exception handler for unhandled errors.
     """
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    logger.error(f"Unhandled exception: {exc}", exc_info = True)
 
-    detail = str(exc) if settings.is_development else "An internal error occurred"
+    detail = str(
+        exc
+    ) if settings.is_development else "An internal error occurred"
 
     return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"detail": detail}
+        status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content = {"detail": detail}
     )
 
 
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["X-Request-ID"],
+    allow_origins = settings.cors_origins,
+    allow_credentials = True,
+    allow_methods = ["*"],
+    allow_headers = ["*"],
+    expose_headers = ["X-Request-ID"],
 )
 
 
@@ -144,7 +155,9 @@ async def add_request_id(request: Request, call_next):
     request.state.request_id = request_id
 
     start_time = time.time()
-    logger.info(f"Request {request_id}: {request.method} {request.url.path}")
+    logger.info(
+        f"Request {request_id}: {request.method} {request.url.path}"
+    )
 
     response = await call_next(request)
 
@@ -159,18 +172,18 @@ async def add_request_id(request: Request, call_next):
 
 
 # Routers
-app.include_router(auth.router, prefix="/api")
-app.include_router(health.router, prefix="/api")
-app.include_router(upload.router, prefix="/api")
-app.include_router(search.router, prefix="/api")
+app.include_router(auth.router, prefix = "/api")
+app.include_router(health.router, prefix = "/api")
+app.include_router(upload.router, prefix = "/api")
+app.include_router(search.router, prefix = "/api")
 
 
 # Root endpoint
 @app.get(
     "/",
-    summary="API Root",
-    description="Get basic API information",
-    tags=["system"],
+    summary = "API Root",
+    description = "Get basic API information",
+    tags = ["system"],
 )
 async def root() -> dict[str, Any]:
     """
@@ -194,7 +207,7 @@ async def root() -> dict[str, Any]:
 # Dev only endpoints
 if settings.is_development:
 
-    @app.get("/api/debug/settings", tags=["debug"])
+    @app.get("/api/debug/settings", tags = ["debug"])
     async def debug_settings() -> dict[str, Any]:
         """
         Show current settings (dev).

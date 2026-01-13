@@ -1,9 +1,8 @@
 /* 
- * PG-VENV Dark Liquid Glass Design System
+ * Design System
  * Global styles and CSS variables
  */
 
-/* === CSS RESET & BASE === */
 *,
 *::before,
 *::after {
@@ -29,7 +28,6 @@ body {
   font-feature-settings: 'kern', 'liga', 'clig', 'calt';
 }
 
-/* === DARK LIQUID GLASS VARIABLES === */
 :root {
   /* Primary Colors */
   --pgv-base-black: #0f0f0f;           /* Deep black background */
@@ -62,7 +60,7 @@ body {
   --pgv-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
   --pgv-shadow-glow: 0 0 20px var(--pgv-accent-primary-glow);
   
-  /* Animation Timings - Liquid Flow */
+  /* Animation Timing */
   --pgv-transition-fast: 200ms cubic-bezier(0.4, 0, 0.2, 1);
   --pgv-transition-base: 300ms cubic-bezier(0.4, 0, 0.2, 1);
   --pgv-transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -98,7 +96,6 @@ body {
   --pgv-accent-turquoise-glow: rgba(6, 214, 160, 0.4);
 }
 
-/* === GLASS PANEL MIXINS === */
 .pgv-glass {
   background: var(--pgv-glass-overlay);
   backdrop-filter: blur(var(--pgv-glass-blur));
@@ -111,7 +108,6 @@ body {
 .pgv-glass:hover {
   background: var(--pgv-glass-overlay-hover);
   border-color: var(--pgv-glass-border-hover);
-  /* Removed transform and box-shadow for static feel */
 }
 
 .pgv-glass-heavy {
@@ -149,7 +145,7 @@ h3 {
 h4 { 
   font-size: 1.375rem; 
   font-weight: 600;
-  font-family: var(--pgv-font-body); /* Switch to body font for h4+ */
+  font-family: var(--pgv-font-body);
 }
 h5 { 
   font-size: 1.125rem; 
@@ -162,17 +158,14 @@ h6 {
   font-family: var(--pgv-font-body);
 }
 
-/* Body Typography */
 p, span, div, label, input, button {
   font-family: var(--pgv-font-body);
 }
 
-/* Code Typography */
 code, pre, .font-mono {
   font-family: var(--pgv-font-mono);
 }
 
-/* === GLOBAL ANIMATIONS === */
 @keyframes pgv-fade-in {
   from {
     opacity: 0;
@@ -282,7 +275,6 @@ code, pre, .font-mono {
 
 .pgv-button-primary:hover {
   background: var(--pgv-accent-primary-light);
-  /* Removed transform and box-shadow - glass swish only */
 }
 
 .pgv-button-glass {
@@ -298,7 +290,6 @@ code, pre, .font-mono {
   box-shadow: var(--pgv-shadow-glow);
 }
 
-/* === FORM ELEMENTS === */
 .pgv-input {
   width: 100%;
   padding: 0.875rem 1.25rem;

@@ -20,7 +20,11 @@ from asyncpg import Connection
 from httpx import AsyncClient
 
 # Add backend to path for imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(
+    0,
+    os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                 ".."))
+)
 
 from auth import hash_password
 from config import Settings, get_settings
@@ -29,19 +33,22 @@ from models import User
 
 
 # Override settings for testing
-@pytest.fixture(scope="session")
+@pytest.fixture(scope = "session")
 def test_settings() -> Settings:
     """
     Test-specific settings.
     """
     return Settings(
-        environment="testing",
-        database_url="postgresql://postgres:devpassword@localhost:5432/multimodal_test",
-        redis_url="redis://localhost:6379/1",
-        secret_key="test-secret-key-for-testing-only",
-        debug=True,
-        openai_api_key=os.getenv("TEST_OPENAI_API_KEY", ""),
-        gemini_api_key=os.getenv("TEST_GEMINI_API_KEY", ""),
+        environment = "testing",
+        database_url =
+        "postgresql://postgres:devpassword@localhost:5432/multimodal_test",
+        redis_url = "redis://localhost:6379/1",
+        secret_key = "test-secret-key-for-testing-only",
+        debug = True,
+        openai_api_key = os.getenv("TEST_OPENAI_API_KEY",
+                                   ""),
+        gemini_api_key = os.getenv("TEST_GEMINI_API_KEY",
+                                   ""),
     )
 
 
@@ -50,7 +57,6 @@ class TestDatabaseWrapper:
     Wrapper that makes a test connection behave like the DatabasePool.
     This allows existing model code to work without modification.
     """
-
     def __init__(self, connection: Connection):
         self.connection = connection
 
@@ -89,7 +95,8 @@ class TestDatabaseWrapper:
                 params.append(value)
 
         where_clause = (
-            f"WHERE {' AND '.join(where_conditions)}" if where_conditions else ""
+            f"WHERE {' AND '.join(where_conditions)}"
+            if where_conditions else ""
         )
 
         query = f"""
@@ -136,7 +143,10 @@ class TestDatabaseWrapper:
 
 
 @pytest_asyncio.fixture
-async def db_connection(test_settings: Settings) -> AsyncGenerator[Connection, None]:
+async def db_connection(
+    test_settings: Settings
+) -> AsyncGenerator[Connection,
+                    None]:
     """
     Create a fresh database connection for each test.
     This avoids event loop conflicts by creating connections per test.
@@ -157,9 +167,9 @@ async def db_connection(test_settings: Settings) -> AsyncGenerator[Connection, N
         # Register vector type codec
         await conn.set_type_codec(
             "vector",
-            encoder=lambda v: f"[{','.join(map(str, v))}]",
-            decoder=lambda v: list(map(float, v[1:-1].split(","))),
-            schema="public",
+            encoder = lambda v: f"[{','.join(map(str, v))}]",
+            decoder = lambda v: list(map(float, v[1 :-1].split(","))),
+            schema = "public",
         )
 
         # Register JSONB codec
@@ -167,9 +177,9 @@ async def db_connection(test_settings: Settings) -> AsyncGenerator[Connection, N
 
         await conn.set_type_codec(
             "jsonb",
-            encoder=json.dumps,
-            decoder=json.loads,
-            schema="pg_catalog",
+            encoder = json.dumps,
+            decoder = json.loads,
+            schema = "pg_catalog",
         )
 
         # Store original db instance
@@ -202,7 +212,8 @@ async def clean_tables(db_connection: Connection) -> None:
     await db_connection.execute("DROP TABLE IF EXISTS uploads CASCADE")
     await db_connection.execute("DROP TABLE IF EXISTS users CASCADE")
 
-    await db_connection.execute("""
+    await db_connection.execute(
+        """
         CREATE TABLE IF NOT EXISTS users (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             email VARCHAR(255) UNIQUE NOT NULL,
@@ -213,9 +224,11 @@ async def clean_tables(db_connection: Connection) -> None:
         );
         CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
         CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
-    """)
+    """
+    )
 
-    await db_connection.execute("""
+    await db_connection.execute(
+        """
         CREATE TABLE IF NOT EXISTS uploads (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -237,7 +250,8 @@ async def clean_tables(db_connection: Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_uploads_processing_status ON uploads(processing_status);
         CREATE INDEX IF NOT EXISTS idx_uploads_file_type ON uploads(file_type);
         CREATE INDEX IF NOT EXISTS idx_uploads_created_at ON uploads(created_at DESC);
-    """)
+    """
+    )
 
 
 @pytest_asyncio.fixture
@@ -263,7 +277,10 @@ async def test_user(db_connection: Connection, clean_tables: None) -> User:
 
 
 @pytest_asyncio.fixture
-async def inactive_user(db_connection: Connection, clean_tables: None) -> User:
+async def inactive_user(
+    db_connection: Connection,
+    clean_tables: None
+) -> User:
     """
     Create an inactive test user.
     """
@@ -286,8 +303,10 @@ async def inactive_user(db_connection: Connection, clean_tables: None) -> User:
 
 @pytest_asyncio.fixture
 async def authenticated_client(
-    test_user: User, test_settings: Settings
-) -> AsyncGenerator[AsyncClient, None]:
+    test_user: User,
+    test_settings: Settings
+) -> AsyncGenerator[AsyncClient,
+                    None]:
     """
     Create an authenticated test client.
     """
@@ -295,11 +314,12 @@ async def authenticated_client(
 
     app.dependency_overrides[get_settings] = lambda: test_settings
 
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
+    transport = ASGITransport(app = app)
+    async with AsyncClient(transport = transport,
+                           base_url = "http://test") as client:
         response = await client.post(
             "/api/auth/token",
-            data={
+            data = {
                 "username": test_user.email,
                 "password": "TestPass123!",
                 "grant_type": "password",
@@ -307,7 +327,8 @@ async def authenticated_client(
         )
 
         token_data = response.json()
-        client.headers["Authorization"] = f"Bearer {token_data['access_token']}"
+        client.headers["Authorization"
+                       ] = f"Bearer {token_data['access_token']}"
 
         yield client
 
@@ -317,7 +338,8 @@ async def authenticated_client(
 @pytest_asyncio.fixture
 async def unauthenticated_client(
     test_settings: Settings,
-) -> AsyncGenerator[AsyncClient, None]:
+) -> AsyncGenerator[AsyncClient,
+                    None]:
     """
     Create an unauthenticated test client.
     """
@@ -325,8 +347,9 @@ async def unauthenticated_client(
 
     app.dependency_overrides[get_settings] = lambda: test_settings
 
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
+    transport = ASGITransport(app = app)
+    async with AsyncClient(transport = transport,
+                           base_url = "http://test") as client:
         yield client
 
     app.dependency_overrides.clear()
@@ -338,10 +361,14 @@ def pytest_configure(config):
     Register custom markers.
     """
     config.addinivalue_line("markers", "unit: mark test as a unit test")
-    config.addinivalue_line("markers", "integration: mark test as an integration test")
+    config.addinivalue_line(
+        "markers",
+        "integration: mark test as an integration test"
+    )
     config.addinivalue_line("markers", "slow: mark test as slow running")
     config.addinivalue_line(
-        "markers", "requires_api_keys: mark test as requiring real API keys"
+        "markers",
+        "requires_api_keys: mark test as requiring real API keys"
     )
 
 
@@ -351,7 +378,6 @@ def make_user_data():
     """
     Factory for creating user test data.
     """
-
     def _make_user_data(**kwargs):
         data = {
             "email": f"user_{uuid4().hex[:8]}@example.com",
@@ -380,7 +406,6 @@ def async_run():
     """
     Helper to run async functions in sync tests.
     """
-
     def _run(coro):
         return asyncio.get_event_loop().run_until_complete(coro)
 

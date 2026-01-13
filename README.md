@@ -1,5 +1,5 @@
 # PG-VENV
-## ©AngelaMos | Connor Boetig | Carter Perez | ©CertGames | 2025
+## ©AngelaMos | ©CertGames | 2026
 ```ruby
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣀⣤⣤⣤⣤⣄⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⠶⣻⠝⠋⠠⠔⠛⠁⡀⠀⠈⢉⡙⠓⠶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -49,8 +49,8 @@ A smart camera roll application that revolutionizes how users search through the
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/ConnorBoetig-dev/Venv
-   cd Venv
+   git clone https://github.com/CarterPerez-dev/vuemantics
+   cd vuemantics
    ```
 
 2. **Run the setup script**
@@ -68,7 +68,7 @@ A smart camera roll application that revolutionizes how users search through the
 
 4. **Start the development environment**
    ```bash
-   make dev
+   just dev-up
    ```
 
 5. **Access the application**
@@ -76,14 +76,52 @@ A smart camera roll application that revolutionizes how users search through the
 
 ## Available Commands
 
+Run `just` to see all available commands grouped by category.
+
 ```bash
-make dev      # Start development environment
-make prod     # Start production environment
-make down     # Stop all containers
-make logs     # View container logs
-make test     # Run tests
-make format   # Format code
-make lint     # Lint code
+# Development
+just dev-up              # Start dev environment (attached)
+just dev-start           # Start dev environment (detached)
+just dev-down            # Stop dev containers
+just dev-logs            # View dev container logs
+just dev-shell           # Shell into backend container
+
+# Production
+just up                  # Start prod environment (attached)
+just start               # Start prod environment (detached)
+just down                # Stop prod containers
+just logs                # View prod container logs
+
+# Local (no Docker)
+just run-backend         # Run backend with uvicorn
+just run-frontend        # Run frontend with pnpm
+
+# Linting & Formatting
+just lint                # Run ruff linter (backend)
+just ruff-fix            # Auto-fix and format backend
+just biome               # Run biome linter (frontend)
+just biome-fix           # Auto-fix frontend
+
+# Type Checking
+just mypy                # Run mypy on backend
+just tsc                 # Run TypeScript check on frontend
+
+# Testing
+just test                # Run pytest
+just test-cov            # Run tests with coverage
+
+# Database
+just dev-migrate head    # Run migrations (dev)
+just dev-migration "msg" # Create new migration (dev)
+
+# Setup
+just setup               # Run setup script
+just install-frontend    # Install frontend deps
+just install-backend     # Install backend deps
+
+# Utilities
+just clean               # Clean cache directories
+just info                # Show project info
 ```
 
 ## Architecture
@@ -95,27 +133,3 @@ make lint     # Lint code
   - Gemini Pro 2.5 for multimodal analysis
   - OpenAI text-embedding-3-small for semantic search
 - **Frontend**: React + TypeScript + Vite + Tailwind CSS
-
-
-## Production
-
-1. Configure production environment variables in `infra/prod/env/.env.prod`
-2. Set up SSL certificates in `infra/prod/ssl/` or proxy with Cloudfare
-3. Update domain in nginx configuration
-4. Run `make prod`
-
-## Testing
-
-```bash
-# Run all tests
-make test
-
-# Run with coverage
-docker-compose -f infra/dev/docker-compose.yml exec backend pytest --cov
-```
----
-### To contribute please refer to - [CONTRIBUTING](https://github.com/ConnorBoetig-dev/Venv/tree/main/meta/CONTRIBUTING.md)
-### Change log refer to - [CHANGELOG](https://github.com/ConnorBoetig-dev/Venv/tree/main/meta/CHANGELOG.md)
-### License refer to -  [LICENSE](https://github.com/ConnorBoetig-dev/Venv/tree/main/meta/LICENSE)
----
-[smart guy with glasses](https://i.kym-cdn.com/entries/icons/facebook/000/054/654/smart-guy-with-glasses.jpg)

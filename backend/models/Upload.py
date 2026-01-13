@@ -16,6 +16,7 @@ from uuid import UUID
 import database
 from models import BaseModel
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -23,7 +24,6 @@ class ProcessingStatus(str, Enum):
     """
     Processing status states for uploads.
     """
-
     PENDING = "pending"  # Just uploaded, not processed
     ANALYZING = "analyzing"  # Gemini is analyzing the media
     EMBEDDING = "embedding"  # Creating embeddings with OpenAI
@@ -35,7 +35,6 @@ class FileType(str, Enum):
     """
     Supported file types.
     """
-
     IMAGE = "image"
     VIDEO = "video"
 
@@ -76,7 +75,8 @@ class Upload(BaseModel):
         self.file_size: int = kwargs.get("file_size", 0)
         self.mime_type: str = kwargs.get("mime_type", "")
         self.processing_status: str = kwargs.get(
-            "processing_status", ProcessingStatus.PENDING
+            "processing_status",
+            ProcessingStatus.PENDING
         )
         self.gemini_summary: str | None = kwargs.get("gemini_summary")
 
@@ -85,8 +85,12 @@ class Upload(BaseModel):
         if isinstance(embedding_raw, str):
             # Parse string format from database: "[0.1,0.2,0.3]"
             try:
-                if embedding_raw.startswith("[") and embedding_raw.endswith("]"):
-                    self.embedding = list(map(float, embedding_raw[1:-1].split(",")))
+                if embedding_raw.startswith(
+                        "[") and embedding_raw.endswith("]"):
+                    self.embedding = list(
+                        map(float,
+                            embedding_raw[1 :-1].split(","))
+                    )
                 else:
                     self.embedding = None
             except (ValueError, AttributeError):
@@ -159,10 +163,12 @@ class Upload(BaseModel):
         user_id: UUID,
         filename: str,
         file_path: str,
-        file_type: Literal["image", "video"],
+        file_type: Literal["image",
+                           "video"],
         file_size: int,
         mime_type: str,
-        metadata: dict[str, Any] | None = None,
+        metadata: dict[str,
+                       Any] | None = None,
         upload_id: UUID | None = None,
     ) -> "Upload":
         """
@@ -282,7 +288,8 @@ class Upload(BaseModel):
         user_id: UUID | None = None,
         limit: int = 20,
         similarity_threshold: float = 0.0,
-    ) -> list[tuple["Upload", float]]:
+    ) -> list[tuple["Upload",
+                    float]]:
         """
         Search uploads by vector similarity.
 
@@ -302,11 +309,11 @@ class Upload(BaseModel):
             filters["user_id"] = user_id
 
         records = await database.db.vector_similarity_search(
-            table_name=cls.__tablename__,
-            embedding_column="embedding",
-            query_embedding=query_embedding,
-            limit=limit,
-            filters=filters,
+            table_name = cls.__tablename__,
+            embedding_column = "embedding",
+            query_embedding = query_embedding,
+            limit = limit,
+            filters = filters,
         )
 
         results = []
@@ -330,10 +337,10 @@ class Upload(BaseModel):
             lists: Number of clusters for IVFFlat index
         """
         await database.db.create_vector_index(
-            table_name=cls.__tablename__,
-            embedding_column="embedding",
-            index_type="ivfflat",
-            lists=lists,
+            table_name = cls.__tablename__,
+            embedding_column = "embedding",
+            index_type = "ivfflat",
+            lists = lists,
         )
 
     async def _insert(self) -> None:
@@ -364,7 +371,8 @@ class Upload(BaseModel):
             self.embedding,
             self.thumbnail_path,
             self.error_message,
-            json.dumps(self.metadata) if self.metadata is not None else None,
+            json.dumps(self.metadata)
+            if self.metadata is not None else None,
         )
 
         for key, value in dict(record).items():
@@ -404,7 +412,8 @@ class Upload(BaseModel):
             self.embedding,
             self.thumbnail_path,
             self.error_message,
-            json.dumps(self.metadata) if self.metadata is not None else None,
+            json.dumps(self.metadata)
+            if self.metadata is not None else None,
             self.id,
         )
 
@@ -413,7 +422,9 @@ class Upload(BaseModel):
                 setattr(self, key, value)
 
     async def update_status(
-        self, status: ProcessingStatus, error_message: str | None = None
+        self,
+        status: ProcessingStatus,
+        error_message: str | None = None
     ) -> None:
         """
         Update processing status.
@@ -434,14 +445,21 @@ class Upload(BaseModel):
             RETURNING updated_at
         """
 
-        updated_at = await database.db.fetchval(query, status, error_message, self.id)
+        updated_at = await database.db.fetchval(
+            query,
+            status,
+            error_message,
+            self.id
+        )
         if updated_at:
             self.processing_status = status
             self.error_message = error_message
             self.updated_at = updated_at
 
     async def update_analysis(
-        self, gemini_summary: str, embedding: list[float]
+        self,
+        gemini_summary: str,
+        embedding: list[float]
     ) -> None:
         """
         Update with AI analysis results.
@@ -454,7 +472,9 @@ class Upload(BaseModel):
             raise ValueError("Cannot update analysis for unsaved upload")
 
         # Pass the embedding list directly to PostgreSQL
-        logger.info(f"DEBUG: Passing embedding directly as list, length: {len(embedding) if embedding else 'None'}")
+        logger.info(
+            f"DEBUG: Passing embedding directly as list, length: {len(embedding) if embedding else 'None'}"
+        )
 
         query = """
             UPDATE uploads
@@ -467,7 +487,11 @@ class Upload(BaseModel):
         """
 
         updated_at = await database.db.fetchval(
-            query, gemini_summary, embedding, ProcessingStatus.COMPLETED, self.id
+            query,
+            gemini_summary,
+            embedding,
+            ProcessingStatus.COMPLETED,
+            self.id
         )
 
         if updated_at:
@@ -494,7 +518,11 @@ class Upload(BaseModel):
             RETURNING updated_at
         """
 
-        updated_at = await database.db.fetchval(query, thumbnail_path, self.id)
+        updated_at = await database.db.fetchval(
+            query,
+            thumbnail_path,
+            self.id
+        )
         if updated_at:
             self.thumbnail_path = thumbnail_path
             self.updated_at = updated_at
@@ -519,7 +547,11 @@ class Upload(BaseModel):
             LIMIT $2
         """
 
-        records = await database.db.fetch(query, ProcessingStatus.PENDING, limit)
+        records = await database.db.fetch(
+            query,
+            ProcessingStatus.PENDING,
+            limit
+        )
         return cls.from_records(records)
 
     @classmethod
@@ -537,7 +569,10 @@ class Upload(BaseModel):
         """
 
         records = await database.db.fetch(query, user_id)
-        return {record["processing_status"]: record["count"] for record in records}
+        return {
+            record["processing_status"]: record["count"]
+            for record in records
+        }
 
     def to_dict(self, exclude: set[str] | None = None) -> dict[str, Any]:
         """

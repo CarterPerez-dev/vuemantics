@@ -18,7 +18,6 @@ class TestUploadModel:
     """
     Test Upload model functionality.
     """
-
     async def test_upload_init(self):
         """
         Test Upload initialization.
@@ -54,19 +53,22 @@ class TestUploadModel:
         assert FileType.VIDEO == "video"
 
     async def test_create_upload(
-        self, db_connection: Connection, test_user: User, clean_tables: None
+        self,
+        db_connection: Connection,
+        test_user: User,
+        clean_tables: None
     ):
         """
         Test creating a new upload.
         """
         upload = await Upload.create(
-            user_id=test_user.id,
-            filename="test_image.jpg",
-            file_path="/storage/uploads/user123/file456/test_image.jpg",
-            file_type="image",
-            file_size=1024 * 1024,  # 1MB
-            mime_type="image/jpeg",
-            metadata={"width": 1920, "height": 1080},
+            user_id = test_user.id,
+            filename = "test_image.jpg",
+            file_path = "/storage/uploads/user123/file456/test_image.jpg",
+            file_type = "image",
+            file_size = 1024 * 1024,  # 1MB
+            mime_type = "image/jpeg",
+            metadata = {"width": 1920, "height": 1080},
         )
 
         assert upload.id is not None
@@ -80,7 +82,10 @@ class TestUploadModel:
         assert upload.created_at is not None
 
     async def test_find_by_user(
-        self, db_connection: Connection, test_user: User, clean_tables: None
+        self,
+        db_connection: Connection,
+        test_user: User,
+        clean_tables: None
     ):
         """
         Test finding uploads by user.
@@ -88,12 +93,12 @@ class TestUploadModel:
         # Create multiple uploads
         for i in range(5):
             await Upload.create(
-                user_id=test_user.id,
-                filename=f"file{i}.{'jpg' if i < 3 else 'mp4'}",
-                file_path=f"/storage/{i}",
-                file_type="image" if i < 3 else "video",
-                file_size=1000 * (i + 1),
-                mime_type="image/jpeg" if i < 3 else "video/mp4",
+                user_id = test_user.id,
+                filename = f"file{i}.{'jpg' if i < 3 else 'mp4'}",
+                file_path = f"/storage/{i}",
+                file_type = "image" if i < 3 else "video",
+                file_size = 1000 * (i + 1),
+                mime_type = "image/jpeg" if i < 3 else "video/mp4",
             )
 
         # Find all uploads
@@ -101,20 +106,29 @@ class TestUploadModel:
         assert len(uploads) == 5
 
         # Test pagination
-        uploads = await Upload.find_by_user(test_user.id, limit=3)
+        uploads = await Upload.find_by_user(test_user.id, limit = 3)
         assert len(uploads) == 3
 
         # Test file type filter
-        images = await Upload.find_by_user(test_user.id, file_type="image")
+        images = await Upload.find_by_user(
+            test_user.id,
+            file_type = "image"
+        )
         assert len(images) == 3
         assert all(u.file_type == "image" for u in images)
 
-        videos = await Upload.find_by_user(test_user.id, file_type="video")
+        videos = await Upload.find_by_user(
+            test_user.id,
+            file_type = "video"
+        )
         assert len(videos) == 2
         assert all(u.file_type == "video" for u in videos)
 
     async def test_find_by_user_with_status_filter(
-        self, db_connection: Connection, test_user: User, clean_tables: None
+        self,
+        db_connection: Connection,
+        test_user: User,
+        clean_tables: None
     ):
         """
         Test filtering uploads by processing status.
@@ -130,12 +144,12 @@ class TestUploadModel:
 
         for i, status in enumerate(statuses):
             upload = await Upload.create(
-                user_id=test_user.id,
-                filename=f"file{i}.jpg",
-                file_path=f"/storage/{i}",
-                file_type="image",
-                file_size=1000,
-                mime_type="image/jpeg",
+                user_id = test_user.id,
+                filename = f"file{i}.jpg",
+                file_path = f"/storage/{i}",
+                file_type = "image",
+                file_size = 1000,
+                mime_type = "image/jpeg",
             )
             # Update status
             await db_connection.execute(
@@ -146,26 +160,33 @@ class TestUploadModel:
 
         # Filter by status
         completed = await Upload.find_by_user(
-            test_user.id, status=ProcessingStatus.COMPLETED
+            test_user.id,
+            status = ProcessingStatus.COMPLETED
         )
         assert len(completed) == 2
 
-        failed = await Upload.find_by_user(test_user.id, status=ProcessingStatus.FAILED)
+        failed = await Upload.find_by_user(
+            test_user.id,
+            status = ProcessingStatus.FAILED
+        )
         assert len(failed) == 1
 
     async def test_update_status(
-        self, db_connection: Connection, test_user: User, clean_tables: None
+        self,
+        db_connection: Connection,
+        test_user: User,
+        clean_tables: None
     ):
         """
         Test updating processing status.
         """
         upload = await Upload.create(
-            user_id=test_user.id,
-            filename="test.jpg",
-            file_path="/storage/test.jpg",
-            file_type="image",
-            file_size=1000,
-            mime_type="image/jpeg",
+            user_id = test_user.id,
+            filename = "test.jpg",
+            file_path = "/storage/test.jpg",
+            file_type = "image",
+            file_size = 1000,
+            mime_type = "image/jpeg",
         )
 
         assert upload.processing_status == ProcessingStatus.PENDING
@@ -177,7 +198,8 @@ class TestUploadModel:
 
         # Update to failed with error
         await upload.update_status(
-            ProcessingStatus.FAILED, "Gemini API rate limit exceeded"
+            ProcessingStatus.FAILED,
+            "Gemini API rate limit exceeded"
         )
         assert upload.processing_status == ProcessingStatus.FAILED
         assert upload.error_message == "Gemini API rate limit exceeded"
@@ -193,12 +215,12 @@ class TestUploadModel:
         Test updating with AI analysis results.
         """
         upload = await Upload.create(
-            user_id=test_user.id,
-            filename="beach.jpg",
-            file_path="/storage/beach.jpg",
-            file_type="image",
-            file_size=2000,
-            mime_type="image/jpeg",
+            user_id = test_user.id,
+            filename = "beach.jpg",
+            file_path = "/storage/beach.jpg",
+            file_type = "image",
+            file_size = 2000,
+            mime_type = "image/jpeg",
         )
 
         summary = "A beautiful sunset over a tropical beach with palm trees"
@@ -211,18 +233,21 @@ class TestUploadModel:
         assert len(upload.embedding) == 1536
 
     async def test_update_thumbnail(
-        self, db_connection: Connection, test_user: User, clean_tables: None
+        self,
+        db_connection: Connection,
+        test_user: User,
+        clean_tables: None
     ):
         """
         Test updating thumbnail path.
         """
         upload = await Upload.create(
-            user_id=test_user.id,
-            filename="video.mp4",
-            file_path="/storage/video.mp4",
-            file_type="video",
-            file_size=10000000,
-            mime_type="video/mp4",
+            user_id = test_user.id,
+            filename = "video.mp4",
+            file_path = "/storage/video.mp4",
+            file_type = "video",
+            file_size = 10000000,
+            mime_type = "video/mp4",
         )
 
         thumbnail_path = "/storage/thumbnails/video_thumb.jpg"
@@ -232,7 +257,10 @@ class TestUploadModel:
         assert upload.thumbnail_path == thumbnail_path
 
     async def test_get_pending_uploads(
-        self, db_connection: Connection, test_user: User, clean_tables: None
+        self,
+        db_connection: Connection,
+        test_user: User,
+        clean_tables: None
     ):
         """
         Test getting uploads that need processing.
@@ -240,12 +268,12 @@ class TestUploadModel:
         # Create mix of uploads
         for i in range(10):
             upload = await Upload.create(
-                user_id=test_user.id,
-                filename=f"file{i}.jpg",
-                file_path=f"/storage/{i}",
-                file_type="image",
-                file_size=1000,
-                mime_type="image/jpeg",
+                user_id = test_user.id,
+                filename = f"file{i}.jpg",
+                file_path = f"/storage/{i}",
+                file_type = "image",
+                file_size = 1000,
+                mime_type = "image/jpeg",
             )
 
             # Set some to different statuses
@@ -257,16 +285,22 @@ class TestUploadModel:
                 )
 
         # Get pending uploads
-        pending = await Upload.get_pending_uploads(limit=3)
+        pending = await Upload.get_pending_uploads(limit = 3)
 
         assert len(pending) == 3
-        assert all(u.processing_status == ProcessingStatus.PENDING for u in pending)
+        assert all(
+            u.processing_status == ProcessingStatus.PENDING
+            for u in pending
+        )
 
         # Should be ordered by created_at ASC (oldest first)
         assert pending[0].created_at <= pending[1].created_at
 
     async def test_count_by_user(
-        self, db_connection: Connection, test_user: User, clean_tables: None
+        self,
+        db_connection: Connection,
+        test_user: User,
+        clean_tables: None
     ):
         """
         Test counting uploads by status for a user.
@@ -283,12 +317,12 @@ class TestUploadModel:
         for status, count in status_counts.items():
             for _ in range(count):
                 upload = await Upload.create(
-                    user_id=test_user.id,
-                    filename="file.jpg",
-                    file_path="/storage/file.jpg",
-                    file_type="image",
-                    file_size=1000,
-                    mime_type="image/jpeg",
+                    user_id = test_user.id,
+                    filename = "file.jpg",
+                    file_path = "/storage/file.jpg",
+                    file_type = "image",
+                    file_size = 1000,
+                    mime_type = "image/jpeg",
                 )
                 await db_connection.execute(
                     "UPDATE uploads SET processing_status = $1 WHERE id = $2",
@@ -301,13 +335,16 @@ class TestUploadModel:
 
         assert counts == status_counts
 
-    async def test_to_dict_embedding_handling(self, sample_embedding: list[float]):
+    async def test_to_dict_embedding_handling(
+        self,
+        sample_embedding: list[float]
+    ):
         """
         Test that embeddings are handled properly in to_dict.
         """
         upload = Upload(
-            filename="test.jpg",
-            embedding=sample_embedding,
+            filename = "test.jpg",
+            embedding = sample_embedding,
         )
 
         # Default behavior: exclude embedding, add flag
@@ -316,7 +353,7 @@ class TestUploadModel:
         assert result["has_embedding"] is True
 
         # Can explicitly include embedding
-        result = upload.to_dict(exclude={"filename"})
+        result = upload.to_dict(exclude = {"filename"})
         assert "embedding" not in result  # Still excluded by default
         assert result["has_embedding"] is True
 
@@ -343,12 +380,12 @@ class TestUploadModel:
             embedding[0] += i * 0.1  # Small variation
 
             upload = await Upload.create(
-                user_id=test_user.id,
-                filename=f"image{i}.jpg",
-                file_path=f"/storage/{i}",
-                file_type="image",
-                file_size=1000,
-                mime_type="image/jpeg",
+                user_id = test_user.id,
+                filename = f"image{i}.jpg",
+                file_path = f"/storage/{i}",
+                file_type = "image",
+                file_size = 1000,
+                mime_type = "image/jpeg",
             )
 
             # Update with embedding and mark as completed
@@ -370,9 +407,9 @@ class TestUploadModel:
 
         # Search with the first embedding
         results = await Upload.search_by_embedding(
-            query_embedding=embeddings[0],
-            user_id=test_user.id,
-            limit=2,
+            query_embedding = embeddings[0],
+            user_id = test_user.id,
+            limit = 2,
         )
 
         assert len(results) == 2
@@ -391,8 +428,8 @@ class TestUploadModel:
         Test string representation of Upload.
         """
         upload = Upload(
-            filename="vacation.jpg",
-            processing_status=ProcessingStatus.COMPLETED,
+            filename = "vacation.jpg",
+            processing_status = ProcessingStatus.COMPLETED,
         )
 
         repr_str = str(upload)
@@ -401,14 +438,16 @@ class TestUploadModel:
         assert "COMPLETED" in repr_str
 
     async def test_create_embedding_index(
-        self, db_connection: Connection, clean_tables: None
+        self,
+        db_connection: Connection,
+        clean_tables: None
     ):
         """
         Test creating vector index for similarity search.
         """
         # This would normally be called after having many uploads
         # Just test that it doesn't error
-        await Upload.create_embedding_index(lists=10)
+        await Upload.create_embedding_index(lists = 10)
 
         # Verify index exists (index name pattern)
         await db_connection.fetchval(
@@ -423,19 +462,22 @@ class TestUploadModel:
         # Just ensure no error was raised
 
     async def test_save_methods(
-        self, db_connection: Connection, test_user: User, clean_tables: None
+        self,
+        db_connection: Connection,
+        test_user: User,
+        clean_tables: None
     ):
         """
         Test _insert and _update methods via save().
         """
         # Test insert
         upload = Upload(
-            user_id=test_user.id,
-            filename="new.jpg",
-            file_path="/storage/new.jpg",
-            file_type="image",
-            file_size=5000,
-            mime_type="image/jpeg",
+            user_id = test_user.id,
+            filename = "new.jpg",
+            file_path = "/storage/new.jpg",
+            file_type = "image",
+            file_size = 5000,
+            mime_type = "image/jpeg",
         )
 
         await upload.save()

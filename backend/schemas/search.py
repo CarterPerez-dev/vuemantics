@@ -27,9 +27,9 @@ class SearchRequest(BaseModel):
     """
 
     model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields for MVP
-        str_strip_whitespace=True,
-        json_schema_extra={
+        extra = "ignore",  # Allow extra fields for MVP
+        str_strip_whitespace = True,
+        json_schema_extra = {
             "example": {
                 "query": "funny cat playing with toys",
                 "limit": 20,
@@ -42,35 +42,47 @@ class SearchRequest(BaseModel):
     )
 
     query: str = Field(
-        description="Natural language search query",
-        min_length=1,
-        max_length=500,  # For now
-        examples=["sunset over mountains", "birthday party with friends"],
+        description = "Natural language search query",
+        min_length = 1,
+        max_length = 500,  # For now
+        examples = ["sunset over mountains", "birthday party with friends"],
     )
 
     limit: int = Field(
-        default=20, ge=1, le=100, description="Maximum number of results"
+        default = 20,
+        ge = 1,
+        le = 100,
+        description = "Maximum number of results"
     )
 
     similarity_threshold: float = Field(
-        default=0.25, ge=0.0, le=1.0, description="Minimum similarity score (0-1)"
+        default = 0.25,
+        ge = 0.0,
+        le = 1.0,
+        description = "Minimum similarity score (0-1)"
     )
 
-    file_types: list[Literal["image", "video"]] | None = Field(
-        default=None, description="Filter by file types (None = all types)"
-    )
+    file_types: list[Literal[
+        "image",
+        "video"]] | None = Field(
+            default = None,
+            description = "Filter by file types (None = all types)"
+        )
 
     date_from: datetime | None = Field(
-        default=None, description="Filter uploads created after this date"
+        default = None,
+        description = "Filter uploads created after this date"
     )
 
     date_to: datetime | None = Field(
-        default=None, description="Filter uploads created before this date"
+        default = None,
+        description = "Filter uploads created before this date"
     )
 
     user_id: UUID | None = Field(
-        default=None,
-        description="Search only within specific user's uploads (admin feature)",
+        default = None,
+        description =
+        "Search only within specific user's uploads (admin feature)",
     )
 
     @field_validator("query")
@@ -89,7 +101,11 @@ class SearchRequest(BaseModel):
 
     @field_validator("date_to")
     @classmethod
-    def validate_date_range(cls, v: datetime | None, info) -> datetime | None:
+    def validate_date_range(
+        cls,
+        v: datetime | None,
+        info
+    ) -> datetime | None:
         """
         Ensure date_to is after date_from if both provided.
         """
@@ -106,18 +122,24 @@ class SearchResult(BaseModel):
     """
 
     model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields for MVP
-        from_attributes=True,
+        extra = "ignore",  # Allow extra fields for MVP
+        from_attributes = True,
     )
 
-    upload: UploadResponse = Field(description="Matched upload")
+    upload: UploadResponse = Field(description = "Matched upload")
     similarity_score: float = Field(
-        ge=0.0, le=1.0, description="Similarity score (0-1, higher is more similar)"
+        ge = 0.0,
+        le = 1.0,
+        description = "Similarity score (0-1, higher is more similar)"
     )
     distance: float = Field(
-        ge=0.0, description="Vector distance (lower is more similar)"
+        ge = 0.0,
+        description = "Vector distance (lower is more similar)"
     )
-    rank: int = Field(ge=1, description="Result rank (1 is best match)")
+    rank: int = Field(
+        ge = 1,
+        description = "Result rank (1 is best match)"
+    )
 
 
 class SearchResponse(BaseModel):
@@ -126,8 +148,8 @@ class SearchResponse(BaseModel):
     """
 
     model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields for MVP
-        json_schema_extra={
+        extra = "ignore",  # Allow extra fields for MVP
+        json_schema_extra = {
             "example": {
                 "results": [
                     {
@@ -147,28 +169,36 @@ class SearchResponse(BaseModel):
     )
 
     results: list[SearchResult] = Field(
-        description="Search results ordered by similarity"
+        description = "Search results ordered by similarity"
     )
 
-    total_found: int = Field(ge=0, description="Total number of matching results")
+    total_found: int = Field(
+        ge = 0,
+        description = "Total number of matching results"
+    )
 
     returned_count: int = Field(
-        ge=0, description="Number of results returned (may be less than limit)"
+        ge = 0,
+        description = "Number of results returned (may be less than limit)"
     )
 
     search_time_ms: float = Field(
-        ge=0, description="Search execution time in milliseconds"
+        ge = 0,
+        description = "Search execution time in milliseconds"
     )
 
-    query: str = Field(description="Original search query")
+    query: str = Field(description = "Original search query")
 
     query_embedding_generated: bool = Field(
-        default=True, description="Whether embedding was successfully generated"
+        default = True,
+        description = "Whether embedding was successfully generated"
     )
 
-    applied_filters: dict[str, Any] | None = Field(
-        default=None, description="Filters that were applied"
-    )
+    applied_filters: dict[str,
+                          Any] | None = Field(
+                              default = None,
+                              description = "Filters that were applied"
+                          )
 
 
 class SimilarUploadsRequest(BaseModel):
@@ -177,21 +207,30 @@ class SimilarUploadsRequest(BaseModel):
     """
 
     model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields for MVP
+        extra = "ignore",  # Allow extra fields for MVP
     )
 
-    upload_id: UUID = Field(description="Upload ID to find similar items for")
+    upload_id: UUID = Field(
+        description = "Upload ID to find similar items for"
+    )
 
     limit: int = Field(
-        default=10, ge=1, le=50, description="Maximum number of similar items"
+        default = 10,
+        ge = 1,
+        le = 50,
+        description = "Maximum number of similar items"
     )
 
     similarity_threshold: float = Field(
-        default=0.5, ge=0.0, le=1.0, description="Minimum similarity score"
+        default = 0.5,
+        ge = 0.0,
+        le = 1.0,
+        description = "Minimum similarity score"
     )
 
     include_same_user: bool = Field(
-        default=True, description="Include uploads from same user"
+        default = True,
+        description = "Include uploads from same user"
     )
 
 
@@ -201,12 +240,20 @@ class SearchHistoryItem(BaseModel):
     """
 
     model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields for MVP
-        from_attributes=True,
+        extra = "ignore",  # Allow extra fields for MVP
+        from_attributes = True,
     )
 
-    id: UUID = Field(description="Search history ID")
-    query: str = Field(description="Search query")
-    result_count: int = Field(ge=0, description="Number of results found")
-    searched_at: datetime = Field(description="When search was performed")
-    filters_applied: dict[str, Any] | None = Field(description="Filters used in search")
+    id: UUID = Field(description = "Search history ID")
+    query: str = Field(description = "Search query")
+    result_count: int = Field(
+        ge = 0,
+        description = "Number of results found"
+    )
+    searched_at: datetime = Field(
+        description = "When search was performed"
+    )
+    filters_applied: dict[str,
+                          Any] | None = Field(
+                              description = "Filters used in search"
+                          )

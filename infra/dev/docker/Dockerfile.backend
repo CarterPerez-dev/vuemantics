@@ -2,10 +2,8 @@
 
 FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
@@ -14,27 +12,25 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     libsm6 \
     libxext6 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:$PATH"
+
 COPY backend/pyproject.toml /app/
 COPY backend/README.md /app/README.md
 
-# Create empty backend package for installation
-RUN mkdir -p /app/backend && touch /app/backend/__init__.py
+RUN uv venv .venv
+ENV VIRTUAL_ENV=/app/.venv
+ENV PATH="/app/.venv/bin:$PATH"
 
-# Install Python dependencies
-RUN pip install --upgrade pip setuptools wheel
-RUN pip install -e ".[dev]"
+RUN uv pip install -e ".[dev]"
 
-# Copy the rest of the application
 COPY backend /app
 
-# Create storage directory
 RUN mkdir -p /app/storage/uploads
 
-# Expose port
 EXPOSE 8000
 
-# Default command (overridden in docker-compose)
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

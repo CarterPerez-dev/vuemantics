@@ -2,37 +2,35 @@
 
 FROM python:3.11-slim as builder
 
-# Set working directory
 WORKDIR /app
 
-# Install build dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     libpq-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:$PATH"
+
 COPY backend/pyproject.toml /app/
 COPY backend/README.md /app/README.md
 
-# Create empty backend package for installation
-RUN mkdir -p /app/backend && touch /app/backend/__init__.py
+RUN uv venv .venv
+ENV VIRTUAL_ENV=/app/.venv
+ENV PATH="/app/.venv/bin:$PATH"
 
-# Install Python dependencies
-RUN pip install --upgrade pip setuptools wheel
-RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -e .
+RUN uv pip install .
 
-# Final stage
+COPY backend /app
+
 FROM python:3.11-slim
 
-# Create non-root user
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
-# Set working directory
 WORKDIR /app
 
-# Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     postgresql-client \
     libpq-dev \
@@ -41,30 +39,19 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy wheels from builder
-COPY --from=builder /app/wheels /wheels
-COPY --from=builder /app/pyproject.toml /app/
-COPY --from=builder /app/README.md /app/
+COPY --from=builder /app/.venv /app/.venv
+ENV VIRTUAL_ENV=/app/.venv
+ENV PATH="/app/.venv/bin:$PATH"
 
-# Install the application
-RUN pip install --upgrade pip && \
-    pip install --no-cache /wheels/* && \
-    pip install -e .
-
-# Copy application code
 COPY backend /app
 
-# Create storage directory and set permissions
 RUN mkdir -p /app/storage/uploads && \
     chown -R appuser:appuser /app
 
-# Switch to non-root user
 USER appuser
 
-# Expose port
 EXPOSE 8000
 
-# Run with gunicorn for production
 CMD ["gunicorn", "main:app", \
      "--worker-class", "uvicorn.workers.UvicornWorker", \
      "--workers", "4", \
