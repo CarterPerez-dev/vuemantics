@@ -251,7 +251,6 @@ class Settings(BaseSettings):
         """
         Get database URL with asyncpg driver.
         """
-        # Replace postgresql:// with postgresql+asyncpg:// in future
         if self.database_url.startswith("postgresql://"):
             return self.database_url
         return self.database_url

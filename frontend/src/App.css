@@ -149,7 +149,7 @@ h3 {
 h4 { 
   font-size: 1.375rem; 
   font-weight: 600;
-  font-family: var(--pgv-font-body); /* Switch to body font for h4+ */
+  font-family: var(--pgv-font-body);
 }
 h5 { 
   font-size: 1.125rem; 
@@ -162,17 +162,14 @@ h6 {
   font-family: var(--pgv-font-body);
 }
 
-/* Body Typography */
 p, span, div, label, input, button {
   font-family: var(--pgv-font-body);
 }
 
-/* Code Typography */
 code, pre, .font-mono {
   font-family: var(--pgv-font-mono);
 }
 
-/* === GLOBAL ANIMATIONS === */
 @keyframes pgv-fade-in {
   from {
     opacity: 0;

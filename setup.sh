@@ -171,9 +171,9 @@ MAX_UPLOAD_SIZE=104857600
 # CORS
 CORS_ORIGINS=["http://localhost:3000", "http://localhost:5173"]
 EOF
-    echo "✅ Created infra/dev/env/.env.dev (add your API keys!)"
+    echo "Created infra/dev/env/.env.dev (add your API keys!)"
 else
-    echo "✅ infra/dev/env/.env.dev already exists"
+    echo "infra/dev/env/.env.dev already exists"
 fi
 
 # Prod environment

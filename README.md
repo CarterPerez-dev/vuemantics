@@ -1,5 +1,5 @@
 # PG-VENV
-## ©AngelaMos | Connor Boetig | Carter Perez | ©CertGames | 2025
+## ©AngelaMos | ©CertGames | 2026
 ```ruby
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣀⣤⣤⣤⣤⣄⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⠶⣻⠝⠋⠠⠔⠛⠁⡀⠀⠈⢉⡙⠓⠶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -49,8 +49,8 @@ A smart camera roll application that revolutionizes how users search through the
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/ConnorBoetig-dev/Venv
-   cd Venv
+   git clone https://github.com/CarterPerez-dev/vuemantics
+   cd vuemantics
    ```
 
 2. **Run the setup script**
@@ -95,27 +95,3 @@ make lint     # Lint code
   - Gemini Pro 2.5 for multimodal analysis
   - OpenAI text-embedding-3-small for semantic search
 - **Frontend**: React + TypeScript + Vite + Tailwind CSS
-
-
-## Production
-
-1. Configure production environment variables in `infra/prod/env/.env.prod`
-2. Set up SSL certificates in `infra/prod/ssl/` or proxy with Cloudfare
-3. Update domain in nginx configuration
-4. Run `make prod`
-
-## Testing
-
-```bash
-# Run all tests
-make test
-
-# Run with coverage
-docker-compose -f infra/dev/docker-compose.yml exec backend pytest --cov
-```
----
-### To contribute please refer to - [CONTRIBUTING](https://github.com/ConnorBoetig-dev/Venv/tree/main/meta/CONTRIBUTING.md)
-### Change log refer to - [CHANGELOG](https://github.com/ConnorBoetig-dev/Venv/tree/main/meta/CHANGELOG.md)
-### License refer to -  [LICENSE](https://github.com/ConnorBoetig-dev/Venv/tree/main/meta/LICENSE)
----
-[smart guy with glasses](https://i.kym-cdn.com/entries/icons/facebook/000/054/654/smart-guy-with-glasses.jpg)

@@ -28,7 +28,9 @@ class DatabasePool:
     and handling vector operations efficiently.
     """
     def __init__(self) -> None:
-        """Initialize database pool instance."""
+        """
+        Initialize database pool instance
+        """
         self._pool: Pool | None = None
         self._lock = asyncio.Lock()
 
