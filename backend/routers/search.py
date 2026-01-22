@@ -163,7 +163,7 @@ async def find_similar_uploads(
             detail = "Upload not found"
         )
 
-    if not upload.embedding:
+    if not upload.embedding_local:
         raise HTTPException(
             status_code = status.HTTP_400_BAD_REQUEST,
             detail = "Upload has not been processed yet",

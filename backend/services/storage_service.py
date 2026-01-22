@@ -63,7 +63,6 @@ class StorageService:
             base_path: Base directory for uploads (defaults to settings)
         """
         self.base_path = base_path or settings.upload_path
-        self.base_path.mkdir(parents = True, exist_ok = True)
         logger.info(
             f"Storage service initialized with base path: {self.base_path}"
         )

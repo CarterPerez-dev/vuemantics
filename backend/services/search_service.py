@@ -2,7 +2,7 @@
 Search service for semantic similarity search using embeddings.
 
 Handles query embedding generation, vector search orchestration,
-and result formatting. Uses OpenAI for query embeddings and
+and result formatting. Uses local bge-m3 for query embeddings and
 pgvector for similarity search.
 ---
 /backend/services/search_service.py
@@ -14,8 +14,6 @@ import time
 from datetime import datetime
 from typing import Any
 from uuid import UUID
-
-from openai import AsyncOpenAI
 
 from config import settings
 from models import Upload
@@ -42,19 +40,15 @@ class SearchService:
     Handles semantic search functionality.
 
     Workflow:
-    1. Generate embedding for search query
+    1. Generate embedding for search query using local bge-m3
     2. Find similar uploads using pgvector
     3. Apply additional filters
     4. Format and return results
     """
     def __init__(self):
         """
-        Initialize search service with OpenAI client.
+        Initialize search service.
         """
-        self._openai_client = AsyncOpenAI(
-            api_key = settings.openai_api_key
-        )
-        self._embedding_model = settings.embedding_model
         logger.info("Search service initialized")
 
     async def search(
@@ -136,28 +130,26 @@ class SearchService:
             query: Search query text
 
         Returns:
-            1536-dimensional embedding vector
+            1024-dimensional embedding vector
 
         Raises:
             QueryEmbeddingError: If embedding generation fails
         """
         try:
+            from services import local_ai_service
+
             # Clean query
             cleaned_query = " ".join(query.split())
 
             # Enhance query for better search results
             enhanced_query = f"Find media content related to: {cleaned_query}"
 
-            # Generate embedding
-            response = await self._openai_client.embeddings.create(
-                input = enhanced_query,
-                model = self._embedding_model,
-                encoding_format = "float",
+            # Generate embedding using local bge-m3
+            embedding = await local_ai_service.create_embedding_for_query(
+                enhanced_query
             )
 
-            embedding = response.data[0].embedding
-
-            if len(embedding) != settings.embedding_dimensions:
+            if len(embedding) != settings.local_embedding_dimensions:
                 raise QueryEmbeddingError(
                     f"Invalid embedding dimensions: {len(embedding)}"
                 )
@@ -189,12 +181,13 @@ class SearchService:
         Returns:
             List of search results with similarity scores
         """
-        # Perform vector search
+        # Perform vector search using local embeddings
         upload_results = await Upload.search_by_embedding(
             query_embedding = query_embedding,
             user_id = user_id,
             limit = limit,
             similarity_threshold = similarity_threshold,
+            use_local = True,
         )
 
         # Convert to SearchResult objects
@@ -310,14 +303,16 @@ class SearchService:
         if not upload or upload.user_id != user_id:
             return []
 
-        if not upload.embedding:
-            logger.warning(f"Upload {upload_id} has no embedding")
+        if not upload.embedding_local:
+            logger.warning(f"Upload {upload_id} has no local embedding")
             return []
+
+        embedding_to_use = upload.embedding_local
 
         # Search using the upload's embedding
         search_user_id = None if include_same_user else user_id
         results = await self._search_uploads(
-            query_embedding = upload.embedding,
+            query_embedding = embedding_to_use,
             user_id = search_user_id,
             limit = limit + 1,  # Get extra to exclude self
             similarity_threshold = 0.5,
@@ -415,7 +410,7 @@ class SearchService:
             Similarity score (0-1)
         """
         # Simple dot product for normalized vectors
-        # (OpenAI embeddings are pre-normalized)
+        # (bge-m3 embeddings are pre-normalized)
         similarity = sum(
             a * b for a, b in zip(embedding1, embedding2, strict = False)
         )

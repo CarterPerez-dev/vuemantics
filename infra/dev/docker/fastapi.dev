@@ -1,0 +1,27 @@
+FROM python:3.14-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    libxml2-dev \
+    libxslt-dev \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:$PATH"
+
+# Copy backend code
+COPY backend /app
+
+# Install Python dependencies
+RUN uv sync
+
+# Expose port
+EXPOSE 8000
+
+# Run with uvicorn hot reload
+CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

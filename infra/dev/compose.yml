@@ -1,0 +1,141 @@
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: multimodal-postgres-dev
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: multimodal_search_dev
+    ports:
+      - "5455:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - multimodal-dev
+
+  redis:
+    image: redis:7-alpine
+    container_name: multimodal-redis-dev
+    ports:
+      - "6361:6379"
+    volumes:
+      - redis_data_dev:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - multimodal-dev
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: multimodal-ollama-dev
+    runtime: nvidia
+    ports:
+      - "11435:11434"
+    deploy:
+      resources:
+        limits:
+          cpus: '8.0'
+          memory: 24G
+        reservations:
+          cpus: '4.0'
+          memory: 8G
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ollama_data_dev:/root/.ollama
+    networks:
+      - multimodal-dev
+    restart: unless-stopped
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - OLLAMA_KEEP_ALIVE=30m
+      - OLLAMA_FLASH_ATTENTION=1
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backend:
+    build:
+      context: ../..
+      dockerfile: infra/dev/docker/fastapi.dev
+    container_name: multimodal-backend-dev
+    ports:
+      - "8776:8000"
+    volumes:
+      - ../../backend:/app
+      - ../../storage:/storage
+    env_file:
+      - ../../.env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - WATCHFILES_FORCE_POLLING=true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    command: uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - multimodal-dev
+
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: ../infra/dev/docker/vite.dev
+    container_name: multimodal-frontend-dev
+    ports:
+      - "5276:5173"
+    volumes:
+      - ../../frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=/api
+      - CHOKIDAR_USEPOLLING=true
+    networks:
+      - multimodal-dev
+
+  nginx:
+    image: nginx:alpine
+    container_name: multimodal-nginx-dev
+    ports:
+      - "856:80"
+    volumes:
+      - ./nginx/dev.conf:/etc/nginx/nginx.conf:ro
+      - ../../storage/uploads:/var/www/uploads:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - multimodal-dev
+
+networks:
+  multimodal-dev:
+    driver: bridge
+
+volumes:
+  postgres_data_dev:
+  redis_data_dev:
+  ollama_data_dev:

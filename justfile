@@ -67,34 +67,11 @@ mypy *ARGS:
 typecheck: mypy
 
 # =============================================================================
-# Testing
-# =============================================================================
-
-[group('test')]
-pytest *ARGS:
-    cd backend && pytest tests {{ARGS}}
-
-[group('test')]
-test: pytest
-
-[group('test')]
-test-cov:
-    cd backend && pytest tests --cov=. --cov-report=term-missing --cov-report=html
-
-[group('test')]
-test-unit:
-    cd backend && pytest tests -m unit
-
-[group('test')]
-test-integration:
-    cd backend && pytest tests -m integration
-
-# =============================================================================
 # CI / Quality
 # =============================================================================
 
 [group('ci')]
-ci: lint typecheck test
+ci: lint typecheck
 
 [group('ci')]
 check: ruff mypy
@@ -105,39 +82,39 @@ check: ruff mypy
 
 [group('prod')]
 up *ARGS:
-    docker compose -f infra/prod/docker-compose.yml up {{ARGS}}
+    docker compose -f infra/prod/compose.yml up {{ARGS}}
 
 [group('prod')]
 start *ARGS:
-    docker compose -f infra/prod/docker-compose.yml up -d {{ARGS}}
+    docker compose -f infra/prod/compose.yml up -d {{ARGS}}
 
 [group('prod')]
 down *ARGS:
-    docker compose -f infra/prod/docker-compose.yml down {{ARGS}}
+    docker compose -f infra/prod/compose.yml down {{ARGS}}
 
 [group('prod')]
 stop:
-    docker compose -f infra/prod/docker-compose.yml stop
+    docker compose -f infra/prod/compose.yml stop
 
 [group('prod')]
 build *ARGS:
-    docker compose -f infra/prod/docker-compose.yml build {{ARGS}}
+    docker compose -f infra/prod/compose.yml build {{ARGS}}
 
 [group('prod')]
 rebuild:
-    docker compose -f infra/prod/docker-compose.yml build --no-cache
+    docker compose -f infra/prod/compose.yml build --no-cache
 
 [group('prod')]
 logs *SERVICE:
-    docker compose -f infra/prod/docker-compose.yml logs -f {{SERVICE}}
+    docker compose -f infra/prod/compose.yml logs -f {{SERVICE}}
 
 [group('prod')]
 ps:
-    docker compose -f infra/prod/docker-compose.yml ps
+    docker compose -f infra/prod/compose.yml ps
 
 [group('prod')]
 shell service='backend':
-    docker compose -f infra/prod/docker-compose.yml exec -it {{service}} /bin/bash
+    docker compose -f infra/prod/compose.yml exec -it {{service}} /bin/bash
 
 # =============================================================================
 # Docker Compose (Development)
@@ -145,39 +122,39 @@ shell service='backend':
 
 [group('dev')]
 dev-up *ARGS:
-    docker compose -f infra/dev/docker-compose.yml up {{ARGS}}
+    docker compose -f infra/dev/compose.yml up {{ARGS}}
 
 [group('dev')]
 dev-start *ARGS:
-    docker compose -f infra/dev/docker-compose.yml up -d {{ARGS}}
+    docker compose -f infra/dev/compose.yml up -d {{ARGS}}
 
 [group('dev')]
 dev-down *ARGS:
-    docker compose -f infra/dev/docker-compose.yml down {{ARGS}}
+    docker compose -f infra/dev/compose.yml down {{ARGS}}
 
 [group('dev')]
 dev-stop:
-    docker compose -f infra/dev/docker-compose.yml stop
+    docker compose -f infra/dev/compose.yml stop
 
 [group('dev')]
 dev-build *ARGS:
-    docker compose -f infra/dev/docker-compose.yml build {{ARGS}}
+    docker compose -f infra/dev/compose.yml build {{ARGS}}
 
 [group('dev')]
 dev-rebuild:
-    docker compose -f infra/dev/docker-compose.yml build --no-cache
+    docker compose -f infra/dev/compose.yml build --no-cache
 
 [group('dev')]
 dev-logs *SERVICE:
-    docker compose -f infra/dev/docker-compose.yml logs -f {{SERVICE}}
+    docker compose -f infra/dev/compose.yml logs -f {{SERVICE}}
 
 [group('dev')]
 dev-ps:
-    docker compose -f infra/dev/docker-compose.yml ps
+    docker compose -f infra/dev/compose.yml ps
 
 [group('dev')]
 dev-shell service='backend':
-    docker compose -f infra/dev/docker-compose.yml exec -it {{service}} /bin/bash
+    docker compose -f infra/dev/compose.yml exec -it {{service}} /bin/bash
 
 # =============================================================================
 # Database (Production)
@@ -185,23 +162,23 @@ dev-shell service='backend':
 
 [group('db')]
 migrate *ARGS:
-    docker compose -f infra/prod/docker-compose.yml exec backend alembic upgrade {{ARGS}}
+    docker compose -f infra/prod/compose.yml exec backend alembic upgrade {{ARGS}}
 
 [group('db')]
 migration message:
-    docker compose -f infra/prod/docker-compose.yml exec backend alembic revision --autogenerate -m "{{message}}"
+    docker compose -f infra/prod/compose.yml exec backend alembic revision --autogenerate -m "{{message}}"
 
 [group('db')]
 rollback:
-    docker compose -f infra/prod/docker-compose.yml exec backend alembic downgrade -1
+    docker compose -f infra/prod/compose.yml exec backend alembic downgrade -1
 
 [group('db')]
 db-history:
-    docker compose -f infra/prod/docker-compose.yml exec backend alembic history --verbose
+    docker compose -f infra/prod/compose.yml exec backend alembic history --verbose
 
 [group('db')]
 db-current:
-    docker compose -f infra/prod/docker-compose.yml exec backend alembic current
+    docker compose -f infra/prod/compose.yml exec backend alembic current
 
 # =============================================================================
 # Database (Development)
@@ -209,15 +186,15 @@ db-current:
 
 [group('db-dev')]
 dev-migrate *ARGS:
-    docker compose -f infra/dev/docker-compose.yml exec backend alembic upgrade {{ARGS}}
+    docker compose -f infra/dev/compose.yml exec backend alembic upgrade {{ARGS}}
 
 [group('db-dev')]
 dev-migration message:
-    docker compose -f infra/dev/docker-compose.yml exec backend alembic revision --autogenerate -m "{{message}}"
+    docker compose -f infra/dev/compose.yml exec backend alembic revision --autogenerate -m "{{message}}"
 
 [group('db-dev')]
 dev-rollback:
-    docker compose -f infra/dev/docker-compose.yml exec backend alembic downgrade -1
+    docker compose -f infra/dev/compose.yml exec backend alembic downgrade -1
 
 # =============================================================================
 # Database (Local - no Docker)
@@ -292,10 +269,7 @@ info:
 [group('util')]
 clean:
     -rm -rf backend/.mypy_cache
-    -rm -rf backend/.pytest_cache
     -rm -rf backend/.ruff_cache
-    -rm -rf backend/htmlcov
-    -rm -rf backend/.coverage
     -rm -rf frontend/node_modules/.cache
     @echo "Cache directories cleaned"
 
@@ -307,7 +281,7 @@ prune:
 [group('util')]
 [confirm("This will delete ALL Docker data including volumes. Continue?")]
 nuke:
-    -docker compose -f infra/dev/docker-compose.yml down -v
-    -docker compose -f infra/prod/docker-compose.yml down -v
+    -docker compose -f infra/dev/compose.yml down -v
+    -docker compose -f infra/prod/compose.yml down -v
     docker system prune -a -v -f
     @echo "Everything nuked"

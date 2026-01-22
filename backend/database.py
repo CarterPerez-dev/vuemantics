@@ -1,9 +1,5 @@
 """
-Database connection and session management using asyncpg.
-
-Provides async PostgreSQL connection pooling with pgvector support.
-Uses raw asyncpg for maximum performance and control over queries.
----
+ⒸAngelaMos | 2026
 /backend/database.py
 """
 
@@ -81,10 +77,17 @@ class DatabasePool:
 
     async def _init_connection(self, conn: Connection) -> None:
         """
-        Initialize individual connection.
-        Vector type registration happens after extension verification.
+        Initialize individual connection with vector codec.
         """
-        pass
+        try:
+            await conn.set_type_codec(
+                "vector",
+                encoder = lambda v: f"[{','.join(map(str, v))}]",
+                decoder = lambda v: list(map(float, v[1:-1].split(","))),
+                schema = "public",
+            )
+        except asyncpg.PostgresError:
+            pass
 
     async def _verify_pgvector(self) -> None:
         """

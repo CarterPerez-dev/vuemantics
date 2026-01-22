@@ -1,4 +1,4 @@
-# PG-VENV
+# VueMantic
 ## ©AngelaMos | ©CertGames | 2026
 ```ruby
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣀⣤⣤⣤⣤⣄⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -33,17 +33,16 @@
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠉⠉⠉⠉⠛⠛⠛⠛⠛⠛⠋⠉⠉⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ```
 ---
-# Multimodal Search System - PG-VENV
+# Multimodal Search System - VueMantic
 
 A smart camera roll application that revolutionizes how users search through their personal media collections by leveraging AI to understand content semantically.
 
 ## Prerequisites
 
 - Docker and Docker Compose
-- Python 3.10+
-- Node.js 18+
-- OpenAI API key
-- Google Gemini API key
+- Python 3.13+
+- Node.js 20+
+- Ollama (for local AI models)
 
 ## Quick Start
 
@@ -53,17 +52,21 @@ A smart camera roll application that revolutionizes how users search through the
    cd vuemantics
    ```
 
-2. **Run the setup script**
+2. **Install Ollama and pull models**
    ```bash
-   chmod +x setup.sh
-   ./setup.sh
+   # Install Ollama (if not already installed)
+   curl -fsSL https://ollama.com/install.sh | sh
+
+   # Pull required models
+   ollama pull qwen2.5vl:7b
+   ollama pull bge-m3
    ```
 
-3. **Configure API keys**
-   Create `infra/dev/env/.env.dev` from `.env.example` and add your API keys:
-   ```env
-   OPENAI_API_KEY="your-openai-key"
-   GEMINI_API_KEY="your-gemini-key"
+3. **Configure environment**
+   Copy `.env.example` to `.env` and configure settings:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your settings (default values work for local development)
    ```
 
 4. **Start the development environment**
@@ -106,16 +109,11 @@ just biome-fix           # Auto-fix frontend
 just mypy                # Run mypy on backend
 just tsc                 # Run TypeScript check on frontend
 
-# Testing
-just test                # Run pytest
-just test-cov            # Run tests with coverage
-
 # Database
 just dev-migrate head    # Run migrations (dev)
 just dev-migration "msg" # Create new migration (dev)
 
 # Setup
-just setup               # Run setup script
 just install-frontend    # Install frontend deps
 just install-backend     # Install backend deps
 
@@ -129,7 +127,7 @@ just info                # Show project info
 - **Backend**: FastAPI with async support
 - **Database**: PostgreSQL 16 with pgvector extension
 - **Cache**: Redis for performance optimization
-- **AI Models**: 
-  - Gemini Pro 2.5 for multimodal analysis
-  - OpenAI text-embedding-3-small for semantic search
+- **AI Models** (via Ollama - 100% local, $0 cost):
+  - Qwen2.5-VL-7B for multimodal image/video analysis
+  - bge-m3 for semantic embeddings (1024-dim, 72% MTEB score)
 - **Frontend**: React + TypeScript + Vite + Tailwind CSS

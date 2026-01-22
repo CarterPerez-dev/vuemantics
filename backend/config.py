@@ -1,10 +1,6 @@
 """
-Application configuration using Pydantic Settings.
----
-Loads configuration from environment variables with validation and type conversion.
-Follows 12-factor app principles for configuration management.
----
-/backend/config.py
+ⒸAngelaMos | 2026
+config.py
 """
 
 import warnings
@@ -15,12 +11,16 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+_ENV_FILE = _PROJECT_ROOT / ".env"
+
+
 class Settings(BaseSettings):
     """
     Application settings loaded from environment variables.
     """
     model_config = SettingsConfigDict(
-        env_file = ".env",
+        env_file = _ENV_FILE,
         env_file_encoding = "utf-8",
         case_sensitive = False,
         extra = "ignore",  # Ignore extra env vars
@@ -85,23 +85,33 @@ class Settings(BaseSettings):
         description = "JWT signing algorithm"
     )
 
-    # AI Services
-    openai_api_key: str = Field(
-        default = "",
-        description = "OpenAI API key for embeddings"
+    # Local AI Services
+    ollama_host: str = Field(
+        default = "http://localhost:11434",
+        description = "Ollama API host"
     )
-    gemini_api_key: str = Field(
-        default = "",
-        description = "Google Gemini API key for media analysis"
+    vision_model: str = Field(
+        default = "qwen2.5vl:7b",
+        description = "Ollama vision model for image/video analysis"
     )
-    embedding_model: str = Field(
-        default = "text-embedding-3-small",
-        description = "OpenAI embedding model to use"
+    local_embedding_model: str = Field(
+        default = "BAAI/bge-m3",
+        description = "Local embedding model (bge-m3)"
     )
-    embedding_dimensions: int = Field(
-        default = 1536,
+    local_embedding_dimensions: int = Field(
+        default = 1024,
         gt = 0,
-        description = "Embedding vector dimensions"
+        description = "Local embedding vector dimensions"
+    )
+    max_concurrent_vision: int = Field(
+        default = 1,
+        ge = 1,
+        description = "Max concurrent vision inferences"
+    )
+    max_concurrent_embedding: int = Field(
+        default = 2,
+        ge = 1,
+        description = "Max concurrent embedding operations"
     )
 
     # Storage
@@ -179,6 +189,16 @@ class Settings(BaseSettings):
             description = "Thumbnail dimensions (width, height)"
         )
 
+    @field_validator("cors_origins", mode = "before")
+    @classmethod
+    def parse_cors_origins(cls, v) -> list[str]:
+        """
+        Parse CORS origins from comma-separated string or list.
+        """
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(",")]
+        return v
+
     @field_validator("environment")
     @classmethod
     def validate_environment(cls, v: str) -> str:
@@ -190,14 +210,6 @@ class Settings(BaseSettings):
             raise ValueError(f"environment must be one of {allowed}")
         return v
 
-    @field_validator("upload_path")
-    @classmethod
-    def ensure_upload_path_exists(cls, v: Path) -> Path:
-        """
-        Ensure upload directory exists, create if not.
-        """
-        v.mkdir(parents = True, exist_ok = True)
-        return v
 
     @field_validator("secret_key")
     @classmethod
@@ -211,20 +223,6 @@ class Settings(BaseSettings):
             warnings.warn(
                 "Using default secret key in production is insecure!",
                 stacklevel = 2
-            )
-        return v
-
-    @field_validator("openai_api_key", "gemini_api_key")
-    @classmethod
-    def validate_api_keys(cls, v: str, info) -> str:
-        """
-        Validate API keys are present.
-        """
-        env = info.data.get("environment")
-        if not v and env not in ("development", "testing"):
-            field_name = info.field_name
-            raise ValueError(
-                f"{field_name} is required in {env} environment"
             )
         return v
 
@@ -266,5 +264,4 @@ def get_settings() -> Settings:
     return Settings()
 
 
-# Global settings instance for easy import
 settings = get_settings()

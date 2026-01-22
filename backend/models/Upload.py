@@ -53,7 +53,7 @@ class Upload(BaseModel):
         mime_type: MIME type of file
         processing_status: Current processing state
         gemini_summary: AI-generated description
-        embedding: 1536-dimensional vector from OpenAI
+        embedding_local: 1024-dimensional vector from bge-m3
         thumbnail_path: Path to generated thumbnail
         error_message: Error details if processing failed
         metadata: Additional file metadata (JSON)
@@ -80,23 +80,22 @@ class Upload(BaseModel):
         )
         self.gemini_summary: str | None = kwargs.get("gemini_summary")
 
-        # Handle embedding - could be string from database or list from API
-        embedding_raw = kwargs.get("embedding")
-        if isinstance(embedding_raw, str):
-            # Parse string format from database: "[0.1,0.2,0.3]"
+        # Handle embedding (1024-dim from bge-m3)
+        embedding_local_raw = kwargs.get("embedding_local")
+        if isinstance(embedding_local_raw, str):
             try:
-                if embedding_raw.startswith(
-                        "[") and embedding_raw.endswith("]"):
-                    self.embedding = list(
+                if embedding_local_raw.startswith(
+                        "[") and embedding_local_raw.endswith("]"):
+                    self.embedding_local = list(
                         map(float,
-                            embedding_raw[1 :-1].split(","))
+                            embedding_local_raw[1 :-1].split(","))
                     )
                 else:
-                    self.embedding = None
+                    self.embedding_local = None
             except (ValueError, AttributeError):
-                self.embedding = None
+                self.embedding_local = None
         else:
-            self.embedding = embedding_raw
+            self.embedding_local = embedding_local_raw
 
         self.thumbnail_path: str | None = kwargs.get("thumbnail_path")
         self.error_message: str | None = kwargs.get("error_message")
@@ -133,7 +132,7 @@ class Upload(BaseModel):
                 -- Processing
                 processing_status VARCHAR(20) NOT NULL DEFAULT 'pending',
                 gemini_summary TEXT,
-                embedding vector(1536),
+                embedding_local vector(1024),  -- bge-m3 embeddings
 
                 -- Metadata
                 thumbnail_path TEXT,
@@ -288,16 +287,18 @@ class Upload(BaseModel):
         user_id: UUID | None = None,
         limit: int = 20,
         similarity_threshold: float = 0.0,
+        use_local: bool = True,
     ) -> list[tuple["Upload",
                     float]]:
         """
         Search uploads by vector similarity.
 
         Args:
-            query_embedding: 1536-dimensional query vector
+            query_embedding: Query vector (1024-dim bge-m3)
             user_id: Optional filter by user
             limit: Maximum results
             similarity_threshold: Minimum similarity score (0-1)
+            use_local: If True, search embedding_local, else embedding
 
         Returns:
             List of (Upload, similarity_score) tuples
@@ -308,9 +309,11 @@ class Upload(BaseModel):
         if user_id:
             filters["user_id"] = user_id
 
+        embedding_column = "embedding_local" if use_local else "embedding"
+
         records = await database.db.vector_similarity_search(
             table_name = cls.__tablename__,
-            embedding_column = "embedding",
+            embedding_column = embedding_column,
             query_embedding = query_embedding,
             limit = limit,
             filters = filters,
@@ -354,7 +357,7 @@ class Upload(BaseModel):
                 gemini_summary, embedding, thumbnail_path,
                 error_message, metadata
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::vector, $10, $11, $12)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             RETURNING *
         """
 
@@ -391,7 +394,7 @@ class Upload(BaseModel):
                 mime_type = $5,
                 processing_status = $6,
                 gemini_summary = $7,
-                embedding = $8::vector,
+                embedding = $8,
                 thumbnail_path = $9,
                 error_message = $10,
                 metadata = $11,
@@ -459,44 +462,62 @@ class Upload(BaseModel):
     async def update_analysis(
         self,
         gemini_summary: str,
-        embedding: list[float]
+        embedding: list[float],
+        use_local: bool = True
     ) -> None:
         """
         Update with AI analysis results.
 
         Args:
-            gemini_summary: Text description from Gemini
-            embedding: Vector embedding from OpenAI
+            gemini_summary: Text description from vision model
+            embedding: Vector embedding (1024-dim bge-m3)
+            use_local: If True, save to embedding_local (default)
         """
         if self.id is None:
             raise ValueError("Cannot update analysis for unsaved upload")
 
-        # Pass the embedding list directly to PostgreSQL
-        logger.info(
-            f"DEBUG: Passing embedding directly as list, length: {len(embedding) if embedding else 'None'}"
-        )
+        if isinstance(embedding, list) and len(embedding) > 0 and isinstance(embedding[0], list):
+            embedding_list = embedding[0]
+        elif isinstance(embedding, list) and len(embedding) > 0 and isinstance(embedding[0], (int, float)):
+            embedding_list = embedding
+        else:
+            raise ValueError(f"Invalid embedding format: {type(embedding)}")
 
-        query = """
-            UPDATE uploads
-            SET gemini_summary = $1,
-                embedding = $2::vector,
-                processing_status = $3,
-                updated_at = NOW()
-            WHERE id = $4
-            RETURNING updated_at
-        """
+        if use_local:
+            query = """
+                UPDATE uploads
+                SET gemini_summary = $1,
+                    embedding_local = $2,
+                    processing_status = $3,
+                    updated_at = NOW()
+                WHERE id = $4
+                RETURNING updated_at
+            """
+        else:
+            query = """
+                UPDATE uploads
+                SET gemini_summary = $1,
+                    embedding = $2,
+                    processing_status = $3,
+                    updated_at = NOW()
+                WHERE id = $4
+                RETURNING updated_at
+            """
 
         updated_at = await database.db.fetchval(
             query,
             gemini_summary,
-            embedding,
+            embedding_list,
             ProcessingStatus.COMPLETED,
             self.id
         )
 
         if updated_at:
             self.gemini_summary = gemini_summary
-            self.embedding = embedding
+            if use_local:
+                self.embedding_local = embedding_list
+            else:
+                self.embedding = embedding_list
             self.processing_status = ProcessingStatus.COMPLETED
             self.updated_at = updated_at
 

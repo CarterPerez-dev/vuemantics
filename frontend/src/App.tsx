@@ -1,99 +1,36 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
-import { useAuth } from '@/hooks/useAuth'
-import Layout from '@/components/Layout/Layout'
-import Home from '@/pages/Home/Home'
-import Login from '@/pages/Login/Login'
-import Register from '@/pages/Register/Register'
-import Dashboard from '@/pages/Dashboard/Dashboard'
-import Upload from '@/pages/Upload/Upload'
-import NotFound from '@/pages/NotFound/NotFound'
-import './App.css'
+// ===========================
+// ©AngelaMos | 2025
+// App.tsx
+// ===========================
 
-// Protected route wrapper
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoadingUser } = useAuth()
-  const location = useLocation()
+import { QueryClientProvider } from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { RouterProvider } from 'react-router-dom'
+import { Toaster } from 'sonner'
 
-  if (isLoadingUser) {
-    return (
-      <div className="pgv-loading-container">
-        <div className="pgv-loading-spinner"></div>
-        <p className="pgv-loading-text">Loading...</p>
-      </div>
-    )
-  }
+import { queryClient } from '@/core/api'
+import { router } from '@/core/app/routers'
+import '@/core/app/toast.module.scss'
 
-  if (!isAuthenticated) {
-    // Redirect to login but save the attempted location
-    return <Navigate to="/login" state={{ from: location }} replace />
-  }
-
-  return <>{children}</>
-}
-
-// Public route wrapper (redirects to dashboard if already authenticated)
-function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth()
-  const location = useLocation()
-  
-  if (isAuthenticated) {
-    // Get the page they were trying to visit or default to dashboard
-    const from = location.state?.from?.pathname || '/dashboard'
-    return <Navigate to={from} replace />
-  }
-
-  return <>{children}</>
-}
-
-function App() {
-  const { setupTokenRefresh } = useAuth()
-
-  // Set up token auto-refresh
-  useEffect(() => {
-    const cleanup = setupTokenRefresh()
-    return cleanup
-  }, [setupTokenRefresh])
-
+export default function App(): React.ReactElement {
   return (
-    <div className="app">
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<Home />} />
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          }
+    <QueryClientProvider client={queryClient}>
+      <div className="app">
+        <RouterProvider router={router} />
+        <Toaster
+          position="top-right"
+          duration={2000}
+          theme="dark"
+          toastOptions={{
+            style: {
+              background: 'hsl(0, 0%, 12.2%)',
+              border: '1px solid hsl(0, 0%, 18%)',
+              color: 'hsl(0, 0%, 98%)',
+            },
+          }}
         />
-        <Route
-          path="/register"
-          element={
-            <PublicRoute>
-              <Register />
-            </PublicRoute>
-          }
-        />
-
-        {/* Protected routes with layout */}
-        <Route
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/upload" element={<Upload />} />
-        </Route>
-
-        {/* 404 */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </div>
+      </div>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   )
 }
-
-export default App

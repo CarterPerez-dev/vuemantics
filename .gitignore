@@ -220,3 +220,4 @@ backend/PG_VENV.egg-info
 coverage.xml
 htmlcov/
 .vite
+CURRENT_STATUS.md

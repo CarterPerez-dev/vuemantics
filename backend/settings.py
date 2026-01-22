@@ -1,28 +1,16 @@
 """
-Application-wide settings and constants.
-
-Centralized location for configuration that doesn't come from environment variables.
----
+ⒸAngelaMos | 2026
 /backend/settings.py
 """
 
 from typing import Final
 
-from passlib.context import CryptContext
-
-# Password hashing configuration
-pwd_context = CryptContext(
-    schemes = ["bcrypt"],
-    deprecated = "auto",
-    bcrypt__rounds = 14
-)
-
 # Password validation constants
 MIN_PASSWORD_LENGTH: Final[int] = 8
-MAX_PASSWORD_LENGTH: Final[int] = 69
+MAX_PASSWORD_LENGTH: Final[int] = 72  # bcrypt max
 
 # Embedding configuration
-EMBEDDING_DIMENSIONS: Final[int] = 1536  # OpenAI text-embedding-3-small dimensions
+EMBEDDING_DIMENSIONS: Final[int] = 1024  # bge-m3 dimensions
 
 # Special characters for password validation
 SPECIAL_CHARACTERS: Final[str] = "!@#$%^&*()_+-=[]{}|;:,.<>?"

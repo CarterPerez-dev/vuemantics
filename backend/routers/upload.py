@@ -40,7 +40,7 @@ from services import (
     FileTooLargeError,
     StorageError,
     UnsupportedFileTypeError,
-    ai_service,
+    local_ai_service,
     storage_service,
 )
 
@@ -99,7 +99,7 @@ async def process_upload_background(
 
         # Queue for AI processing
         logger.info(f"Starting AI processing for upload {upload_id}")
-        await ai_service.analyze_media(upload_id)
+        await local_ai_service.analyze_media(upload_id)
         logger.info(f"AI processing completed for upload {upload_id}")
 
     except Exception as e:

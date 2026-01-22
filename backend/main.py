@@ -1,10 +1,6 @@
 """
-Main FastAPI application entry point.
-
-Configures the app with middleware, routers, and lifecycle events.
-Handles database connections, CORS, rate limiting, and error handling.
----
-/backend/main.py
+ⒸAngelaMos | 2026
+main.py
 """
 
 import logging
@@ -172,10 +168,10 @@ async def add_request_id(request: Request, call_next):
 
 
 # Routers
-app.include_router(auth.router, prefix = "/api")
-app.include_router(health.router, prefix = "/api")
-app.include_router(upload.router, prefix = "/api")
-app.include_router(search.router, prefix = "/api")
+app.include_router(auth.router)
+app.include_router(health.router)
+app.include_router(upload.router)
+app.include_router(search.router)
 
 
 # Root endpoint

@@ -12,6 +12,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    field_serializer,
     field_validator,
 )
 
@@ -40,7 +41,7 @@ class UploadResponse(TimestampMixin):
                 "mime_type": "image/jpeg",
                 "processing_status": "completed",
                 "gemini_summary": "A beach scene with palm trees and sunset",
-                "embedding": [0.123, -0.456, 0.789],  # ... 1536 dimensions
+                "embedding_local": [0.123, -0.456, 0.789],  # ... 1024 dimensions
                 "thumbnail_path": "/storage/uploads/user123/file456/thumb_vacation_photo.jpg",
                 "error_message": None,
                 "metadata": {"width": 1920, "height": 1080},
@@ -66,13 +67,13 @@ class UploadResponse(TimestampMixin):
         "failed"] = Field(description = "Current processing status")
     gemini_summary: str | None = Field(
         default = None,
-        description = "AI-generated description from Gemini"
+        description = "AI-generated description from vision model"
     )
-    embedding: list[float] | None = Field(
+    embedding_local: list[float] | None = Field(
         default = None,
-        description = "1536-dimensional embedding vector from OpenAI",
-        min_length = 1536,
-        max_length = 1536,
+        description = "1024-dimensional embedding vector from bge-m3",
+        min_length = 1024,
+        max_length = 1024,
     )
     has_embedding: bool = Field(
         default = False,
@@ -92,7 +93,7 @@ class UploadResponse(TimestampMixin):
                        description = "Additional file metadata"
                    )
 
-    @field_validator("embedding")
+    @field_validator("embedding_local")
     @classmethod
     def validate_embedding_dimensions(cls,
                                       v: list[float] | None
@@ -104,6 +105,24 @@ class UploadResponse(TimestampMixin):
             raise ValueError(
                 f"Embedding must have exactly {EMBEDDING_DIMENSIONS} dimensions, got {len(v)}"
             )
+        return v
+
+    @field_serializer("file_path")
+    def serialize_file_path(self, v: str) -> str:
+        """
+        Prepend /files/ to relative path for nginx serving.
+        """
+        if v and not v.startswith("/files/"):
+            return f"/files/{v}"
+        return v
+
+    @field_serializer("thumbnail_path")
+    def serialize_thumbnail_path(self, v: str | None) -> str | None:
+        """
+        Prepend /files/ to relative thumbnail path for nginx serving.
+        """
+        if v and not v.startswith("/files/"):
+            return f"/files/{v}"
         return v
 
 

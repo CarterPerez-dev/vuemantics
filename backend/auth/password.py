@@ -10,11 +10,12 @@ Includes validation for strong passwords with multiple character types.
 import re
 import secrets
 
+import bcrypt
+
 from settings import (
     MAX_PASSWORD_LENGTH,
     MIN_PASSWORD_LENGTH,
     SPECIAL_CHARACTERS,
-    pwd_context,
 )
 
 
@@ -26,7 +27,10 @@ def hash_password(password: str) -> str:
     if not is_valid:
         raise ValueError(error_msg)
 
-    return pwd_context.hash(password)
+    password_bytes = password.encode('utf-8')
+    salt = bcrypt.gensalt(rounds = 14)
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    return hashed.decode('utf-8')
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -34,7 +38,9 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     Verify a password against its hash.
     """
     try:
-        return pwd_context.verify(plain_password, hashed_password)
+        password_bytes = plain_password.encode('utf-8')
+        hashed_bytes = hashed_password.encode('utf-8')
+        return bcrypt.checkpw(password_bytes, hashed_bytes)
     except Exception:
         return False
 
