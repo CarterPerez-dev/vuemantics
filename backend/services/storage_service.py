@@ -1,14 +1,11 @@
 """
-Storage service for handling file uploads and operations.
-
-Provides abstraction over local filesystem storage with interface
-designed for easy migration to cloud storage (S3/GCS) later.
----
-/backend/services/storage_service.py
+ⒸAngelaMos | 2026
+storage_service.py
 """
 
 import asyncio
 import logging
+import os
 import shutil
 from pathlib import Path
 from typing import BinaryIO
@@ -18,52 +15,29 @@ import aiofiles
 import cv2
 from PIL import Image
 
-from config import settings
+import config
+from core.validators import FileValidator
+from core.validators.file import IMAGE_EXTENSIONS, VIDEO_EXTENSIONS
 
 
 logger = logging.getLogger(__name__)
 
 
-class StorageError(Exception):
-    """
-    Base exception for storage operations.
-    """
-
-    pass
-
-
-class FileTooLargeError(StorageError):
-    """
-    Raised when uploaded file exceeds size limit.
-    """
-
-    pass
-
-
-class UnsupportedFileTypeError(StorageError):
-    """
-    Raised when file type is not supported.
-    """
-
-    pass
-
-
 class StorageService:
     """
-    Handles file storage operations with cloud-ready interface.
+    Handles file storage operations with cloud-ready interface
 
     Currently uses local filesystem but designed for easy migration
-    to cloud storage services like S3 or Google Cloud Storage.
+    to cloud storage services like S3 or Google Cloud Storage
     """
     def __init__(self, base_path: Path | None = None):
         """
-        Initialize storage service.
+        Initialize storage service
 
         Args:
             base_path: Base directory for uploads (defaults to settings)
         """
-        self.base_path = base_path or settings.upload_path
-        self.base_path.mkdir(parents = True, exist_ok = True)
+        self.base_path = base_path or config.settings.upload_path
         logger.info(
             f"Storage service initialized with base path: {self.base_path}"
         )
@@ -76,42 +50,6 @@ class StorageService:
         """
         return self.base_path / str(user_id) / str(upload_id)
 
-    def _get_file_extension(self, filename: str, mime_type: str) -> str:
-        """
-        Get file extension from filename or mime type.
-        """
-        # Try filename first
-        if "." in filename:
-            ext = filename.split(".")[-1].lower()
-            if ext in {
-                    "jpg",
-                    "jpeg",
-                    "png",
-                    "webp",
-                    "heic",
-                    "heif",
-                    "mp4",
-                    "mov",
-                    "avi",
-                    "webm",
-            }:
-                return ext
-
-        # Fallback to mime type
-        mime_to_ext = {
-            "image/jpeg": "jpg",
-            "image/jpg": "jpg",
-            "image/png": "png",
-            "image/webp": "webp",
-            "image/heic": "heic",
-            "image/heif": "heif",
-            "video/mp4": "mp4",
-            "video/quicktime": "mov",
-            "video/x-msvideo": "avi",
-            "video/webm": "webm",
-        }
-        return mime_to_ext.get(mime_type, "bin")
-
     async def validate_file(
         self,
         filename: str,
@@ -120,7 +58,7 @@ class StorageService:
     ) -> tuple[str,
                str]:
         """
-        Validate uploaded file.
+        Validate uploaded file using FileValidator.
 
         Args:
             filename: Original filename
@@ -130,23 +68,8 @@ class StorageService:
         Returns:
             Tuple of (file_type, extension)
         """
-        # Check size
-        if file_size > settings.max_upload_size:
-            raise FileTooLargeError(
-                f"File size {file_size} exceeds limit of {settings.max_upload_size} bytes"
-            )
-
-        # Check MIME type
-        if mime_type not in settings.allowed_mime_types:
-            raise UnsupportedFileTypeError(
-                f"MIME type {mime_type} is not supported"
-            )
-
-        # Determine file type
-        file_type = "image" if mime_type in settings.allowed_image_types else "video"
-        extension = self._get_file_extension(filename, mime_type)
-
-        return file_type, extension
+        result = FileValidator.validate(filename, mime_type, file_size)
+        return result.file_type, result.extension
 
     async def save_upload(
         self,
@@ -178,7 +101,8 @@ class StorageService:
         # Write file asynchronously
         async with aiofiles.open(file_path, "wb") as f:
             # Read chunks to handle large files
-            while chunk := file_content.read(1024 * 1024):  # 1MB chunks
+            while chunk := file_content.read(config.FILE_UPLOAD_CHUNK_SIZE
+                                             ):
                 await f.write(chunk)
 
         # Return relative path for database storage
@@ -209,7 +133,7 @@ class StorageService:
         try:
             upload_dir = self._get_upload_dir(user_id, upload_id)
             original_path = upload_dir / f"original.{extension}"
-            thumb_path = upload_dir / "thumb_256.jpg"
+            thumb_path = upload_dir / config.THUMBNAIL_FILENAME
 
             if file_type == "image":
                 await self._generate_image_thumbnail(
@@ -236,7 +160,7 @@ class StorageService:
         thumb_path: Path
     ) -> None:
         """
-        Generate thumbnail for image.
+        Generate thumbnail for image
         """
         # Run in thread pool to avoid blocking
         loop = asyncio.get_event_loop()
@@ -253,7 +177,7 @@ class StorageService:
         thumb_path: Path
     ) -> None:
         """
-        Synchronous image thumbnail generation.
+        Synchronous image thumbnail generation
         """
         with Image.open(source_path) as original_img:
             # Convert RGBA to RGB if needed
@@ -276,12 +200,16 @@ class StorageService:
 
             # Thumbnail with aspect ratio preserved
             img.thumbnail(
-                settings.thumbnail_size,
+                config.settings.thumbnail_size,
                 Image.Resampling.LANCZOS
             )
 
-            # Save as JPEG
-            img.save(thumb_path, "JPEG", quality = 85, optimize = True)
+            img.save(
+                thumb_path,
+                "JPEG",
+                quality = config.THUMBNAIL_QUALITY,
+                optimize = True
+            )
 
     async def _generate_video_thumbnail(
         self,
@@ -289,7 +217,7 @@ class StorageService:
         thumb_path: Path
     ) -> None:
         """
-        Generate thumbnail from video first frame.
+        Generate thumbnail from video first frame
         """
         # Run in thread pool to avoid blocking
         loop = asyncio.get_event_loop()
@@ -306,7 +234,7 @@ class StorageService:
         thumb_path: Path
     ) -> None:
         """
-        Synchronous video thumbnail generation.
+        Synchronous video thumbnail generation
         """
         cap = cv2.VideoCapture(str(source_path))
         try:
@@ -319,14 +247,17 @@ class StorageService:
                 # Convert to PIL Image
                 img = Image.fromarray(frame_rgb)
 
-                # Thumbnail with aspect ratio preserved
                 img.thumbnail(
-                    settings.thumbnail_size,
+                    config.settings.thumbnail_size,
                     Image.Resampling.LANCZOS
                 )
 
-                # Save as JPEG
-                img.save(thumb_path, "JPEG", quality = 85, optimize = True)
+                img.save(
+                    thumb_path,
+                    "JPEG",
+                    quality = config.THUMBNAIL_QUALITY,
+                    optimize = True
+                )
         finally:
             cap.release()
 
@@ -335,7 +266,7 @@ class StorageService:
         user_id: UUID,
         upload_id: UUID,
         extension: str,
-        max_frames: int = 10
+        max_frames: int = config.MAX_VIDEO_FRAMES
     ) -> list[str]:
         """
         Extract frames from video for AI analysis.
@@ -376,7 +307,7 @@ class StorageService:
         max_frames: int
     ) -> list[str]:
         """
-        Synchronous video frame extraction.
+        Synchronous video frame extraction
         """
         cap = cv2.VideoCapture(str(video_path))
         frame_paths = []
@@ -410,7 +341,7 @@ class StorageService:
 
     async def delete_upload(self, user_id: UUID, upload_id: UUID) -> bool:
         """
-        Delete all files for an upload.
+        Delete all files for an upload
 
         Args:
             user_id: User's ID
@@ -468,22 +399,16 @@ class StorageService:
             stats = file_path.stat()
 
             # Get image/video metadata
-            if file_path.suffix.lower() in {".jpg",
-                                            ".jpeg",
-                                            ".png",
-                                            ".webp"}:
+            if file_path.suffix.lower() in IMAGE_EXTENSIONS:
                 return await self._get_image_metadata(file_path, stats)
-            elif file_path.suffix.lower() in {".mp4",
-                                              ".mov",
-                                              ".avi",
-                                              ".webm"}:
+            if file_path.suffix.lower() in VIDEO_EXTENSIONS:
                 return await self._get_video_metadata(file_path, stats)
 
         return None
 
-    async def _get_image_metadata(self, file_path: Path, stats) -> dict:
+    async def _get_image_metadata(self, file_path: Path, stats: os.stat_result) -> dict:
         """
-        Extract image metadata.
+        Extract image metadata
         """
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(
@@ -493,9 +418,9 @@ class StorageService:
             stats
         )
 
-    def _get_image_metadata_sync(self, file_path: Path, stats) -> dict:
+    def _get_image_metadata_sync(self, file_path: Path, stats: os.stat_result) -> dict:
         """
-        Synchronous image metadata extraction.
+        Synchronous image metadata extraction
         """
         with Image.open(file_path) as img:
             return {
@@ -507,9 +432,9 @@ class StorageService:
                                       2),
             }
 
-    async def _get_video_metadata(self, file_path: Path, stats) -> dict:
+    async def _get_video_metadata(self, file_path: Path, stats: os.stat_result) -> dict:
         """
-        Extract video metadata.
+        Extract video metadata
         """
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(
@@ -519,9 +444,9 @@ class StorageService:
             stats
         )
 
-    def _get_video_metadata_sync(self, file_path: Path, stats) -> dict:
+    def _get_video_metadata_sync(self, file_path: Path, stats: os.stat_result) -> dict:
         """
-        Synchronous video metadata extraction.
+        Synchronous video metadata extraction
         """
         cap = cv2.VideoCapture(str(file_path))
         try:
@@ -547,5 +472,4 @@ class StorageService:
             cap.release()
 
 
-# Global instance
 storage_service = StorageService()

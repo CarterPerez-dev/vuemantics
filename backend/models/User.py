@@ -1,23 +1,24 @@
 """
-User model for authentication and user management.
-
-Handles user registration, login, and profile management.
-Password hashing is delegated to auth.password module.
----
-/backend/models/User.py
+ⒸAngelaMos | 2026
+User model for authentication and user management
+User.py
 """
 
+from __future__ import annotations
+
 from typing import Any
+from uuid import UUID
 
 from asyncpg import UniqueViolationError
 
+import config
 import database
-from models import BaseModel
+from models.Base import BaseModel
 
 
 class User(BaseModel):
     """
-    User model for authentication.
+    User model for authentication
 
     Attributes:
         id: Unique identifier (UUID)
@@ -27,7 +28,6 @@ class User(BaseModel):
         created_at: Timestamp of account creation
         updated_at: Timestamp of last update
     """
-
     __tablename__ = "users"
 
     def __init__(self, **kwargs: Any) -> None:
@@ -35,9 +35,11 @@ class User(BaseModel):
         Initialize user instance.
         """
         super().__init__(**kwargs)
+        self.id: UUID = kwargs["id"]  # Users from DB always have IDs
         self.email: str = kwargs.get("email", "")
         self.password_hash: str = kwargs.get("password_hash", "")
         self.is_active: bool = kwargs.get("is_active", True)
+        self.token_version: int = kwargs.get("token_version", 0)
 
     @classmethod
     async def create_table(cls) -> None:
@@ -50,6 +52,7 @@ class User(BaseModel):
                 email VARCHAR(255) UNIQUE NOT NULL,
                 password_hash VARCHAR(255) NOT NULL,
                 is_active BOOLEAN DEFAULT TRUE,
+                token_version INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT NOW(),
                 updated_at TIMESTAMP DEFAULT NOW()
             );
@@ -66,9 +69,9 @@ class User(BaseModel):
         email: str,
         password_hash: str,
         is_active: bool = True
-    ) -> "User":
+    ) -> User:
         """
-        Create a new user.
+        Create a new user
         """
         await cls.ensure_table_exists()
 
@@ -85,16 +88,21 @@ class User(BaseModel):
                 password_hash,
                 is_active
             )
-            return cls.from_record(record)
+            if record is None:
+                raise ValueError("Failed to create user")
+            user = cls.from_record(record)
+            if user is None:
+                raise ValueError("Failed to create user from record")
+            return user
         except UniqueViolationError as e:
             raise ValueError(
                 f"User with email {email} already exists"
             ) from e
 
     @classmethod
-    async def find_by_email(cls, email: str) -> "User | None":
+    async def find_by_email(cls, email: str) -> User | None:
         """
-        Find user by email address.
+        Find user by email address
         """
         await cls.ensure_table_exists()
 
@@ -107,9 +115,9 @@ class User(BaseModel):
         return cls.from_record(record)
 
     @classmethod
-    async def find_active_by_email(cls, email: str) -> "User | None":
+    async def find_active_by_email(cls, email: str) -> User | None:
         """
-        Find active user by email address.
+        Find active user by email address
         """
         await cls.ensure_table_exists()
 
@@ -122,11 +130,13 @@ class User(BaseModel):
         return cls.from_record(record)
 
     @classmethod
-    async def get_all_active(cls,
-                             limit: int = 100,
-                             offset: int = 0) -> list["User"]:
+    async def get_all_active(
+        cls,
+        limit: int = config.DEFAULT_QUERY_LIMIT,
+        offset: int = 0
+    ) -> list[User]:
         """
-        Get all active users with pagination.
+        Get all active users with pagination
         """
         await cls.ensure_table_exists()
 
@@ -157,12 +167,14 @@ class User(BaseModel):
             self.is_active
         )
 
+        if record is None:
+            raise RuntimeError("Insert query failed to return a record")
         for key, value in dict(record).items():
             setattr(self, key, value)
 
     async def _update(self) -> None:
         """
-        Update existing user record.
+        Update existing user record
         """
         query = """
             UPDATE users
@@ -188,7 +200,7 @@ class User(BaseModel):
 
     async def update_password(self, new_password_hash: str) -> None:
         """
-        Update user's password.
+        Update user's password and invalidate all tokens
         """
         if self.id is None:
             raise ValueError("Cannot update password for unsaved user")
@@ -196,23 +208,44 @@ class User(BaseModel):
         query = """
             UPDATE users
             SET password_hash = $1,
+                token_version = token_version + 1,
                 updated_at = NOW()
             WHERE id = $2
-            RETURNING updated_at
+            RETURNING updated_at, token_version
         """
 
-        updated_at = await database.db.fetchval(
+        record = await database.db.fetchrow(
             query,
             new_password_hash,
             self.id
         )
-        if updated_at:
+        if record:
             self.password_hash = new_password_hash
-            self.updated_at = updated_at
+            self.updated_at = record["updated_at"]
+            self.token_version = record["token_version"]
+
+    async def invalidate_tokens(self) -> None:
+        """
+        Invalidate all user tokens (for logout/security)
+        """
+        if self.id is None:
+            raise ValueError("Cannot invalidate tokens for unsaved user")
+
+        query = """
+            UPDATE users
+            SET token_version = token_version + 1,
+                updated_at = NOW()
+            WHERE id = $1
+            RETURNING token_version
+        """
+
+        token_version = await database.db.fetchval(query, self.id)
+        if token_version is not None:
+            self.token_version = token_version
 
     async def deactivate(self) -> None:
         """
-        Deactivate user account.
+        Deactivate user account
         """
         if self.id is None:
             raise ValueError("Cannot deactivate unsaved user")
@@ -232,7 +265,7 @@ class User(BaseModel):
 
     async def reactivate(self) -> None:
         """
-        Reactivate user account.
+        Reactivate user account
         """
         if self.id is None:
             raise ValueError("Cannot reactivate unsaved user")
@@ -253,7 +286,7 @@ class User(BaseModel):
     @classmethod
     async def email_exists(cls, email: str) -> bool:
         """
-        Check if email already exists.
+        Check if email already exists
         """
         await cls.ensure_table_exists()
 
@@ -264,11 +297,12 @@ class User(BaseModel):
             )
         """
 
-        return await database.db.fetchval(query, email)
+        result = await database.db.fetchval(query, email)
+        return bool(result)
 
     def to_dict(self, exclude: set[str] | None = None) -> dict[str, Any]:
         """
-        Convert to dictionary, excluding password_hash by default.
+        Convert to dictionary, excluding password_hash by default
         """
         if exclude is None:
             exclude = {"password_hash"}
@@ -280,6 +314,6 @@ class User(BaseModel):
 
     def __repr__(self) -> str:
         """
-        String representation of User.
+        String representation of User
         """
         return f"<User id={self.id} email={self.email}>"

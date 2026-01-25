@@ -1,16 +1,11 @@
 """
-Base schemas for shared components.
-
-Provides reusable schemas like pagination
-that are used across multiple endpoints.
----
-/backend/schemas/base.py
+ⒸAngelaMos | 2026
+base.py
 """
 
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Generic, TypeVar
 
 from pydantic import (
     BaseModel,
@@ -18,15 +13,13 @@ from pydantic import (
     Field,
 )
 
-
-T = TypeVar("T")
+from config import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 
 
 class PaginationParams(BaseModel):
     """
-    Pagination parameters for list endpoints.
+    Pagination parameters for list endpoints
     """
-
     model_config = ConfigDict(
         extra = "ignore",  # Allow extra fields for MVP
         str_strip_whitespace = True,
@@ -38,34 +31,33 @@ class PaginationParams(BaseModel):
         description = "Page number (1-indexed)"
     )
     page_size: int = Field(
-        default = 20,
+        default = DEFAULT_PAGE_SIZE,
         ge = 1,
-        le = 100,
-        description = "Items per page (max 100)"
+        le = MAX_PAGE_SIZE,
+        description = f"Items per page (max {MAX_PAGE_SIZE})"
     )
 
     @property
     def offset(self) -> int:
         """
-        Calculate offset for database queries.
+        Calculate offset for database queries
         """
         return (self.page - 1) * self.page_size
 
     @property
     def limit(self) -> int:
         """
-        Get limit for database queries.
+        Get limit for database queries
         """
         return self.page_size
 
 
-class PaginatedResponse(BaseModel, Generic[T]):
+class PaginatedResponse[T](BaseModel):
     """
-    Generic paginated response wrapper.
+    Generic paginated response wrapper
     """
-
     model_config = ConfigDict(
-        extra = "ignore",  # Allow extra fields for MVP
+        extra = "ignore",
     )
 
     items: list[T] = Field(description = "List of items for current page")
@@ -81,7 +73,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
                page: int,
                page_size: int) -> PaginatedResponse[T]:
         """
-        Create paginated response with calculated pages.
+        Create paginated response with calculated pages
         """
         pages = (total + page_size - 1) // page_size if total > 0 else 0
 
@@ -98,23 +90,5 @@ class TimestampMixin(BaseModel):
     """
     Mixin for models with timestamps.
     """
-
     created_at: datetime = Field(description = "Creation timestamp")
     updated_at: datetime = Field(description = "Last update timestamp")
-
-
-class ErrorResponse(BaseModel):
-    """
-    Standard error response.
-    """
-
-    model_config = ConfigDict(
-        extra = "ignore",  # Allow extra fields for MVP
-    )
-
-    detail: str = Field(description = "Error message")
-    code: str | None = Field(default = None, description = "Error code")
-    field: str | None = Field(
-        default = None,
-        description = "Field that caused error"
-    )

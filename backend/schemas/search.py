@@ -1,31 +1,36 @@
 """
-Search schemas for semantic search requests and responses.
-
-Supports advanced filtering options
-like similarity threshold, file type, and date ranges.
----
-/backend/schemas/search.py
+ⒸAngelaMos | 2026
+search.py
 """
 
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any
 from uuid import UUID
 
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    ValidationInfo,
     field_validator,
 )
 
-from schemas import UploadResponse
+from config import (
+    DEFAULT_PAGE_SIZE,
+    MAX_PAGE_SIZE,
+    MAX_QUERY_LENGTH,
+    SEARCH_DEFAULT_SIMILARITY_THRESHOLD,
+    SIMILAR_UPLOADS_DEFAULT_LIMIT,
+    SIMILAR_UPLOADS_SIMILARITY_THRESHOLD,
+)
+from models.Upload import FileType
+from schemas.upload import UploadResponse
 
 
 class SearchRequest(BaseModel):
     """
-    Semantic search request with advanced filtering options.
+    Semantic search request with advanced filtering options
     """
-
     model_config = ConfigDict(
         extra = "ignore",  # Allow extra fields for MVP
         str_strip_whitespace = True,
@@ -44,30 +49,31 @@ class SearchRequest(BaseModel):
     query: str = Field(
         description = "Natural language search query",
         min_length = 1,
-        max_length = 500,  # For now
-        examples = ["sunset over mountains", "birthday party with friends"],
+        max_length = MAX_QUERY_LENGTH,
+        examples = [
+            "sunset over mountains",
+            "birthday party with friends"
+        ],
     )
 
     limit: int = Field(
-        default = 20,
+        default = DEFAULT_PAGE_SIZE,
         ge = 1,
-        le = 100,
+        le = MAX_PAGE_SIZE,
         description = "Maximum number of results"
     )
 
     similarity_threshold: float = Field(
-        default = 0.25,
+        default = SEARCH_DEFAULT_SIMILARITY_THRESHOLD,
         ge = 0.0,
         le = 1.0,
         description = "Minimum similarity score (0-1)"
     )
 
-    file_types: list[Literal[
-        "image",
-        "video"]] | None = Field(
-            default = None,
-            description = "Filter by file types (None = all types)"
-        )
+    file_types: list[FileType] | None = Field(
+        default = None,
+        description = "Filter by file types (None = all types)"
+    )
 
     date_from: datetime | None = Field(
         default = None,
@@ -104,7 +110,7 @@ class SearchRequest(BaseModel):
     def validate_date_range(
         cls,
         v: datetime | None,
-        info
+        info: ValidationInfo
     ) -> datetime | None:
         """
         Ensure date_to is after date_from if both provided.
@@ -120,7 +126,6 @@ class SearchResult(BaseModel):
     """
     Individual search result with similarity score.
     """
-
     model_config = ConfigDict(
         extra = "ignore",  # Allow extra fields for MVP
         from_attributes = True,
@@ -146,7 +151,6 @@ class SearchResponse(BaseModel):
     """
     Search response with results and metadata.
     """
-
     model_config = ConfigDict(
         extra = "ignore",  # Allow extra fields for MVP
         json_schema_extra = {
@@ -215,14 +219,14 @@ class SimilarUploadsRequest(BaseModel):
     )
 
     limit: int = Field(
-        default = 10,
+        default = SIMILAR_UPLOADS_DEFAULT_LIMIT,
         ge = 1,
         le = 50,
         description = "Maximum number of similar items"
     )
 
     similarity_threshold: float = Field(
-        default = 0.5,
+        default = SIMILAR_UPLOADS_SIMILARITY_THRESHOLD,
         ge = 0.0,
         le = 1.0,
         description = "Minimum similarity score"
@@ -236,9 +240,8 @@ class SimilarUploadsRequest(BaseModel):
 
 class SearchHistoryItem(BaseModel):
     """
-    Search history entry.
+    Search history entry
     """
-
     model_config = ConfigDict(
         extra = "ignore",  # Allow extra fields for MVP
         from_attributes = True,

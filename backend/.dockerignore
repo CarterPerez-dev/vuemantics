@@ -1,0 +1,25 @@
+# Backend Docker Ignore
+# ©AngelaMos | 2026
+
+storage/
+.git
+.gitignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+*.venv
+.venv/
+pip-cache/
+*.egg-info/
+.pytest_cache/
+.venv/
+.mypy_cache/
+.ruff_cache/
+*._cache/
+*._cache
+.coverage
+tests/images/
+tests/videos/
+

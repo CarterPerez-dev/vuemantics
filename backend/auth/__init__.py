@@ -1,5 +1,5 @@
 """
-Authentication package for JWT and password management.
+Authentication package for JWT tokens and dependencies.
 """
 
 from .jwt_auth import (
@@ -12,12 +12,7 @@ from .jwt_auth import (
     refresh_access_token,
     TokenType,
 )
-from .password import (
-    hash_password,
-    verify_password,
-    validate_password_strength,
-    generate_secure_token,
-)
+from .dependencies import verify_upload_ownership
 
 __all__ = [
     # JWT functions
@@ -29,9 +24,6 @@ __all__ = [
     "get_current_active_user",
     "refresh_access_token",
     "TokenType",
-    # Password functions
-    "hash_password",
-    "verify_password",
-    "validate_password_strength",
-    "generate_secure_token",
+    # Dependencies
+    "verify_upload_ownership",
 ]

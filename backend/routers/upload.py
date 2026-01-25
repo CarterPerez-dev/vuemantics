@@ -1,71 +1,71 @@
 """
-Upload routes for file uploads and management.
-
-Implements async file upload with immediate response and background processing.
-Follows MVP pattern: availability > security, simple but scalable.
----
-/backend/routers/upload.py
+ⒸAngelaMos | 2026
+upload.py
 """
 
+import logging
 import asyncio
 import contextlib
-import logging
-from typing import Annotated
 from uuid import UUID, uuid4
+from typing import Annotated, Any
 
 from fastapi import (
     APIRouter,
     Depends,
     File,
-    HTTPException,
     Request,
     UploadFile,
     status,
 )
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 
-from auth import get_current_user
-from models import (
-    ProcessingStatus,
-    Upload,
-    User,
+import config
+from auth import (
+    get_current_user, 
+    verify_upload_ownership,
 )
+from core import (
+    AUTH_401,
+    CONFLICT_409,
+    FILE_TOO_LARGE_413,
+    NOT_FOUND_404,
+    RATE_LIMIT_420,
+    SERVER_ERROR_500,
+    UNSUPPORTED_MEDIA_415,
+    VALIDATION_422,
+    ConflictError,
+    NotFoundError,
+    StorageError,
+    ValidationError,
+    limiter,
+)
+from models.User import User
+from models.Upload import Upload, ProcessingStatus
 from schemas import (
     PaginatedResponse,
     UploadListParams,
     UploadResponse,
 )
-from services import (
-    FileTooLargeError,
-    StorageError,
-    UnsupportedFileTypeError,
-    ai_service,
-    storage_service,
-)
+from services.ai import (
+    local_ai_service,
+    regenerate_upload_description,
+)    
+from services.storage_service import storage_service
 
 
 logger = logging.getLogger(__name__)
-
-# Rate limiting
-limiter = Limiter(key_func = get_remote_address)
 
 router = APIRouter(
     prefix = "/uploads",
     tags = ["uploads"],
     responses = {
-        401: {
-            "description": "Unauthorized"
-        },
-        413: {
-            "description": "File too large"
-        },
-        415: {
-            "description": "Unsupported media type"
-        },
-        429: {
-            "description": "Too many requests"
-        },
+        **AUTH_401,
+        **NOT_FOUND_404,
+        **CONFLICT_409,
+        **FILE_TOO_LARGE_413,
+        **UNSUPPORTED_MEDIA_415,
+        **VALIDATION_422,
+        **RATE_LIMIT_420,
+        **SERVER_ERROR_500,
     },
 )
 
@@ -77,10 +77,10 @@ async def process_upload_background(
     extension: str,
 ) -> None:
     """
-    Background task to process upload after saving.
+    Background task to process upload after saving
 
-    This runs after the API returns to the user.
-    Handles thumbnail generation and prepares for AI processing.
+    This runs after the API returns to the user
+    Handles thumbnail generation and prepares for AI processing
     """
     try:
         # Generate thumbnail
@@ -99,7 +99,7 @@ async def process_upload_background(
 
         # Queue for AI processing
         logger.info(f"Starting AI processing for upload {upload_id}")
-        await ai_service.analyze_media(upload_id)
+        await local_ai_service.analyze_media(upload_id)
         logger.info(f"AI processing completed for upload {upload_id}")
 
     except Exception as e:
@@ -108,8 +108,10 @@ async def process_upload_background(
         )
         try:
             upload = await Upload.find_by_id(upload_id)
-            if upload and upload.processing_status not in ["completed",
-                                                           "failed"]:
+            if upload and upload.processing_status not in [
+                    ProcessingStatus.COMPLETED,
+                    ProcessingStatus.FAILED
+            ]:
                 await upload.update_status(
                     ProcessingStatus.FAILED,
                     error_message = f"Processing failed: {str(e)[:200]}",
@@ -127,7 +129,7 @@ async def process_upload_background(
     summary = "Upload a file",
     description = "Upload an image or video file for processing",
 )
-@limiter.limit("100/minute")
+@limiter.limit(config.settings.rate_limit_upload)
 async def upload_file(
     request: Request,
     file: Annotated[UploadFile,
@@ -136,10 +138,10 @@ async def upload_file(
                             Depends(get_current_user)],
 ) -> UploadResponse:
     """
-    Upload a new file.
+    Upload a new file
 
-    File is saved immediately and processing happens in background.
-    Returns upload details with 'pending' status.
+    File is saved immediately and processing happens in background
+    Returns upload details with 'pending' status
     """
     # Generate upload ID early
     upload_id = uuid4()
@@ -151,23 +153,11 @@ async def upload_file(
         # Reset file position for saving
         await file.seek(0)
 
-        try:
-            file_type, extension = await storage_service.validate_file(
-                filename=file.filename or "unknown",
-                mime_type=file.content_type or "application/octet-stream",
-                file_size=file_size,
-            )
-        except FileTooLargeError as err:
-            raise HTTPException(
-                status_code = status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                detail =
-                f"File too large. Maximum size is {storage_service.base_path} bytes",
-            ) from err
-        except UnsupportedFileTypeError as e:
-            raise HTTPException(
-                status_code = status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-                detail = str(e),
-            ) from e
+        file_type, extension = await storage_service.validate_file(
+            filename=file.filename or "unknown",
+            mime_type=file.content_type or "application/octet-stream",
+            file_size=file_size,
+        )
 
         file_path = await storage_service.save_upload(
             file_content = file.file,
@@ -205,22 +195,14 @@ async def upload_file(
         logger.info(f"User {current_user.id} uploaded file {upload.id}")
         return UploadResponse.model_validate(upload)
 
-    except HTTPException:
-        raise
     except StorageError as e:
         logger.error(f"Storage error during upload: {e}")
-        raise HTTPException(
-            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail = "Failed to save upload",
-        ) from e
+        raise
     except Exception as e:
         logger.error(f"Unexpected error during upload: {e}")
         with contextlib.suppress(Exception):
             await storage_service.delete_upload(current_user.id, upload_id)
-        raise HTTPException(
-            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail = "Upload failed",
-        ) from e
+        raise
 
 
 @router.get(
@@ -237,7 +219,7 @@ async def list_uploads(
                       Depends()],
 ) -> PaginatedResponse[UploadResponse]:
     """
-    List user's uploads with pagination and filters.
+    List user's uploads with pagination and filters
 
     Supports filtering by:
     - file_type: 'image' or 'video'
@@ -245,16 +227,18 @@ async def list_uploads(
     - sort_by: 'created_at', 'updated_at', 'file_size', 'filename'
     - sort_order: 'asc' or 'desc'
     """
-    # Get uploads from db
     uploads = await Upload.find_by_user(
         user_id = current_user.id,
         limit = params.limit,
         offset = params.offset,
         file_type = params.file_type,
         status = params.processing_status,
+        show_hidden = params.show_hidden,
+        sort_by = params.sort_by,
+        sort_order = params.sort_order,
     )
 
-    filters = {"user_id": current_user.id}
+    filters: dict[str, Any] = {"user_id": current_user.id}
     if params.file_type:
         filters["file_type"] = params.file_type
     if params.processing_status:
@@ -262,7 +246,6 @@ async def list_uploads(
 
     total = await Upload.count(filters)
 
-    # Convert to response models
     upload_responses = [
         UploadResponse.model_validate(upload) for upload in uploads
     ]
@@ -282,29 +265,12 @@ async def list_uploads(
     description = "Get details of a specific upload",
 )
 async def get_upload(
-    upload_id: UUID,
-    current_user: Annotated[User,
-                            Depends(get_current_user)],
+    upload: Annotated[Upload,
+                      Depends(verify_upload_ownership)],
 ) -> UploadResponse:
     """
-    Get details of a specific upload.
-
-    Returns 404 if upload not found or doesn't belong to user.
+    Get details of a specific upload
     """
-    upload = await Upload.find_by_id(upload_id)
-
-    if not upload:
-        raise HTTPException(
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail = "Upload not found",
-        )
-
-    if upload.user_id != current_user.id:
-        raise HTTPException(
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail = "Upload not found",
-        )
-
     return UploadResponse.model_validate(upload)
 
 
@@ -315,12 +281,13 @@ async def get_upload(
     description = "Delete an upload and all associated files",
 )
 async def delete_upload(
-    upload_id: UUID,
+    upload: Annotated[Upload,
+                      Depends(verify_upload_ownership)],
     current_user: Annotated[User,
                             Depends(get_current_user)],
 ) -> None:
     """
-    Delete an upload and all associated files.
+    Delete an upload and all associated files
 
     Removes:
     - Database record
@@ -328,33 +295,13 @@ async def delete_upload(
     - Thumbnail
     - Any extracted frames
     """
-    upload = await Upload.find_by_id(upload_id)
-
-    if not upload:
-        raise HTTPException(
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail = "Upload not found",
-        )
-
-    if upload.user_id != current_user.id:
-        raise HTTPException(
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail = "Upload not found",
-        )
-
     try:
-        await storage_service.delete_upload(current_user.id, upload_id)
-
+        await storage_service.delete_upload(current_user.id, upload.id)
         await upload.delete()
-
-        logger.info(f"User {current_user.id} deleted upload {upload_id}")
-
+        logger.info(f"User {current_user.id} deleted upload {upload.id}")
     except Exception as e:
-        logger.error(f"Failed to delete upload {upload_id}: {e}")
-        raise HTTPException(
-            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail = "Failed to delete upload",
-        ) from e
+        logger.error(f"Failed to delete upload {upload.id}: {e}")
+        raise
 
 
 @router.get(
@@ -364,38 +311,152 @@ async def delete_upload(
     response_model = dict,
 )
 async def get_upload_metadata(
-    upload_id: UUID,
+    upload: Annotated[Upload,
+                      Depends(verify_upload_ownership)],
     current_user: Annotated[User,
                             Depends(get_current_user)],
 ) -> dict:
     """
-    Get additional metadata for upload.
+    Get additional metadata for upload
 
-    Returns dimensions, format, duration (for videos), etc.
+    Returns dimensions, format, duration (for videos), etc
     """
-    upload = await Upload.find_by_id(upload_id)
-
-    if not upload:
-        raise HTTPException(
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail = "Upload not found",
-        )
-
-    if upload.user_id != current_user.id:
-        raise HTTPException(
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail = "Upload not found",
-        )
-
     metadata = await storage_service.get_upload_metadata(
         current_user.id,
-        upload_id
+        upload.id
     )
 
     if not metadata:
-        raise HTTPException(
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail = "Metadata not available",
-        )
+        raise NotFoundError("Metadata not available")
 
     return metadata
+
+
+@router.patch(
+    "/{upload_id}/hide",
+    response_model = UploadResponse,
+    summary = "Toggle upload hidden status",
+    description = "Hide or unhide an upload from the gallery",
+)
+async def toggle_upload_hidden(
+    upload: Annotated[Upload,
+                      Depends(verify_upload_ownership)],
+    current_user: Annotated[User,
+                            Depends(get_current_user)],
+    hidden: bool = True,
+) -> UploadResponse:
+    """
+    Toggle hidden status for an upload
+
+    Args:
+        upload_id: Upload's ID
+        hidden: Set to true to hide, false to unhide
+    """
+    await upload.update_hidden(hidden)
+    logger.info(
+        f"User {current_user.id} {'hid' if hidden else 'unhid'} upload {upload.id}"
+    )
+
+    return UploadResponse.model_validate(upload)
+
+
+@router.post(
+    "/bulk/delete",
+    status_code = status.HTTP_200_OK,
+    summary = "Bulk delete uploads",
+    description = "Delete multiple uploads at once",
+)
+async def bulk_delete_uploads(
+    upload_ids: list[UUID],
+    current_user: Annotated[User,
+                            Depends(get_current_user)],
+) -> dict:
+    """
+    Delete multiple uploads at once
+    """
+    if not upload_ids:
+        raise ValidationError("No upload IDs provided")
+
+    if len(upload_ids) > config.MAX_BULK_UPLOAD_DELETE:
+        raise ValidationError(
+            f"Maximum {config.MAX_BULK_UPLOAD_DELETE} uploads can be deleted at once"
+        )
+
+    # Delete files from storage
+    for upload_id in upload_ids:
+        try:
+            await storage_service.delete_upload(current_user.id, upload_id)
+        except Exception as e:
+            logger.warning(f"Failed to delete files for {upload_id}: {e}")
+
+    # Delete from database
+    deleted_count = await Upload.bulk_delete(upload_ids, current_user.id)
+    logger.info(
+        f"User {current_user.id} bulk deleted {deleted_count} uploads"
+    )
+
+    return {"deleted": deleted_count}
+
+
+@router.post(
+    "/bulk/hide",
+    status_code = status.HTTP_200_OK,
+    summary = "Bulk hide/unhide uploads",
+    description = "Hide or unhide multiple uploads at once",
+)
+async def bulk_hide_uploads(
+    upload_ids: list[UUID],
+    current_user: Annotated[User,
+                            Depends(get_current_user)],
+    hidden: bool = True,
+) -> dict:
+    """
+    Hide or unhide multiple uploads at once
+    """
+    if not upload_ids:
+        raise ValidationError("No upload IDs provided")
+
+    if len(upload_ids) > config.MAX_BULK_UPLOAD_UPDATE:
+        raise ValidationError(
+            f"Maximum {config.MAX_BULK_UPLOAD_UPDATE} uploads can be updated at once"
+        )
+
+    updated_count = await Upload.bulk_update_hidden(
+        upload_ids,
+        current_user.id,
+        hidden
+    )
+    logger.info(
+        f"User {current_user.id} bulk {'hid' if hidden else 'unhid'} {updated_count} uploads"
+    )
+
+    return {"updated": updated_count}
+
+
+@router.post(
+    "/{upload_id}/regenerate-description",
+    response_model = UploadResponse,
+    status_code = status.HTTP_200_OK,
+    summary = "Regenerate AI description",
+    description = "Re-run AI analysis to generate new description and embedding",
+)
+@limiter.limit(config.settings.rate_limit_upload)
+async def regenerate_description(
+    request: Request,
+    upload: Annotated[Upload,
+                      Depends(verify_upload_ownership)],
+    current_user: Annotated[User,
+                            Depends(get_current_user)],
+) -> UploadResponse:
+    """
+    Regenerate AI generated description for an upload
+    """
+    await regenerate_upload_description(upload)
+
+    logger.info(
+        f"User {current_user.id} regenerated description for upload {upload.id} "
+        f"(attempt #{upload.regeneration_count})"
+    )
+
+    return UploadResponse.model_validate(upload)
+    

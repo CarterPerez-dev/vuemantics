@@ -2,7 +2,7 @@
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.2
+    rev: v0.14.3
     hooks:
       - id: ruff
         args: [--fix, --ignore=PLC0415]
@@ -11,26 +11,8 @@ repos:
         files: ^backend/
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0 
+    rev: v6.0.0
     hooks:
-      - id: check-ast
-        files: ^backend/
-      - id: debug-statements
-        files: ^backend/
+      - id: check-toml
       - id: check-yaml
-      - id: end-of-file-fixer
-        files: ^backend/
-      - id: trailing-whitespace
-        files: ^backend/
-        
-  - repo: local
-    hooks:
-      - id: pg-tests
-        name: Run PG-VENV Tests
-        entry: bash -c "source venv/bin/activate && make test-unit"
-        language: system
-        files: ^backend/.*\.py$  
-        pass_filenames: false
-        stages: [pre-commit]
-        verbose: true
-        description: 'Run unit tests before commit'
+        args: [--allow-multiple-documents]

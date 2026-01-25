@@ -1,5 +1,6 @@
 """
-PG-VENV Migrations Package
+ⒸAngelaMos | 2026
+Vuemantics Migrations
 ---------------------------------
 ⡋⣡⣴⣶⣶⡀⠄⠄⠙⢿⣿⣿⣿⣿⣿⣴⣿⣿⣿⢃⣤⣄⣀⣥⣿
 ⢸⣇⠻⣿⣿⣿⣧⣀⢀⣠⡌⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⠿⣿⣿

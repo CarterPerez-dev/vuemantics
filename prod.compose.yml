@@ -1,0 +1,137 @@
+# ===================
+# ⒸAngelaMos | 2026
+# Vuemantics - Prod Compose
+# ===================
+
+name: ${APP_NAME:-vuemantics-prod}
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: ${APP_NAME:-vuemantics}-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: multimodal_search_prod
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - multimodal-prod
+
+  redis:
+    image: redis:7-alpine
+    container_name: ${APP_NAME:-vuemantics}-redis
+    ports:
+      - "${REDIS_HOST_PORT:-63933}:6379"
+    volumes:
+      - redis_data_prod:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - multimodal-prod
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ${APP_NAME:-vuemantics}-ollama
+    runtime: nvidia
+    ports:
+      - "${OLLAMA_HOST_PORT:-11939}:11434"
+    deploy:
+      resources:
+        limits:
+          cpus: '8.0'
+          memory: 24G
+        reservations:
+          cpus: '4.0'
+          memory: 8G
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ollama_data_prod:/root/.ollama
+    networks:
+      - multimodal-prod
+    restart: always
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - OLLAMA_KEEP_ALIVE=30m
+      - OLLAMA_FLASH_ATTENTION=1
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  backend:
+    build:
+      context: .
+      dockerfile: infra/prod/docker/fastapi.prod
+    container_name: ${APP_NAME:-vuemantics}-backend
+    ports:
+      - "${BACKEND_HOST_PORT:-43333}:8000"
+    env_file:
+      - ./.env.prod
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    restart: always
+    networks:
+      - multimodal-prod
+
+  nginx:
+    build:
+      context: .
+      dockerfile: infra/prod/docker/frontend-builder.prod
+      args:
+        - VITE_API_URL=${VITE_API_URL:-/api}
+        - VITE_APP_TITLE=${VITE_APP_TITLE:-Vuemantics}
+    container_name: ${APP_NAME:-vuemantics}-nginx
+    ports:
+      - "${NGINX_HOST_PORT:-7067}:80"
+    volumes:
+      - ./storage/uploads:/var/www/uploads:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    networks:
+      - multimodal-prod
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 64M
+    restart: unless-stopped
+
+networks:
+  multimodal-prod:
+    driver: bridge
+
+volumes:
+  postgres_data_prod:
+  redis_data_prod:
+  ollama_data_prod:

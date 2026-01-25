@@ -1,15 +1,12 @@
 """
-Schemas package for request/response validation.
-All Pydantic models for API request and response validation.
----
-/backend/schemas/__init__.py
+ⒸAngelaMos | 2026
+__init__.py
 """
 
 from .base import (
     PaginationParams,
     PaginatedResponse,
     TimestampMixin,
-    ErrorResponse,
 )
 from .auth import (
     LoginRequest,
@@ -17,6 +14,9 @@ from .auth import (
     RefreshRequest,
     PasswordResetRequest,
     PasswordResetConfirm,
+)
+from .client_config import (
+    ClientConfigResponse,
 )
 from .user import (
     UserBase,
@@ -39,6 +39,10 @@ from .search import (
     SimilarUploadsRequest,
     SearchHistoryItem,
 )
+from .health import (
+    HealthStatus,
+    HealthDetailedResponse,
+)
 
 __all__ = [
 
@@ -46,7 +50,6 @@ __all__ = [
     "PaginationParams",
     "PaginatedResponse",
     "TimestampMixin",
-    "ErrorResponse",
 
     # Auth
     "LoginRequest",
@@ -54,6 +57,9 @@ __all__ = [
     "RefreshRequest",
     "PasswordResetRequest",
     "PasswordResetConfirm",
+
+    # Client Config
+    "ClientConfigResponse",
 
     # User
     "UserBase",
@@ -75,4 +81,8 @@ __all__ = [
     "SearchResponse",
     "SimilarUploadsRequest",
     "SearchHistoryItem",
+
+    # Health
+    "HealthStatus",
+    "HealthDetailedResponse",
 ]

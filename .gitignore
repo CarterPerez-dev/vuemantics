@@ -1,222 +1,46 @@
-# Python
+# .gitignore
+# ©AngelaMos | 2026
+
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+*.pyc
+*.pyo
+*.log
+logs/
 
-# Virtual Environment
-venv/
-ENV/
-env/
 .venv
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.project
-.pydevproject
-
-# Environment variables
 .env
-.env.local
-.env.*.local
-.env.test.local
-infra/dev/env/.env.dev
-infra/prod/env/.env.prod
+.env.prod
 
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Testing
 .coverage
 .pytest_cache/
 htmlcov/
 .tox/
 .coverage.*
-.cache
-nosetests.xml
-coverage.xml
 *.cover
-.hypothesis/
+*.mypy_cache/
+*.ruff_cache/
+*.pylint_cache/
+*.pytest_cache/
+*.cache
 
-# Temporary files
-*.tmp
-*.temp
-tmp/
-temp/
-
-# Uploads (for local development)
-uploads/
-static/uploads/
-
-# Compiled files
-*.pyc
-*.pyo
-
-# Distribution
-.Python
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Documentation
-docs/_build/
-site/
-
-# Secrets
-*.key
-*.pem
-*.crt
-secrets/
-credentials/
-firebase-admin-*.json
-
-# Backup files
-*.bak
-*.backup
-*~
-
-# Node modules (if frontend is in same repo)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Build outputs
-out/
-build/
-dist/
-
-# Docker
-.dockerignore
-
-# Terraform
-*.tfstate
-*.tfstate.*
-.terraform/
-.terraform.lock.hcl
-
-# MacOS
-.AppleDouble
-.LSOverride
-Icon
-._*
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.apdisk
-
-# Windows
-Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-ehthumbs_vista.db
-*.stackdump
-[Dd]esktop.ini
-$RECYCLE.BIN/
-*.cab
-*.msi
-*.msix
-*.msm
-*.msp
-*.lnk
-
-.claude/
-.claude
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Ruff
-.ruff_cache/
-
-# Database dumps
-*.sql
-*.dump
-*.psql
-
-# Uploaded files (except .gitkeep)
 storage/uploads/**
 !storage/uploads/.gitkeep
 storage/test_uploads/**
 !storage/test_uploads/.gitkeep
 
-# Node.js
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
-.npm
-.pnp
-.pnp.js
+/node_modules/
+*.vite/
+.vite/
 
-# Frontend build
-frontend/dist/
-frontend/dist-ssr/
-frontend/*.local
+# Too much data
+backend/tests/videos/
 
-# Docker
-*.log
-docker-compose.override.yml
-
-# Project specific
-storage/uploads/*
-!storage/uploads/.gitkeep
-infra/dev/env/.env.dev
-infra/prod/env/.env.prod
-infra/prod/ssl/
-*.pem
-*.crt
-*.key
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-backend/PG_VENV.egg-info
-coverage.xml
-htmlcov/
-.vite

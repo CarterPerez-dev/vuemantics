@@ -1,11 +1,8 @@
 """
-User schemas for registration, responses, and updates.
-Includes password validation at schema level for immediate feedback.
----
-/backend/schemas/user.py
+ⒸAngelaMos | 2026
+user.py
 """
 
-import re
 from datetime import datetime
 from uuid import UUID
 
@@ -14,9 +11,15 @@ from pydantic import (
     ConfigDict,
     EmailStr,
     Field,
+    ValidationInfo,
     field_validator,
 )
 
+from config import (
+    MIN_PASSWORD_LENGTH,
+    MAX_PASSWORD_LENGTH,
+)
+from core import validate_password_strength
 from schemas import TimestampMixin
 
 
@@ -24,7 +27,6 @@ class UserBase(BaseModel):
     """
     Base user fields.
     """
-
     email: EmailStr = Field(
         description = "User's email address",
         examples = ["user@example.com"]
@@ -35,7 +37,6 @@ class UserCreate(UserBase):
     """
     User registration request with password validation.
     """
-
     model_config = ConfigDict(
         extra = "ignore",  # Allow extra fields for MVP
         str_strip_whitespace = True,
@@ -46,43 +47,21 @@ class UserCreate(UserBase):
 
     password: str = Field(
         description =
-        "Password (8-69 chars, must include uppercase, lowercase, number, special char)",
-        min_length = 8,
-        max_length = 69,
+        f"Password ({MIN_PASSWORD_LENGTH}-{MAX_PASSWORD_LENGTH} chars, must include uppercase, lowercase, number, special char)",
+        min_length = MIN_PASSWORD_LENGTH,
+        max_length = MAX_PASSWORD_LENGTH,
         examples = ["MyStr0ng!Pass123"],
     )
 
     @field_validator("password")
     @classmethod
-    def validate_password_strength(cls, v: str) -> str:
+    def validate_password(cls, v: str) -> str:
         """
-        Validate password meets security requirements.
-
-        Requirements:
-        - At least one uppercase letter
-        - At least one lowercase letter
-        - At least one number
-        - At least one special character
+        Validate password using centralized validation logic.
         """
-        if not re.search(r"[A-Z]", v):
-            raise ValueError(
-                "Password must contain at least one uppercase letter"
-            )
-
-        if not re.search(r"[a-z]", v):
-            raise ValueError(
-                "Password must contain at least one lowercase letter"
-            )
-
-        if not re.search(r"\d", v):
-            raise ValueError("Password must contain at least one number")
-
-        special_chars = "!@#$%^&*()_+-=[]{}|;:,.<>?"
-        if not re.search(rf"[{re.escape(special_chars)}]", v):
-            raise ValueError(
-                f"Password must contain at least one special character ({special_chars})"
-            )
-
+        is_valid, error_msg = validate_password_strength(v)
+        if not is_valid:
+            raise ValueError(error_msg)
         return v
 
 
@@ -111,9 +90,8 @@ class UserResponse(UserBase, TimestampMixin):
 
 class UserUpdate(BaseModel):
     """
-    User profile update request.
+    User profile update request
     """
-
     model_config = ConfigDict(
         extra = "ignore",  # Allow extra fields for MVP
         str_strip_whitespace = True,
@@ -131,9 +109,8 @@ class UserUpdate(BaseModel):
 
 class PasswordChangeRequest(BaseModel):
     """
-    Password change request.
+    Password change request
     """
-
     model_config = ConfigDict(
         extra = "ignore",  # Allow extra fields for MVP
         str_strip_whitespace = True,
@@ -151,34 +128,19 @@ class PasswordChangeRequest(BaseModel):
     )
     new_password: str = Field(
         description = "New password",
-        min_length = 8,
-        max_length = 69
+        min_length = MIN_PASSWORD_LENGTH,
+        max_length = MAX_PASSWORD_LENGTH
     )
 
     @field_validator("new_password")
     @classmethod
-    def validate_new_password(cls, v: str, info) -> str:
+    def validate_new_password(cls, v: str, info: ValidationInfo) -> str:
         """
-        Validate new password meets requirements.
+        Validate new password using centralized validation logic.
         """
-        if not re.search(r"[A-Z]", v):
-            raise ValueError(
-                "Password must contain at least one uppercase letter"
-            )
-
-        if not re.search(r"[a-z]", v):
-            raise ValueError(
-                "Password must contain at least one lowercase letter"
-            )
-
-        if not re.search(r"\d", v):
-            raise ValueError("Password must contain at least one number")
-
-        special_chars = "!@#$%^&*()_+-=[]{}|;:,.<>?"
-        if not re.search(rf"[{re.escape(special_chars)}]", v):
-            raise ValueError(
-                f"Password must contain at least one special character ({special_chars})"
-            )
+        is_valid, error_msg = validate_password_strength(v)
+        if not is_valid:
+            raise ValueError(error_msg)
 
         if "current_password" in info.data and v == info.data[
                 "current_password"]:
@@ -191,9 +153,8 @@ class PasswordChangeRequest(BaseModel):
 
 class UserStats(BaseModel):
     """
-    User statistics response.
+    User statistics response
     """
-
     model_config = ConfigDict(
         extra = "ignore",  # Allow extra fields for MVP
     )
