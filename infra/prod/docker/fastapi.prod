@@ -1,6 +1,6 @@
 # Production Dockerfile for Backend
 
-FROM python:3.11-slim as builder
+FROM python:3.14-slim as builder
 
 WORKDIR /app
 

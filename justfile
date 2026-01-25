@@ -53,7 +53,7 @@ biome-fix:
 
 [group('frontend')]
 tsc *ARGS:
-    cd frontend && pnpm tsc --noEmit {{ARGS}}
+    cd frontend && pnpm tsc -b {{ARGS}}
 
 # =============================================================================
 # Type Checking
@@ -81,40 +81,40 @@ check: ruff mypy
 # =============================================================================
 
 [group('prod')]
-up *ARGS:
-    docker compose -f infra/prod/compose.yml up {{ARGS}}
+prod-up *ARGS:
+    docker compose -f prod.compose.yml up {{ARGS}}
 
 [group('prod')]
-start *ARGS:
-    docker compose -f infra/prod/compose.yml up -d {{ARGS}}
+prod-start *ARGS:
+    docker compose -f prod.compose.yml up -d {{ARGS}}
 
 [group('prod')]
-down *ARGS:
-    docker compose -f infra/prod/compose.yml down {{ARGS}}
+prod-down *ARGS:
+    docker compose -f prod.compose.yml down {{ARGS}}
 
 [group('prod')]
-stop:
-    docker compose -f infra/prod/compose.yml stop
+prod-stop:
+    docker compose -f prod.compose.yml stop
 
 [group('prod')]
-build *ARGS:
-    docker compose -f infra/prod/compose.yml build {{ARGS}}
+prod-build *ARGS:
+    docker compose -f prod.compose.yml build {{ARGS}}
 
 [group('prod')]
-rebuild:
-    docker compose -f infra/prod/compose.yml build --no-cache
+prod-rebuild:
+    docker compose -f prod.compose.yml build --no-cache
 
 [group('prod')]
-logs *SERVICE:
-    docker compose -f infra/prod/compose.yml logs -f {{SERVICE}}
+prod-logs *SERVICE:
+    docker compose -f prod.compose.yml logs -f {{SERVICE}}
 
 [group('prod')]
-ps:
-    docker compose -f infra/prod/compose.yml ps
+prod-ps:
+    docker compose -f prod.compose.yml ps
 
 [group('prod')]
-shell service='backend':
-    docker compose -f infra/prod/compose.yml exec -it {{service}} /bin/bash
+prod-shell service='backend':
+    docker compose -f prod.compose.yml exec -it {{service}} /bin/bash
 
 # =============================================================================
 # Docker Compose (Development)
@@ -122,103 +122,39 @@ shell service='backend':
 
 [group('dev')]
 dev-up *ARGS:
-    docker compose -f infra/dev/compose.yml up {{ARGS}}
+    docker compose -f compose.yml up {{ARGS}}
 
 [group('dev')]
 dev-start *ARGS:
-    docker compose -f infra/dev/compose.yml up -d {{ARGS}}
+    docker compose -f compose.yml up -d {{ARGS}}
 
 [group('dev')]
 dev-down *ARGS:
-    docker compose -f infra/dev/compose.yml down {{ARGS}}
+    docker compose -f compose.yml down {{ARGS}}
 
 [group('dev')]
 dev-stop:
-    docker compose -f infra/dev/compose.yml stop
+    docker compose -f compose.yml stop
 
 [group('dev')]
 dev-build *ARGS:
-    docker compose -f infra/dev/compose.yml build {{ARGS}}
+    docker compose -f compose.yml build {{ARGS}}
 
 [group('dev')]
 dev-rebuild:
-    docker compose -f infra/dev/compose.yml build --no-cache
+    docker compose -f compose.yml build --no-cache
 
 [group('dev')]
 dev-logs *SERVICE:
-    docker compose -f infra/dev/compose.yml logs -f {{SERVICE}}
+    docker compose -f compose.yml logs -f {{SERVICE}}
 
 [group('dev')]
 dev-ps:
-    docker compose -f infra/dev/compose.yml ps
+    docker compose -f compose.yml ps
 
 [group('dev')]
 dev-shell service='backend':
-    docker compose -f infra/dev/compose.yml exec -it {{service}} /bin/bash
-
-# =============================================================================
-# Database (Production)
-# =============================================================================
-
-[group('db')]
-migrate *ARGS:
-    docker compose -f infra/prod/compose.yml exec backend alembic upgrade {{ARGS}}
-
-[group('db')]
-migration message:
-    docker compose -f infra/prod/compose.yml exec backend alembic revision --autogenerate -m "{{message}}"
-
-[group('db')]
-rollback:
-    docker compose -f infra/prod/compose.yml exec backend alembic downgrade -1
-
-[group('db')]
-db-history:
-    docker compose -f infra/prod/compose.yml exec backend alembic history --verbose
-
-[group('db')]
-db-current:
-    docker compose -f infra/prod/compose.yml exec backend alembic current
-
-# =============================================================================
-# Database (Development)
-# =============================================================================
-
-[group('db-dev')]
-dev-migrate *ARGS:
-    docker compose -f infra/dev/compose.yml exec backend alembic upgrade {{ARGS}}
-
-[group('db-dev')]
-dev-migration message:
-    docker compose -f infra/dev/compose.yml exec backend alembic revision --autogenerate -m "{{message}}"
-
-[group('db-dev')]
-dev-rollback:
-    docker compose -f infra/dev/compose.yml exec backend alembic downgrade -1
-
-# =============================================================================
-# Database (Local - no Docker)
-# =============================================================================
-
-[group('db-local')]
-migrate-local *ARGS:
-    cd backend && uv run alembic upgrade {{ARGS}}
-
-[group('db-local')]
-migration-local message:
-    cd backend && uv run alembic revision --autogenerate -m "{{message}}"
-
-[group('db-local')]
-rollback-local:
-    cd backend && uv run alembic downgrade -1
-
-[group('db-local')]
-db-history-local:
-    cd backend && uv run alembic history --verbose
-
-[group('db-local')]
-db-current-local:
-    cd backend && uv run alembic current
+    docker compose -f compose.yml exec -it {{service}} /bin/bash
 
 # =============================================================================
 # Local Development (no Docker)
@@ -241,7 +177,7 @@ sync-dev:
     cd backend && uv sync --all-extras
 
 # =============================================================================
-# Setup
+# Setup # TODO
 # =============================================================================
 
 [group('setup')]
@@ -281,7 +217,7 @@ prune:
 [group('util')]
 [confirm("This will delete ALL Docker data including volumes. Continue?")]
 nuke:
-    -docker compose -f infra/dev/compose.yml down -v
-    -docker compose -f infra/prod/compose.yml down -v
+    -docker compose -f compose.yml down -v
+    -docker compose -f prod.compose.yml down -v
     docker system prune -a -v -f
     @echo "Everything nuked"

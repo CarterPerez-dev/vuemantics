@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 COPY frontend/ .
 
 ARG VITE_API_URL=/api
-ARG VITE_APP_TITLE="My App"
+ARG VITE_APP_TITLE="Vuemantics"
 
 ENV VITE_API_URL=${VITE_API_URL} \
     VITE_APP_TITLE=${VITE_APP_TITLE}
@@ -41,8 +41,8 @@ RUN rm -rf /usr/share/nginx/html/* && \
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-COPY --chown=nginx:nginx infra/nginx/nginx.prod.conf /etc/nginx/nginx.conf
-COPY --chown=nginx:nginx infra/nginx/prod.nginx /etc/nginx/conf.d/default.conf
+COPY --chown=nginx:nginx infra/prod/nginx/nginx.prod.conf /etc/nginx/nginx.conf
+COPY --chown=nginx:nginx infra/prod/nginx/prod.nginx /etc/nginx/conf.d/default.conf
 
 RUN chown -R nginx:nginx /usr/share/nginx/html && \
     chown -R nginx:nginx /var/cache/nginx && \

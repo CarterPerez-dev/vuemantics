@@ -14,6 +14,10 @@ export const API_ENDPOINTS = {
     BASE: `/uploads`,
     BY_ID: (id: string) => `/uploads/${id}`,
     METADATA: (id: string) => `/uploads/${id}/metadata`,
+    HIDE: (id: string) => `/uploads/${id}/hide`,
+    REGENERATE: (id: string) => `/uploads/${id}/regenerate-description`,
+    BULK_DELETE: `/uploads/bulk/delete`,
+    BULK_HIDE: `/uploads/bulk/hide`,
   },
   SEARCH: {
     BASE: `/search`,
@@ -22,6 +26,7 @@ export const API_ENDPOINTS = {
     BATCH: `/search/batch`,
     STATS: `/search/stats`,
   },
+  CLIENT_CONFIG: `/client-config`,
   HEALTH: `/health`,
 } as const
 
@@ -34,15 +39,19 @@ export const QUERY_KEYS = {
     ALL: ['uploads'] as const,
     LIST: () => [...QUERY_KEYS.UPLOADS.ALL, 'list'] as const,
     BY_ID: (id: string) => [...QUERY_KEYS.UPLOADS.ALL, 'detail', id] as const,
-    METADATA: (id: string) => [...QUERY_KEYS.UPLOADS.ALL, 'metadata', id] as const,
+    METADATA: (id: string) =>
+      [...QUERY_KEYS.UPLOADS.ALL, 'metadata', id] as const,
   },
   SEARCH: {
     ALL: ['search'] as const,
     QUERY: (query: string) => [...QUERY_KEYS.SEARCH.ALL, 'query', query] as const,
-    SIMILAR: (uploadId: string) => [...QUERY_KEYS.SEARCH.ALL, 'similar', uploadId] as const,
-    SUGGESTIONS: (query: string) => [...QUERY_KEYS.SEARCH.ALL, 'suggestions', query] as const,
+    SIMILAR: (uploadId: string) =>
+      [...QUERY_KEYS.SEARCH.ALL, 'similar', uploadId] as const,
+    SUGGESTIONS: (query: string) =>
+      [...QUERY_KEYS.SEARCH.ALL, 'suggestions', query] as const,
     STATS: () => [...QUERY_KEYS.SEARCH.ALL, 'stats'] as const,
   },
+  CLIENT_CONFIG: ['client-config'] as const,
 } as const
 
 export const ROUTES = {

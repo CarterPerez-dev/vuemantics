@@ -1,8 +1,6 @@
 """
-Upload schemas for file uploads and responses.
-File validation happens in service layer since uploads are multipart/form-data.
----
-/backend/schemas/upload.py
+ⒸAngelaMos | 2026
+upload.py
 """
 
 from typing import Any, Literal
@@ -16,8 +14,9 @@ from pydantic import (
     field_validator,
 )
 
+from config import EMBEDDING_DIMENSIONS
+from models.Upload import FileType, ProcessingStatus
 from schemas import PaginationParams, TimestampMixin
-from settings import EMBEDDING_DIMENSIONS
 
 
 class UploadResponse(TimestampMixin):
@@ -26,7 +25,6 @@ class UploadResponse(TimestampMixin):
 
     Note: Full embedding is included for similarity calculations.
     """
-
     model_config = ConfigDict(
         extra = "ignore",  # Allow extra fields for MVP flexibility
         from_attributes = True,
@@ -40,7 +38,7 @@ class UploadResponse(TimestampMixin):
                 "file_size": 2048576,
                 "mime_type": "image/jpeg",
                 "processing_status": "completed",
-                "gemini_summary": "A beach scene with palm trees and sunset",
+                "description": "A beach scene with palm trees and sunset",
                 "embedding_local": [0.123, -0.456, 0.789],  # ... 1024 dimensions
                 "thumbnail_path": "/storage/uploads/user123/file456/thumb_vacation_photo.jpg",
                 "error_message": None,
@@ -55,25 +53,28 @@ class UploadResponse(TimestampMixin):
     user_id: UUID = Field(description = "Owner's user ID")
     filename: str = Field(description = "Original filename")
     file_path: str = Field(description = "Storage path")
-    file_type: Literal["image",
-                       "video"] = Field(description = "Type of media")
+    file_type: FileType = Field(description = "Type of media")
     file_size: int = Field(gt = 0, description = "File size in bytes")
     mime_type: str = Field(description = "MIME type")
-    processing_status: Literal[
-        "pending",
-        "analyzing",
-        "embedding",
-        "completed",
-        "failed"] = Field(description = "Current processing status")
-    gemini_summary: str | None = Field(
+    processing_status: ProcessingStatus = Field(
+        description = "Current processing status"
+    )
+    description: str | None = Field(
         default = None,
         description = "AI-generated description from vision model"
     )
+    description_audit_score: int | None = Field(
+        default = None,
+        ge = 0,
+        le = 100,
+        description = "Description quality score (0-100, higher is better)"
+    )
     embedding_local: list[float] | None = Field(
         default = None,
-        description = "1024-dimensional embedding vector from bge-m3",
-        min_length = 1024,
-        max_length = 1024,
+        description =
+        f"{EMBEDDING_DIMENSIONS}-dimensional embedding vector from bge-m3",
+        min_length = EMBEDDING_DIMENSIONS,
+        max_length = EMBEDDING_DIMENSIONS,
     )
     has_embedding: bool = Field(
         default = False,
@@ -92,6 +93,19 @@ class UploadResponse(TimestampMixin):
                        default = None,
                        description = "Additional file metadata"
                    )
+    hidden: bool = Field(
+        default = False,
+        description = "Whether this upload is hidden from gallery"
+    )
+    regeneration_count: int = Field(
+        default = 0,
+        ge = 0,
+        description = "Number of times description was regenerated"
+    )
+    last_regenerated_at: str | None = Field(
+        default = None,
+        description = "Timestamp of last regeneration"
+    )
 
     @field_validator("embedding_local")
     @classmethod
@@ -130,19 +144,11 @@ class UploadListParams(PaginationParams):
     """
     Parameters for listing uploads with filters.
     """
-
-    file_type: Literal["image",
-                       "video"] | None = Field(
-                           default = None,
-                           description = "Filter by file type"
-                       )
-    processing_status: (
-        Literal["pending",
-                "analyzing",
-                "embedding",
-                "completed",
-                "failed"] | None
-    ) = Field(
+    file_type: FileType | None = Field(
+        default = None,
+        description = "Filter by file type"
+    )
+    processing_status: ProcessingStatus | None = Field(
         default = None,
         description = "Filter by processing status"
     )
@@ -158,6 +164,10 @@ class UploadListParams(PaginationParams):
                             default = "desc",
                             description = "Sort order"
                         )
+    show_hidden: bool = Field(
+        default = False,
+        description = "Include hidden uploads in results"
+    )
 
 
 class UploadStats(BaseModel):
@@ -205,7 +215,6 @@ class BulkUploadResponse(BaseModel):
     """
     Response for bulk upload operations.
     """
-
     model_config = ConfigDict(
         extra = "ignore",  # Allow extra fields for MVP flexibility
     )

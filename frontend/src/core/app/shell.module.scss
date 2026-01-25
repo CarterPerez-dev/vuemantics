@@ -21,7 +21,13 @@ $header-height: 56px;
   left: 0;
   bottom: 0;
   width: $sidebar-width;
-  background: $bg-surface-100;
+  background-color: $bg-shell-base;
+  background-image: radial-gradient(
+    circle,
+    $bg-shell-dot 1px,
+    transparent 1px
+  );
+  background-size: 17px 17px;
   border-right: 1px solid $border-default;
   display: flex;
   flex-direction: column;
@@ -107,6 +113,7 @@ $header-height: 56px;
   width: 17px;
   height: 17px;
   flex-shrink: 0;
+  color: $accent-blue;
 }
 
 .navLabel {
@@ -127,7 +134,7 @@ $header-height: 56px;
   width: 45px;
   height: 45px;
   border-radius: $radius-md;
-  color: $text-light;
+  color: $accent-blue;
   @include flex-center;
   @include transition-fast;
 
@@ -179,6 +186,7 @@ $header-height: 56px;
   width: 18px;
   height: 18px;
   flex-shrink: 0;
+  color: $accent-blue;
 }
 
 .logoutText {
@@ -226,7 +234,13 @@ $header-height: 56px;
   position: sticky;
   top: 0;
   height: $header-height;
-  background: $bg-surface-100;
+  background-color: $bg-shell-base;
+  background-image: radial-gradient(
+    circle,
+    $bg-shell-dot 1px,
+    transparent 1px
+  );
+  background-size: 17px 17px;
   border-bottom: 1px solid $border-default;
   z-index: $z-sticky;
   display: flex;
@@ -284,7 +298,7 @@ $header-height: 56px;
   height: 32px;
   border-radius: $radius-full;
   background: $bg-surface-300;
-  color: $text-light;
+  color: $accent-blue;
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;
   @include flex-center;
@@ -299,6 +313,13 @@ $header-height: 56px;
 .content {
   flex: 1;
   overflow-y: auto;
+  background-color: $bg-content-base;
+  background-image: radial-gradient(
+    circle,
+    $bg-content-dot 1px,
+    transparent 1px
+  );
+  background-size: 20px 20px;
 }
 
 .loading {

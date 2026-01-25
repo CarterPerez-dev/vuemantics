@@ -4,6 +4,6 @@
 // ===================
 
 export * from './auth.types'
-export * from './user.types'
-export * from './upload.types'
+export * from './client-config.types'
 export * from './search.types'
+export * from './upload.types'

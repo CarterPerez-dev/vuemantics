@@ -1,53 +1,54 @@
 """
-Search routes for semantic similarity search.
-
-Implements natural language search over uploaded media using
-vector embeddings and pgvector. Supports filtering and finding
-similar uploads.
----
-/backend/routers/search.py
+ⒸAngelaMos | 2026
+search.py
 """
 
 import logging
 from typing import Annotated
-from uuid import UUID
 
 from fastapi import (
     APIRouter,
     Depends,
-    HTTPException,
     Query,
     Request,
-    status,
 )
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 
-from auth import get_current_user
-from models import Upload, User
+import config
+from config import settings
+from auth import (
+    get_current_user,
+    verify_upload_ownership,
+)
+from core import (
+    AUTH_401,
+    NOT_FOUND_404,
+    RATE_LIMIT_420,
+    SERVER_ERROR_500,
+    VALIDATION_422,
+    ValidationError,
+    limiter,
+)
+from models.Upload import ProcessingStatus, Upload
+from models.User import User
 from schemas import (
     SearchRequest,
     SearchResponse,
     SearchResult,
 )
-from services import search_service
+from services.search_service import search_service
 
 
 logger = logging.getLogger(__name__)
-
-# Rate limiting
-limiter = Limiter(key_func = get_remote_address)
 
 router = APIRouter(
     prefix = "/search",
     tags = ["search"],
     responses = {
-        401: {
-            "description": "Unauthorized"
-        },
-        429: {
-            "description": "Too many requests"
-        },
+        **AUTH_401,
+        **NOT_FOUND_404,
+        **VALIDATION_422,
+        **RATE_LIMIT_420,
+        **SERVER_ERROR_500,
     },
 )
 
@@ -58,7 +59,7 @@ router = APIRouter(
     summary = "Search uploads",
     description = "Search through uploads using natural language queries",
 )
-@limiter.limit("60/minute")
+@limiter.limit(settings.rate_limit_search)
 async def search_uploads(
     request: Request,
     search_request: SearchRequest,
@@ -66,7 +67,7 @@ async def search_uploads(
                             Depends(get_current_user)],
 ) -> SearchResponse:
     """
-    Perform semantic search on user's uploads.
+    Perform semantic search on user's uploads
 
     The search uses AI-generated embeddings to find uploads
     that match the semantic meaning of your query.
@@ -118,10 +119,7 @@ async def search_uploads(
 
     except Exception as e:
         logger.error(f"Search failed for user {current_user.id}: {e}")
-        raise HTTPException(
-            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail = "Search service temporarily unavailable",
-        ) from e
+        raise
 
 
 @router.get(
@@ -130,10 +128,11 @@ async def search_uploads(
     summary = "Find similar uploads",
     description = "Find uploads similar to a specific upload",
 )
-@limiter.limit("30/minute")
+@limiter.limit(settings.rate_limit_search)
 async def find_similar_uploads(
     request: Request,
-    upload_id: UUID,
+    upload: Annotated[Upload,
+                      Depends(verify_upload_ownership)],
     current_user: Annotated[User,
                             Depends(get_current_user)],
     limit: Annotated[int,
@@ -149,47 +148,27 @@ async def find_similar_uploads(
     Uses the embedding of the specified upload to find
     other semantically similar uploads.
     """
-    # Verify upload exists and belongs to user
-    upload = await Upload.find_by_id(upload_id)
-    if not upload:
-        raise HTTPException(
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail = "Upload not found"
-        )
-
-    if upload.user_id != current_user.id:
-        raise HTTPException(
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail = "Upload not found"
-        )
-
     if not upload.embedding_local:
-        raise HTTPException(
-            status_code = status.HTTP_400_BAD_REQUEST,
-            detail = "Upload has not been processed yet",
-        )
+        raise ValidationError("Upload has not been processed yet")
 
     try:
         # Find similar uploads
         results = await search_service.find_similar_uploads(
-            upload_id = upload_id,
+            upload = upload,
             user_id = current_user.id,
             limit = limit,
             include_same_user = include_own,
         )
 
         logger.info(
-            f"Found {len(results)} similar uploads for {upload_id}"
+            f"Found {len(results)} similar uploads for {upload.id}"
         )
 
         return results
 
     except Exception as e:
         logger.error(f"Similar search failed: {e}")
-        raise HTTPException(
-            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail = "Search service temporarily unavailable",
-        ) from e
+        raise
 
 
 @router.get(
@@ -198,7 +177,7 @@ async def find_similar_uploads(
     summary = "Get search suggestions",
     description = "Get search query suggestions based on partial input",
 )
-@limiter.limit("100/minute")
+@limiter.limit(settings.rate_limit_common)
 async def get_search_suggestions(
     request: Request,
     current_user: Annotated[User,
@@ -223,7 +202,7 @@ async def get_search_suggestions(
         suggestions = await search_service.get_search_suggestions(
             partial_query = q,
             user_id = current_user.id,
-            limit = 5
+            limit = config.SEARCH_SUGGESTIONS_DEFAULT_LIMIT
         )
 
         return suggestions
@@ -241,7 +220,7 @@ async def get_search_suggestions(
     summary = "Batch search",
     description = "Perform multiple searches in one request",
 )
-@limiter.limit("10/minute")
+@limiter.limit(settings.rate_limit_search)
 async def batch_search(
     request: Request,
     current_user: Annotated[User,
@@ -265,39 +244,20 @@ async def batch_search(
         return {}
 
     try:
-        # Query length limits
-        MIN_QUERY_LENGTH = 1
-        MAX_QUERY_LENGTH = 500
-
-        # Validate queries
-        for query in queries:
-            if len(query) < MIN_QUERY_LENGTH or len(query
-                                                    ) > MAX_QUERY_LENGTH:
-                raise HTTPException(
-                    status_code = status.HTTP_400_BAD_REQUEST,
-                    detail =
-                    f"Query must be 1-500 characters: {query[:50]}...",
-                )
-
-        # Perform batch search
+        # Perform batch search (validation happens in SearchRequest schema)
         results = await search_service.batch_search(
             queries = queries,
             user_id = current_user.id,
-            max_concurrent = 3
+            max_concurrent = config.BATCH_SEARCH_MAX_CONCURRENT
         )
 
         logger.info(f"Batch search completed for {len(queries)} queries")
 
         return results
 
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Batch search failed: {e}")
-        raise HTTPException(
-            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail = "Search service temporarily unavailable",
-        ) from e
+        raise
 
 
 @router.get(
@@ -319,14 +279,15 @@ async def get_search_stats(
         counts = await Upload.count_by_user(current_user.id)
 
         # Count uploads with embeddings
-        total_searchable = counts.get("completed", 0)
+        total_searchable = counts.get(ProcessingStatus.COMPLETED, 0)
         total_processing = (
-            counts.get("pending",
-                       0) + counts.get("analyzing",
-                                       0) + counts.get("embedding",
-                                                       0)
+            counts.get(ProcessingStatus.PENDING,
+                       0) + counts.get(ProcessingStatus.ANALYZING,
+                                       0) +
+            counts.get(ProcessingStatus.EMBEDDING,
+                       0)
         )
-        total_failed = counts.get("failed", 0)
+        total_failed = counts.get(ProcessingStatus.FAILED, 0)
 
         return {
             "total_uploads": sum(counts.values()),
@@ -338,7 +299,4 @@ async def get_search_stats(
 
     except Exception as e:
         logger.error(f"Failed to get search stats: {e}")
-        raise HTTPException(
-            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail = "Failed to retrieve statistics",
-        ) from e
+        raise

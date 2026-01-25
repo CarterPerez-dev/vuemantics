@@ -27,8 +27,8 @@ export function Component(): React.ReactElement {
 
       <div className={styles.content}>
         <p className={styles.description}>
-          Search your photos and videos using natural language. Powered by AI vision models
-          and vector embeddings for semantic understanding.
+          Search your photos and videos using natural language. Powered by AI
+          vision models and vector embeddings for semantic understanding.
         </p>
 
         <div className={styles.sections}>

@@ -1,10 +1,6 @@
 """
-Base model class for all database models.
-
-Provides common fields and CRUD operations for all models.
-Uses raw asyncpg for performance with async/await throughout.
----
-/backend/models/Base.py
+ⒸAngelaMos | 2025
+Base.py
 """
 
 from datetime import datetime
@@ -13,6 +9,7 @@ from uuid import UUID
 
 from asyncpg import Record
 
+import config
 import database
 
 
@@ -21,7 +18,7 @@ T = TypeVar("T", bound = "BaseModel")
 
 class BaseModel:
     """
-    Base class for all database models.
+    Base class for all database models
 
     Provides:
     - Common fields: id, created_at, updated_at
@@ -29,13 +26,12 @@ class BaseModel:
     - Query helpers: find_by_id, find_all
     - Serialization: to_dict, from_record
     """
-
-    __tablename__: str = ""  # Must be overridden by subclasses
+    __tablename__: str = ""
     __table_created__: bool = False
 
     def __init__(self, **kwargs: Any) -> None:
         """
-        Initialize model instance with field values.
+        Initialize model instance with field values
         """
         self.id: UUID | None = kwargs.get("id")
         self.created_at: datetime | None = kwargs.get("created_at")
@@ -55,7 +51,7 @@ class BaseModel:
     @classmethod
     async def ensure_table_exists(cls) -> None:
         """
-        Ensure table exists, create if not.
+        Ensure table exists, create if not
         """
         if not cls.__table_created__:
             await cls.create_table()
@@ -64,7 +60,7 @@ class BaseModel:
     @classmethod
     def from_record(cls: type[T], record: Record | None) -> T | None:
         """
-        Create model instance from asyncpg Record.
+        Create model instance from asyncpg Record
         """
         if record is None:
             return None
@@ -74,17 +70,19 @@ class BaseModel:
     @classmethod
     def from_records(cls: type[T], records: list[Record]) -> list[T]:
         """
-        Create multiple model instances from asyncpg Records.
+        Create multiple model instances from asyncpg Records
         """
-        return [
-            cls.from_record(record)
-            for record in records
-            if record is not None
-        ]
+        result: list[T] = []
+        for record in records:
+            if record is not None:
+                instance = cls.from_record(record)
+                if instance is not None:
+                    result.append(instance)
+        return result
 
     def to_dict(self, exclude: set[str] | None = None) -> dict[str, Any]:
         """
-        Convert model instance to dictionary.
+        Convert model instance to dictionary
         """
         exclude = exclude or set()
 
@@ -105,7 +103,7 @@ class BaseModel:
     @classmethod
     async def find_by_id(cls: type[T], id: UUID | str) -> T | None:
         """
-        Find a record by ID.
+        Find a record by ID
         """
         await cls.ensure_table_exists()
 
@@ -123,7 +121,7 @@ class BaseModel:
     @classmethod
     async def find_all(
         cls: type[T],
-        limit: int = 100,
+        limit: int = config.DEFAULT_QUERY_LIMIT,
         offset: int = 0,
         order_by: str = "created_at DESC",
     ) -> list[T]:

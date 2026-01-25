@@ -6,10 +6,9 @@
 import { useState } from 'react'
 import { LuUpload, LuX } from 'react-icons/lu'
 import { toast } from 'sonner'
-import { useCreateUpload, useUploads } from '@/api/hooks'
+import { useClientConfig, useCreateUpload, useUploads } from '@/api/hooks'
 import styles from './upload.module.scss'
 
-const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
 const ACCEPTED_TYPES = {
   'image/jpeg': ['.jpg', '.jpeg'],
   'image/png': ['.png'],
@@ -25,17 +24,23 @@ export function Component(): React.ReactElement {
   const [dragActive, setDragActive] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+  const { data: clientConfig } = useClientConfig()
+  const maxFileSizeBytes = (clientConfig?.max_upload_size_mb ?? 100) * 1024 * 1024
+
   const createUpload = useCreateUpload()
   const { data: recentUploads } = useUploads({
     page: 1,
     page_size: 6,
     sort_by: 'created_at',
     sort_order: 'desc',
+    show_hidden: false,
   })
 
   const validateFile = (file: File): boolean => {
-    if (file.size > MAX_FILE_SIZE) {
-      toast.error('File too large. Max size is 100MB')
+    const maxSizeMB = clientConfig?.max_upload_size_mb ?? 100
+    if (file.size > maxFileSizeBytes) {
+      toast.error(`File too large. Max size is ${maxSizeMB}MB`)
       return false
     }
 
@@ -119,6 +124,8 @@ export function Component(): React.ReactElement {
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
             onDrop={handleDrop}
+            role="button"
+            tabIndex={0}
           >
             {selectedFile ? (
               <div className={styles.selectedFile}>
@@ -184,10 +191,15 @@ export function Component(): React.ReactElement {
 
           <div className={styles.info}>
             <p className={styles.infoText}>
-              Supported formats: Images (JPG, PNG, WebP, HEIC) and Videos (MP4, WebM,
-              MOV)
+              Supported formats: Images (JPG, PNG, WebP, HEIC) and Videos (MP4,
+              WebM, MOV)
             </p>
-            <p className={styles.infoText}>Maximum file size: 100MB</p>
+            <p className={styles.infoText}>
+              Maximum file size:{' '}
+              <span className={styles.highlight}>
+                {clientConfig?.max_upload_size_mb ?? 100}MB
+              </span>
+            </p>
           </div>
         </div>
 

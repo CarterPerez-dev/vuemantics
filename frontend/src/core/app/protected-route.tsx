@@ -17,7 +17,6 @@ export function ProtectedRoute({
   const location = useLocation()
   const { isAuthenticated, isLoading, accessToken } = useAuthStore()
 
-  // Check if we have a token (means user was logged in)
   const hasToken = accessToken !== null && accessToken.length > 0
 
   if (isLoading) {

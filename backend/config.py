@@ -6,8 +6,9 @@ config.py
 import warnings
 from functools import lru_cache
 from pathlib import Path
+from typing import Final
 
-from pydantic import Field, field_validator
+from pydantic import Field, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,30 +16,123 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 _ENV_FILE = _PROJECT_ROOT / ".env"
 
 
+# Ver.
+APP_VERSION: Final[str] = "1.0.1"
+
+# Important
+# ======================================================
+SEARCH_DEFAULT_SIMILARITY_THRESHOLD: Final[float] = 0.48  # Default for search queries
+SIMILAR_UPLOADS_SIMILARITY_THRESHOLD: Final[float] = 0.5  # Threshold for "find similar"
+# ======================================================
+
+
+
+EMBEDDING_DIMENSIONS: Final[int] = 1024  # bge-m3 dimensions
+IVFFLAT_INDEX_LISTS: Final[int] = 100  # IVFFlat clusters for pgvector
+
+# AI Model config
+OLLAMA_VISION_TEMPERATURE: Final[float] = 0.3
+OLLAMA_VISION_NUM_PREDICT_IMAGE: Final[int] = 512  # Max tokens for image analysis
+OLLAMA_VISION_NUM_PREDICT_VIDEO: Final[int] = 1024  # Max tokens for video analysis
+OLLAMA_VISION_NUM_CTX: Final[int] = 2048  # Context window
+
+# Text processing limits
+MAX_EMBEDDING_TEXT_LENGTH: Final[int] = 32000  # Max chars for embedding generation
+
+# Concurrency limits
+VISION_SEMAPHORE_LIMIT: Final[int] = 1  # Max concurrent vision operations
+EMBEDDING_SEMAPHORE_LIMIT: Final[int] = 3  # Max concurrent embedding operations
+BATCH_ANALYZE_MAX_CONCURRENT: Final[int] = 3  # Max parallel uploads in batch analysis
+BATCH_EMBEDDING_MAX_CONCURRENT: Final[int] = 3  # Max parallel embedding generations
+
+# Search configuration
+SEARCH_RESULT_MULTIPLIER: Final[int] = 2  # Multiply limit for pre-filtering
+BATCH_SEARCH_MAX_CONCURRENT: Final[int] = 3  # Max parallel searches in batch
+BATCH_SEARCH_DEFAULT_LIMIT: Final[int] = 10  # Default results per query in batch
+SIMILAR_UPLOADS_DEFAULT_LIMIT: Final[int] = 30  # Default similar uploads to return
+SEARCH_SUGGESTIONS_DEFAULT_LIMIT: Final[int] = 5  # Default search suggestions to return
+
+# Processing queue settings
+PROCESSING_BATCH_SIZE: Final[int] = 5  # Process 5 uploads at a time
+PROCESSING_RETRY_ATTEMPTS: Final[int] = 3  # Retry failed processing 3 times
+PENDING_UPLOADS_LIMIT: Final[int] = 10  # Max pending uploads to fetch for processing
+
+# File processing constants
+THUMBNAIL_QUALITY: Final[int] = 85  # JPEG quality for thumbnails
+THUMBNAIL_FILENAME: Final[str] = "thumb_256.jpg"  # Thumbnail filename
+VIDEO_SAMPLE_FPS: Final[float] = 1.0  # Extract 1 frame per second for video analysis
+MAX_VIDEO_FRAMES: Final[int] = 10  # Maximum frames to extract from video
+MAX_VIDEO_FRAMES_FOR_ANALYSIS: Final[int] = 5  # Maximum frames to send to vision model
+
+# Description audit configuration
+DESCRIPTION_MIN_LENGTH: Final[int] = 50
+DESCRIPTION_MAX_LENGTH: Final[int] = 5000
+DESCRIPTION_MIN_WORD_DIVERSITY: Final[float] = 0.20  # 20% unique words minimum
+DESCRIPTION_MAX_CONSECUTIVE_REPEATS: Final[int] = 3  # Flag if 4+ same words in a row
+DESCRIPTION_MAX_GIBBERISH_RATIO: Final[float] = 0.30  # 30% non-alpha max
+DESCRIPTION_AUDIT_PASS_THRESHOLD: Final[int] = 60  # Score must be >= 60 to pass
+
+# Audit penalties (deducted from 100)
+AUDIT_PENALTY_BAD_TOKEN: Final[int] = 50
+AUDIT_PENALTY_TOO_SHORT: Final[int] = 30
+AUDIT_PENALTY_TOO_LONG: Final[int] = 20
+AUDIT_PENALTY_LOW_DIVERSITY: Final[int] = 40
+AUDIT_PENALTY_CONSECUTIVE_REPEATS: Final[int] = 35
+AUDIT_PENALTY_HIGH_GIBBERISH: Final[int] = 25
+
+
+
+# File upload chunk size
+FILE_UPLOAD_CHUNK_SIZE: Final[int] = 1024 * 1024  # 1MB chunks
+
+# Pagination defaults
+DEFAULT_PAGE_SIZE: Final[int] = 50
+MAX_PAGE_SIZE: Final[int] = 100
+DEFAULT_QUERY_LIMIT: Final[int] = 100  # Default limit for database queries
+
+SEARCH_CACHE_TTL: Final[int] = 300  # 5 minutes for search results
+USER_CACHE_TTL: Final[int] = 60  # 1 minute for user data
+UPLOAD_COUNT_CACHE_TTL: Final[int] = 30  # 30 seconds for upload counts
+
+# Query validation
+MIN_QUERY_LENGTH: Final[int] = 1
+MAX_QUERY_LENGTH: Final[int] = 500
+
+MAX_BULK_UPLOAD_DELETE: Final[int] = 100  # Max uploads to delete at once
+MAX_BULK_UPLOAD_UPDATE: Final[int] = 100  # Max uploads to update at once
+
+BCRYPT_ROUNDS: Final[int] = 14  # bcrypt salt rounds
+
+# JWT Token configuration
+ACCESS_TOKEN_EXPIRE_MINUTES: Final[int] = 30  # 30 minutes
+REFRESH_TOKEN_EXPIRE_DAYS: Final[int] = 30  # 30 days
+
+MIN_PASSWORD_LENGTH: Final[int] = 8
+MAX_PASSWORD_LENGTH: Final[int] = 72  # bcrypt max
+SPECIAL_CHARACTERS: Final[str] = "!@#$%^&*()_+-=[]{}|;:,.<>?"
+
+
 class Settings(BaseSettings):
     """
-    Application settings loaded from environment variables.
+    Application settings loaded from environment variables
     """
     model_config = SettingsConfigDict(
         env_file = _ENV_FILE,
         env_file_encoding = "utf-8",
         case_sensitive = False,
-        extra = "ignore",  # Ignore extra env vars
+        extra = "ignore",
     )
 
-    # Application
     app_name: str = Field(
-        default = "PG-VENV",
+        default = "Vuemantics",
         description = "Application name"
     )
     environment: str = Field(
         default = "development",
-        description =
-        "Runtime environment (development/staging/production)",
+        description = "Runtime environment",
     )
     debug: bool = Field(default = False, description = "Debug mode flag")
 
-    # Database
     database_url: str = Field(
         default =
         "postgresql://postgres:devpassword@localhost:5432/multimodal_search_dev",
@@ -65,7 +159,6 @@ class Settings(BaseSettings):
         description = "Query timeout in seconds"
     )
 
-    # Redis
     redis_url: str = Field(
         default = "redis://localhost:6379/0",
         description = "Redis connection URL for caching",
@@ -75,7 +168,23 @@ class Settings(BaseSettings):
         description = "Decode Redis responses to strings"
     )
 
-    # JWT Authentication
+    rate_limit_upload: str = Field(
+        default = "100/minute",
+        description = "Rate limit for upload endpoints"
+    )
+    rate_limit_search: str = Field(
+        default = "60/minute",
+        description = "Rate limit for search endpoints"
+    )
+    rate_limit_auth: str = Field(
+        default = "50/minute",
+        description = "Rate limit for auth endpoints"
+    )
+    rate_limit_common: str = Field(
+        default = "100/minute",
+        description = "Rate limit for common/public endpoints"
+    )
+
     secret_key: str = Field(
         default = "dev-secret-key",
         description = "Secret key for JWT signing (dev)"
@@ -85,13 +194,12 @@ class Settings(BaseSettings):
         description = "JWT signing algorithm"
     )
 
-    # Local AI Services
     ollama_host: str = Field(
-        default = "http://localhost:11434",
+        default = "http://ollama:11434",
         description = "Ollama API host"
     )
     vision_model: str = Field(
-        default = "qwen2.5vl:7b",
+        default = "qwen2.5vl:3b",
         description = "Ollama vision model for image/video analysis"
     )
     local_embedding_model: str = Field(
@@ -114,7 +222,6 @@ class Settings(BaseSettings):
         description = "Max concurrent embedding operations"
     )
 
-    # Storage
     upload_path: Path = Field(
         default = Path("./storage/uploads"),
         description = "Base path for uploaded files"
@@ -124,30 +231,7 @@ class Settings(BaseSettings):
         gt = 0,
         description = "Maximum upload file size in bytes",
     )
-    allowed_image_types: set[str] = Field(
-        default = {
-            "image/jpeg",
-            "image/jpg",
-            "image/png",
-            "image/webp",
-            "image/heic",
-            "image/heif",
-        },
-        description = "Allowed MIME types for images",
-    )
-    allowed_video_types: set[str] = Field(
-        default = {
-            "video/mp4",
-            "video/mpeg",
-            "video/quicktime",
-            "video/x-msvideo",
-            "video/x-flv",
-            "video/webm",
-        },
-        description = "Allowed MIME types for videos",
-    )
 
-    # CORS
     cors_origins: list[str] = Field(
         default = [
             "http://localhost:3000",
@@ -157,9 +241,8 @@ class Settings(BaseSettings):
         description = "Allowed CORS origins",
     )
 
-    # Pagination
     default_page_size: int = Field(
-        default = 20,
+        default = 50,
         ge = 1,
         le = 100,
         description = "Default pagination size"
@@ -170,7 +253,6 @@ class Settings(BaseSettings):
         description = "Maximum pagination size"
     )
 
-    # Processing
     video_frame_sample_rate: int = Field(
         default = 1,
         ge = 1,
@@ -188,12 +270,28 @@ class Settings(BaseSettings):
                        256),
             description = "Thumbnail dimensions (width, height)"
         )
+    vision_max_image_size: int = Field(
+        default = 1568,
+        ge = 224,
+        description = "Max image dimension for vision model (pixels)"
+    )
+    vision_patch_size: int = Field(
+        default = 28,
+        ge = 1,
+        description = "Vision model patch size for dimension alignment"
+    )
+    vision_jpeg_quality: int = Field(
+        default = 88,
+        ge = 1,
+        le = 100,
+        description = "JPEG quality for vision preprocessing"
+    )
 
     @field_validator("cors_origins", mode = "before")
     @classmethod
-    def parse_cors_origins(cls, v) -> list[str]:
+    def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
         """
-        Parse CORS origins from comma-separated string or list.
+        Parse CORS origins from comma-separated string or list
         """
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(",")]
@@ -203,23 +301,22 @@ class Settings(BaseSettings):
     @classmethod
     def validate_environment(cls, v: str) -> str:
         """
-        Validate environment is one of allowed values.
+        Validate environment is one of allowed values
         """
         allowed = {"development", "staging", "production", "testing"}
         if v not in allowed:
             raise ValueError(f"environment must be one of {allowed}")
         return v
 
-
     @field_validator("secret_key")
     @classmethod
-    def validate_secret_key(cls, v: str, info) -> str:
+    def validate_secret_key(cls, v: str, info: ValidationInfo) -> str:
         """
-        Warn if using default secret key in production.
+        Warn if using default secret key in production
         """
         if info.data.get("environment"
                          ) == "production" and v == "dev-secret-key":
-            # For MVP, just warn
+            # just warn for now
             warnings.warn(
                 "Using default secret key in production is insecure!",
                 stacklevel = 2
@@ -229,31 +326,46 @@ class Settings(BaseSettings):
     @property
     def allowed_mime_types(self) -> set[str]:
         """
-        Get all allowed MIME types for upload.
+        Get all allowed MIME types for upload
+        Imported from file validator
         """
-        return self.allowed_image_types.union(self.allowed_video_types)
+        # Prevent circular import
+        from core.validators.file import ALLOWED_MIME_TYPES
+        return ALLOWED_MIME_TYPES
+
+    @property
+    def allowed_image_types(self) -> set[str]:
+        """
+        Get allowed image MIME types.
+        Imported from file validator (single source of truth)
+        """
+        # Prevent circular import
+        from core.validators.file import ALLOWED_IMAGE_MIMES
+        return ALLOWED_IMAGE_MIMES
+
+    @property
+    def allowed_video_types(self) -> set[str]:
+        """
+        Get allowed video MIME types.
+        Imported from file validator (single source of truth)
+        """
+        # Prevent circular import
+        from core.validators.file import ALLOWED_VIDEO_MIMES
+        return ALLOWED_VIDEO_MIMES
 
     @property
     def is_production(self) -> bool:
         """
-        Check if running in production environment.
+        Check if running in production environment
         """
         return self.environment == "production"
 
     @property
     def is_development(self) -> bool:
         """
-        Check if running in development environment.
+        Check if running in development environment
         """
         return self.environment == "development"
-
-    def get_db_url_with_driver(self) -> str:
-        """
-        Get database URL with asyncpg driver.
-        """
-        if self.database_url.startswith("postgresql://"):
-            return self.database_url
-        return self.database_url
 
 
 @lru_cache

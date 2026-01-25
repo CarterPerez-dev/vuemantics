@@ -42,13 +42,13 @@
   left: 0.75rem;
   width: 18px;
   height: 18px;
-  color: $text-lighter;
+  color: $accent-blue;
   pointer-events: none;
 }
 
 .searchInput {
   width: 100%;
-  padding: 0.5rem 2.5rem 0.5rem 2.5rem;
+  padding: 0.5rem 2.5rem;
   background: $bg-control;
   border: 1px solid $border-strong;
   border-radius: $radius-sm;
@@ -62,7 +62,7 @@
 
   &:focus {
     outline: none;
-    border-color: #1f398f;
+    border-color: $accent-blue;
   }
 }
 
@@ -90,7 +90,7 @@
 }
 
 .searchBtn {
-  background: #1f398f;
+  background: $accent-blue;
   color: $text-default;
   padding: 0.5rem 1.5rem;
   border: 1px solid transparent;
@@ -184,7 +184,7 @@
 
 .card {
   background: $bg-surface-100;
-  border: 1px solid $border-default;
+  border: 0.1px solid $bg-surface-100;
   border-radius: $radius-md;
   overflow: hidden;
   cursor: pointer;
@@ -258,7 +258,7 @@
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgb(0, 0, 0, 85%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -348,9 +348,376 @@
   margin: 0;
 }
 
+.confidenceScore {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: $bg-surface-75;
+  border-radius: $radius-sm;
+}
+
+.confidenceLabel {
+  font-size: $font-size-xs;
+  color: $text-lighter;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.confidenceValue {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  font-variant-numeric: tabular-nums;
+}
+
+.scoreHigh {
+  color: #10b981;
+}
+
+.scoreMedium {
+  color: #f59e0b;
+}
+
+.scoreLow {
+  color: #ef4444;
+}
+
 .modalMeta {
   display: flex;
   gap: 1.5rem;
   font-size: $font-size-sm;
   color: $text-lighter;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.toolbarLeft {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.toolbarRight {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.toolbarBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: $bg-surface-100;
+  border: 1px solid $border-default;
+  border-radius: $radius-sm;
+  color: $text-light;
+  font-size: $font-size-sm;
+  cursor: pointer;
+  transition: all 100ms ease-out;
+
+  &:hover {
+    background: $bg-surface-200;
+  }
+
+  &.active {
+    background: $accent-blue;
+    border-color: $accent-blue;
+    color: $text-default;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.textBtn {
+  background: transparent;
+  border: none;
+  color: $text-lighter;
+  font-size: $font-size-sm;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+
+  &:hover {
+    color: $text-default;
+  }
+}
+
+.bulkActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.selectedCount {
+  font-size: $font-size-sm;
+  color: $text-light;
+}
+
+.bulkBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  background: $bg-surface-100;
+  border: 1px solid $border-default;
+  border-radius: $radius-sm;
+  color: $text-light;
+  font-size: $font-size-sm;
+  cursor: pointer;
+  transition: all 100ms ease-out;
+
+  &:hover {
+    background: $bg-surface-200;
+  }
+
+  &.danger {
+    border-color: #b91c1c;
+    color: #ef4444;
+
+    &:hover {
+      background: #b91c1c;
+      color: $text-default;
+    }
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem;
+  background: $bg-surface-100;
+  border: 1px solid $border-default;
+  border-radius: $radius-sm;
+  flex-wrap: wrap;
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filterLabel {
+  font-size: $font-size-sm;
+  color: $text-lighter;
+}
+
+.filterSelect {
+  padding: 0.35rem 0.75rem;
+  background: $bg-control;
+  border: 1px solid $border-strong;
+  border-radius: $radius-sm;
+  color: $text-default;
+  font-size: $font-size-sm;
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: $accent-blue;
+  }
+}
+
+.filterCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: $font-size-sm;
+  color: $text-light;
+  cursor: pointer;
+
+  input {
+    cursor: pointer;
+  }
+}
+
+.card {
+  position: relative;
+  background: $bg-surface-100;
+  border: 2px solid transparent;
+  border-radius: $radius-md;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 100ms ease-out;
+
+  &:hover {
+    filter: brightness(1.1);
+  }
+
+  &.selected {
+    border-color: $accent-blue;
+  }
+
+  &.hidden {
+    opacity: 0.6;
+  }
+}
+
+.checkbox {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  width: 24px;
+  height: 24px;
+  background: $bg-surface-100;
+  border: 2px solid $border-strong;
+  border-radius: $radius-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  color: $accent-blue;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.hiddenBadge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.25rem;
+  background: rgb(0, 0, 0, 60%);
+  border-radius: $radius-sm;
+  color: $text-lighter;
+  z-index: 5;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.similarBtn {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  padding: 0.5rem;
+  background: rgb(0, 0, 0, 70%);
+  border: 1px solid $accent-blue;
+  border-radius: $radius-sm;
+  color: $accent-blue;
+  cursor: pointer;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 150ms ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: $accent-blue;
+    color: $text-default;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.card:hover .similarBtn {
+  opacity: 1;
+}
+
+.hiddenTag {
+  padding: 0.15rem 0.5rem;
+  background: $bg-surface-200;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  color: $text-lighter;
+}
+
+.modalActions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: $bg-surface-200;
+  border: 1px solid $border-default;
+  border-radius: $radius-sm;
+  color: $text-light;
+  font-size: $font-size-sm;
+  cursor: pointer;
+  transition: all 100ms ease-out;
+
+  &:hover:not(:disabled) {
+    background: $bg-selection;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &.danger {
+    border-color: #b91c1c;
+    color: #ef4444;
+
+    &:hover:not(:disabled) {
+      background: #b91c1c;
+      color: $text-default;
+    }
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1.5rem 0;
+}
+
+.pageBtn {
+  padding: 0.5rem 1.25rem;
+  background: $bg-surface-100;
+  border: 1px solid $border-default;
+  border-radius: $radius-sm;
+  color: $text-light;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all 100ms ease-out;
+
+  &:hover:not(:disabled) {
+    background: $bg-surface-200;
+    border-color: $accent-blue;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.pageInfo {
+  font-size: $font-size-sm;
+  color: $text-light;
 }

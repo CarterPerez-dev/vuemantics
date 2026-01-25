@@ -45,12 +45,13 @@
   }
 
   &.active {
-    border-color: #1f398f;
+    border-color: $accent-blue;
     background: $bg-control;
   }
 
   &.hasFile {
     cursor: default;
+
     &:hover {
       filter: none;
     }
@@ -60,7 +61,7 @@
 .icon {
   width: 48px;
   height: 48px;
-  color: $text-lighter;
+  color: $accent-blue;
 }
 
 .text {
@@ -126,7 +127,7 @@
 .fileIcon {
   width: 32px;
   height: 32px;
-  color: #1f398f;
+  color: $accent-blue;
 }
 
 .fileDetails {
@@ -153,7 +154,7 @@
 }
 
 .uploadBtn {
-  background: #1f398f;
+  background: $accent-blue;
   color: $text-default;
   padding: 0.5rem 2rem;
   border: 1px solid transparent;
@@ -212,6 +213,10 @@
   font-size: $font-size-sm;
   color: $text-lighter;
   margin: 0;
+
+  &.highlight {
+    color: $accent-blue;
+  }
 }
 
 .recentSection {
@@ -235,7 +240,7 @@
 
 .card {
   background: $bg-surface-100;
-  border: 1px solid $border-default;
+  border: 1px solid $bg-surface-100;
   border-radius: $radius-md;
   overflow: hidden;
   transition: filter 100ms ease-out;

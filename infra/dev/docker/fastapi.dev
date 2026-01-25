@@ -1,27 +1,45 @@
+# =============================================================================
+# ⒸAngelaMos | 2026
+# vuemantics backend
+# =============================================================================
+# Development Dockerfile for FastAPI backend
+# Features: uv package manager, hot reload, layer caching optimization
+# =============================================================================
+# syntax=docker/dockerfile:1
+
 FROM python:3.14-slim
+
+# Install build dependencies for Python packages with C extensions
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    libxml2-dev \
-    libxslt-dev \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_COMPILE_BYTECODE=0 \
+    UV_LINK_MODE=copy \
+    PYTHONPATH=/app
 
-# Install uv
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.local/bin:$PATH"
+# Copy dependency files first (for layer caching)
+COPY backend/pyproject.toml backend/uv.lock* ./
 
-# Copy backend code
-COPY backend /app
+# Install dependencies only (cached when deps don't change)
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project
 
-# Install Python dependencies
-RUN uv sync
+# Copy application code
+COPY backend/ ./
 
-# Expose port
+# Install project (fast, deps already installed)
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen
+
 EXPOSE 8000
 
-# Run with uvicorn hot reload
 CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

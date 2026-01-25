@@ -4,5 +4,6 @@
 // ===================
 
 export * from './useAuth'
-export * from './useUpload'
+export * from './useClientConfig'
 export * from './useSearch'
+export * from './useUpload'

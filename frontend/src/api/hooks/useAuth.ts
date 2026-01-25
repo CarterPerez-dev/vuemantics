@@ -56,9 +56,7 @@ export const useCurrentUser = (): UseQueryResult<UserResponse, Error> => {
   })
 }
 
-const performRegister = async (
-  data: RegisterRequest
-): Promise<UserResponse> => {
+const performRegister = async (data: RegisterRequest): Promise<UserResponse> => {
   const response = await apiClient.post<unknown>(
     API_ENDPOINTS.AUTH.REGISTER,
     data

@@ -1,5 +1,5 @@
-# VueMantic
-## ©AngelaMos | ©CertGames | 2026
+# Vuemantics
+## © AngelaMos | CertGames | 2026
 ```ruby
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣀⣤⣤⣤⣤⣄⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⠶⣻⠝⠋⠠⠔⠛⠁⡀⠀⠈⢉⡙⠓⠶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -33,51 +33,9 @@
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠉⠉⠉⠉⠛⠛⠛⠛⠛⠛⠋⠉⠉⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ```
 ---
-# Multimodal Search System - VueMantic
+# Multimodal Search System - VueMantics
 
 A smart camera roll application that revolutionizes how users search through their personal media collections by leveraging AI to understand content semantically.
-
-## Prerequisites
-
-- Docker and Docker Compose
-- Python 3.13+
-- Node.js 20+
-- Ollama (for local AI models)
-
-## Quick Start
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/CarterPerez-dev/vuemantics
-   cd vuemantics
-   ```
-
-2. **Install Ollama and pull models**
-   ```bash
-   # Install Ollama (if not already installed)
-   curl -fsSL https://ollama.com/install.sh | sh
-
-   # Pull required models
-   ollama pull qwen2.5vl:7b
-   ollama pull bge-m3
-   ```
-
-3. **Configure environment**
-   Copy `.env.example` to `.env` and configure settings:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your settings (default values work for local development)
-   ```
-
-4. **Start the development environment**
-   ```bash
-   just dev-up
-   ```
-
-5. **Access the application**
-   - Full Application: http://localhost/
-
-## Available Commands
 
 Run `just` to see all available commands grouped by category.
 
@@ -123,11 +81,11 @@ just info                # Show project info
 ```
 
 ## Architecture
-
 - **Backend**: FastAPI with async support
 - **Database**: PostgreSQL 16 with pgvector extension
 - **Cache**: Redis for performance optimization
 - **AI Models** (via Ollama - 100% local, $0 cost):
-  - Qwen2.5-VL-7B for multimodal image/video analysis
+  - Qwen2.5-VL-3B for multimodal image/video analysis
   - bge-m3 for semantic embeddings (1024-dim, 72% MTEB score)
-- **Frontend**: React + TypeScript + Vite + Tailwind CSS
+- **Frontend**: React + TypeScript + Vite + SCSS
+

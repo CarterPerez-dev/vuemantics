@@ -6,7 +6,13 @@
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { GiExitDoor } from 'react-icons/gi'
-import { LuChevronLeft, LuChevronRight, LuImages, LuMenu, LuUpload } from 'react-icons/lu'
+import {
+  LuChevronLeft,
+  LuChevronRight,
+  LuImages,
+  LuMenu,
+  LuUpload,
+} from 'react-icons/lu'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useLogout } from '@/api/hooks'
 import { ROUTES } from '@/config'
@@ -18,11 +24,12 @@ const NAV_ITEMS = [
   { path: ROUTES.GALLERY, label: 'Gallery', icon: LuImages },
 ]
 
-function ShellErrorFallback({ error }: { error: Error }): React.ReactElement {
+function ShellErrorFallback({ error }: { error: unknown }): React.ReactElement {
+  const errorMessage = error instanceof Error ? error.message : String(error)
   return (
     <div className={styles.error}>
       <h2>Something went wrong</h2>
-      <pre>{error.message}</pre>
+      <pre>{errorMessage}</pre>
     </div>
   )
 }
@@ -33,7 +40,7 @@ function ShellLoading(): React.ReactElement {
 
 function getPageTitle(pathname: string): string {
   const item = NAV_ITEMS.find((i) => i.path === pathname)
-  return item?.label ?? 'VueMantic'
+  return item?.label ?? 'Vuemantic'
 }
 
 export function Shell(): React.ReactElement {

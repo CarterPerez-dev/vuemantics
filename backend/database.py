@@ -5,13 +5,14 @@
 
 import asyncio
 import logging
-from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager, suppress
 from typing import Any
 
 import asyncpg
 from asyncpg import Connection, Pool, Record
 
-from config import settings
+import config
 
 
 logger = logging.getLogger(__name__)
@@ -19,10 +20,10 @@ logger = logging.getLogger(__name__)
 
 class DatabasePool:
     """
-    Manages PostgreSQL connection pool with pgvector support.
+    Manages PostgreSQL connection pool with pgvector support
 
     Provides methods for executing queries, managing transactions,
-    and handling vector operations efficiently.
+    and handling vector operations efficiently
     """
     def __init__(self) -> None:
         """
@@ -33,22 +34,22 @@ class DatabasePool:
 
     async def connect(self) -> None:
         """
-        Initialize connection pool with pgvector extension.
+        Initialize connection pool with pgvector extension
         """
         if self._pool is not None:
             return
 
         async with self._lock:
             if self._pool is not None:
-                return
+                return  # type: ignore[unreachable]
 
             try:
                 self._pool = await asyncpg.create_pool(
-                    settings.database_url,
-                    min_size = settings.db_pool_min_size,
-                    max_size = settings.db_pool_max_size,
-                    command_timeout = settings.db_command_timeout,
-                    timeout = settings.db_pool_timeout,
+                    config.settings.database_url,
+                    min_size = config.settings.db_pool_min_size,
+                    max_size = config.settings.db_pool_max_size,
+                    command_timeout = config.settings.db_command_timeout,
+                    timeout = config.settings.db_pool_timeout,
                     init = self._init_connection,
                 )
 
@@ -57,8 +58,8 @@ class DatabasePool:
                 logger.info(
                     "Database pool created successfully",
                     extra = {
-                        "min_size": settings.db_pool_min_size,
-                        "max_size": settings.db_pool_max_size,
+                        "min_size": config.settings.db_pool_min_size,
+                        "max_size": config.settings.db_pool_max_size,
                     },
                 )
 
@@ -68,7 +69,7 @@ class DatabasePool:
 
     async def disconnect(self) -> None:
         """
-        Close all connections in the pool.
+        Close all connections in the pool
         """
         if self._pool is not None:
             await self._pool.close()
@@ -77,22 +78,20 @@ class DatabasePool:
 
     async def _init_connection(self, conn: Connection) -> None:
         """
-        Initialize individual connection with vector codec.
+        Initialize individual connection with vector codec
         """
-        try:
+        with suppress(asyncpg.PostgresError, ValueError):
             await conn.set_type_codec(
                 "vector",
                 encoder = lambda v: f"[{','.join(map(str, v))}]",
-                decoder = lambda v: list(map(float, v[1:-1].split(","))),
+                decoder = lambda v: list(map(float, v[1 :-1].split(","))),
                 schema = "public",
             )
-        except asyncpg.PostgresError:
-            pass
 
     async def _verify_pgvector(self) -> None:
         """
-        Verify required extensions are installed and create if needed.
-        Then register vector type codec for all connections.
+        Verify required extensions are installed and create if needed
+        Then register vector type codec for all connections
         """
         async with self.acquire() as conn:
             try:
@@ -128,7 +127,7 @@ class DatabasePool:
 
     async def _register_vector_types(self) -> None:
         """
-        Register vector type codec for all connections in the pool.
+        Register vector type codec for all connections in the pool
         """
         if self._pool is None:
             return
@@ -142,9 +141,9 @@ class DatabasePool:
             )
 
     @asynccontextmanager
-    async def acquire(self):
+    async def acquire(self) -> AsyncIterator[Connection]:
         """
-        Acquire a connection from the pool.
+        Acquire a connection from the pool
         """
         if self._pool is None:
             raise RuntimeError(
@@ -155,9 +154,9 @@ class DatabasePool:
             yield conn
 
     @asynccontextmanager
-    async def transaction(self):
+    async def transaction(self) -> AsyncIterator[Connection]:
         """
-        Create a database transaction.
+        Future: Create a database transaction for atomic multi-step operations
         """
         async with self.acquire() as conn, conn.transaction():
             yield conn
@@ -169,17 +168,17 @@ class DatabasePool:
         timeout: float | None = None
     ) -> str:
         """
-        Execute a query without returning results.
+        Execute a query without returning results
         """
         async with self.acquire() as conn:
-            return await conn.execute(query, *args, timeout = timeout)
+            return await conn.execute(query, *args, timeout = timeout)  # type: ignore[no-any-return]
 
     async def executemany(self, query: str, args: list[list[Any]]) -> str:
         """
-        Execute a query multiple times with different parameters.
+        Future: Execute a query multiple times with different parameters (bulk insert)
         """
         async with self.acquire() as conn:
-            return await conn.executemany(query, args)
+            return await conn.executemany(query, args)  # type: ignore[no-any-return]
 
     async def fetch(
         self,
@@ -191,7 +190,7 @@ class DatabasePool:
         Execute a query and return all results.
         """
         async with self.acquire() as conn:
-            return await conn.fetch(query, *args, timeout = timeout)
+            return await conn.fetch(query, *args, timeout = timeout)  # type: ignore[no-any-return]
 
     async def fetchrow(
         self,
@@ -200,7 +199,7 @@ class DatabasePool:
         timeout: float | None = None
     ) -> Record | None:
         """
-        Execute a query and return first result.
+        Execute a query and return first result
         """
         async with self.acquire() as conn:
             return await conn.fetchrow(query, *args, timeout = timeout)
@@ -213,7 +212,7 @@ class DatabasePool:
         timeout: float | None = None
     ) -> Any:
         """
-        Execute a query and return single value.
+        Execute a query and return single value
         """
         async with self.acquire() as conn:
             return await conn.fetchval(
@@ -228,12 +227,12 @@ class DatabasePool:
         table_name: str,
         embedding_column: str,
         query_embedding: list[float],
-        limit: int = 10,
+        limit: int = config.DEFAULT_PAGE_SIZE,
         filters: dict[str,
                       Any] | None = None,
     ) -> list[Record]:
         """
-        Perform vector similarity search using pgvector.
+        Perform vector similarity search using pgvector
         """
         # Build the WHERE clause
         where_conditions = []
@@ -268,7 +267,7 @@ class DatabasePool:
         table_name: str,
         embedding_column: str,
         index_type: str = "ivfflat",
-        lists: int = 100,
+        lists: int = config.IVFFLAT_INDEX_LISTS,
     ) -> None:
         """
         Create a vector similarity index for efficient search.
@@ -306,20 +305,11 @@ class DatabasePool:
 db = DatabasePool()
 
 
-async def get_db() -> DatabasePool:
-    """
-    Dependency for FastAPI to get database instance.
-    """
-    if db.pool is None:
-        raise RuntimeError("Database is not connected")
-    return db
-
-
 async def init_db() -> None:
     """
     Initialize database connection pool.
 
-    Should be called during application startup.
+    Should be called during application startup
     """
     await db.connect()
 
@@ -328,6 +318,6 @@ async def close_db() -> None:
     """
     Close database connection pool.
 
-    Should be called during application shutdown.
+    Should be called during application shutdown
     """
     await db.disconnect()

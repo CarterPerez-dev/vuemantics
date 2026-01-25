@@ -12,11 +12,11 @@ import {
 import { toast } from 'sonner'
 import {
   isValidSearchResponse,
+  SEARCH_ERROR_MESSAGES,
   type SearchRequest,
   type SearchResponse,
-  type SearchResult,
-  SEARCH_ERROR_MESSAGES,
   SearchResponseError,
+  type SearchResult,
 } from '@/api/types'
 import { API_ENDPOINTS, QUERY_KEYS } from '@/config'
 import { apiClient } from '@/core/api'
@@ -29,8 +29,13 @@ export const searchQueries = {
   stats: () => QUERY_KEYS.SEARCH.STATS(),
 } as const
 
-const performSearch = async (searchRequest: SearchRequest): Promise<SearchResponse> => {
-  const response = await apiClient.post<unknown>(API_ENDPOINTS.SEARCH.BASE, searchRequest)
+const performSearch = async (
+  searchRequest: SearchRequest
+): Promise<SearchResponse> => {
+  const response = await apiClient.post<unknown>(
+    API_ENDPOINTS.SEARCH.BASE,
+    searchRequest
+  )
   const data: unknown = response.data
 
   if (!isValidSearchResponse(data)) {
@@ -61,15 +66,20 @@ const fetchSimilarUploads = async (
 const fetchSearchSuggestions = async (query: string): Promise<string[]> => {
   if (query.length < 2) return []
 
-  const response = await apiClient.get<string[]>(API_ENDPOINTS.SEARCH.SUGGESTIONS, {
-    params: { q: query },
-  })
+  const response = await apiClient.get<string[]>(
+    API_ENDPOINTS.SEARCH.SUGGESTIONS,
+    {
+      params: { q: query },
+    }
+  )
 
   return response.data
 }
 
 const fetchSearchStats = async (): Promise<Record<string, number>> => {
-  const response = await apiClient.get<Record<string, number>>(API_ENDPOINTS.SEARCH.STATS)
+  const response = await apiClient.get<Record<string, number>>(
+    API_ENDPOINTS.SEARCH.STATS
+  )
   return response.data
 }
 
@@ -124,7 +134,10 @@ export const useSearchSuggestions = (
   })
 }
 
-export const useSearchStats = (): UseQueryResult<Record<string, number>, Error> => {
+export const useSearchStats = (): UseQueryResult<
+  Record<string, number>,
+  Error
+> => {
   return useQuery({
     queryKey: searchQueries.stats(),
     queryFn: fetchSearchStats,

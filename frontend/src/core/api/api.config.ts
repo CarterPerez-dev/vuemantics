@@ -8,7 +8,7 @@ import axios, {
   type AxiosInstance,
   type InternalAxiosRequestConfig,
 } from 'axios'
-import { API_ENDPOINTS, HTTP_STATUS } from '@/config'
+import { API_ENDPOINTS, HTTP_STATUS, ROUTES } from '@/config'
 import { useAuthStore } from '@/core/lib'
 import { ApiError, ApiErrorCode, transformAxiosError } from './errors'
 
@@ -95,7 +95,7 @@ const handleTokenRefresh = async (): Promise<string> => {
 
 const handleAuthFailure = (): void => {
   useAuthStore.getState().logout()
-  window.location.href = '/login'
+  window.location.href = ROUTES.LOGIN
 }
 
 apiClient.interceptors.request.use(

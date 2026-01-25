@@ -1,38 +1,28 @@
 """
-Search service for semantic similarity search using embeddings.
-
-Handles query embedding generation, vector search orchestration,
-and result formatting. Uses local bge-m3 for query embeddings and
-pgvector for similarity search.
----
-/backend/services/search_service.py
+ⒸAngelaMos | 2026
+search_service.py
 """
 
+import time
 import asyncio
 import logging
-import time
-from datetime import datetime
-from typing import Any
 from uuid import UUID
+from typing import Any
 
-from config import settings
-from models import Upload
-from schemas import SearchRequest, SearchResponse, SearchResult
+import config
+from core import (
+    QueryEmbeddingError,
+)
+from models.Upload import Upload
+from schemas import (
+    SearchRequest,
+    SearchResponse,
+    SearchResult,
+)
+from services.ai import local_ai_service
 
 
 logger = logging.getLogger(__name__)
-
-
-class SearchServiceError(Exception):
-    """
-    Base exception for search service errors.
-    """
-
-
-class QueryEmbeddingError(SearchServiceError):
-    """
-    Raised when query embedding generation fails.
-    """
 
 
 class SearchService:
@@ -45,9 +35,9 @@ class SearchService:
     3. Apply additional filters
     4. Format and return results
     """
-    def __init__(self):
+    def __init__(self) -> None:
         """
-        Initialize search service.
+        Initialize search service
         """
         logger.info("Search service initialized")
 
@@ -57,7 +47,7 @@ class SearchService:
         user_id: UUID | None = None
     ) -> SearchResponse:
         """
-        Perform semantic search on uploads.
+        Perform semantic search on uploads
 
         Args:
             request: Search parameters including query and filters
@@ -80,8 +70,9 @@ class SearchService:
             # Perform vector similarity search
             results = await self._search_uploads(
                 query_embedding = query_embedding,
-                user_id = user_id if request.user_id is None else request.user_id,
-                limit = request.limit * 2,  # Get extra for post-filtering
+                user_id = user_id
+                if request.user_id is None else request.user_id,
+                limit = request.limit * config.SEARCH_RESULT_MULTIPLIER,
                 similarity_threshold = request.similarity_threshold,
             )
 
@@ -136,20 +127,15 @@ class SearchService:
             QueryEmbeddingError: If embedding generation fails
         """
         try:
-            from services import local_ai_service
-
-            # Clean query
             cleaned_query = " ".join(query.split())
 
-            # Enhance query for better search results
-            enhanced_query = f"Find media content related to: {cleaned_query}"
-
-            # Generate embedding using local bge-m3
+            # Generate embedding using local bge-m3 (no enhancement, raw query works better)
             embedding = await local_ai_service.create_embedding_for_query(
-                enhanced_query
+                cleaned_query
             )
 
-            if len(embedding) != settings.local_embedding_dimensions:
+            if len(embedding
+                   ) != config.settings.local_embedding_dimensions:
                 raise QueryEmbeddingError(
                     f"Invalid embedding dimensions: {len(embedding)}"
                 )
@@ -170,7 +156,7 @@ class SearchService:
         similarity_threshold: float,
     ) -> list[SearchResult]:
         """
-        Search uploads using vector similarity.
+        Search uploads using vector similarity
 
         Args:
             query_embedding: Query embedding vector
@@ -197,7 +183,7 @@ class SearchService:
             distance = 1.0 - similarity
 
             result = SearchResult(
-                upload = upload.to_dict(),
+                upload = upload,
                 similarity_score = similarity,
                 distance = distance,
                 rank = rank,
@@ -227,22 +213,20 @@ class SearchService:
         if request.file_types:
             filtered = [
                 r for r in filtered
-                if r.upload.get("file_type") in request.file_types
+                if r.upload.file_type in request.file_types
             ]
 
         # Filter by date range
         if request.date_from:
             filtered = [
                 r for r in filtered
-                if datetime.fromisoformat(r.upload.get("created_at", ""))
-                >= request.date_from
+                if r.upload.created_at >= request.date_from
             ]
 
         if request.date_to:
             filtered = [
                 r for r in filtered
-                if datetime.fromisoformat(r.upload.get("created_at", ""))
-                <= request.date_to
+                if r.upload.created_at <= request.date_to
             ]
 
         # Re-rank after filtering
@@ -255,7 +239,7 @@ class SearchService:
                              request: SearchRequest) -> dict[str,
                                                              Any] | None:
         """
-        Get summary of applied filters.
+        Get summary of applied filters
 
         Args:
             request: Search request
@@ -263,7 +247,7 @@ class SearchService:
         Returns:
             Dictionary of applied filters or None
         """
-        filters = {}
+        filters: dict[str, Any] = {}
 
         if request.file_types:
             filters["file_types"] = request.file_types
@@ -281,46 +265,38 @@ class SearchService:
 
     async def find_similar_uploads(
         self,
-        upload_id: UUID,
+        upload: Upload,
         user_id: UUID,
-        limit: int = 10,
+        limit: int = config.SIMILAR_UPLOADS_DEFAULT_LIMIT,
         include_same_user: bool = True,
     ) -> list[SearchResult]:
         """
         Find uploads similar to a specific upload.
 
         Args:
-            upload_id: Upload to find similar items for
+            upload: Upload object (already validated with embedding)
             user_id: Current user ID
             limit: Maximum results
             include_same_user: Whether to include user's own uploads
 
         Returns:
-            List of similar uploads
+            List of similar uploads ordered by similarity
         """
-        # Get the upload
-        upload = await Upload.find_by_id(upload_id)
-        if not upload or upload.user_id != user_id:
-            return []
-
-        if not upload.embedding_local:
-            logger.warning(f"Upload {upload_id} has no local embedding")
-            return []
-
-        embedding_to_use = upload.embedding_local
-
         # Search using the upload's embedding
-        search_user_id = None if include_same_user else user_id
+        if upload.embedding_local is None:
+            return []
+
+        # Always filter by user_id to only show current user's uploads
         results = await self._search_uploads(
-            query_embedding = embedding_to_use,
-            user_id = search_user_id,
+            query_embedding = upload.embedding_local,
+            user_id = user_id,
             limit = limit + 1,  # Get extra to exclude self
-            similarity_threshold = 0.5,
+            similarity_threshold = config.SIMILAR_UPLOADS_SIMILARITY_THRESHOLD,
         )
 
-        # Exclude the source upload
+        # Exclude the source upload from results
         filtered_results = [
-            r for r in results if r.upload.get("id") != str(upload_id)
+            r for r in results if r.upload.id != upload.id
         ]
 
         return filtered_results[: limit]
@@ -329,7 +305,8 @@ class SearchService:
         self,
         queries: list[str],
         user_id: UUID | None = None,
-        max_concurrent: int = 3
+        limit: int = config.BATCH_SEARCH_DEFAULT_LIMIT,
+        max_concurrent: int = config.BATCH_SEARCH_MAX_CONCURRENT
     ) -> dict[str,
               SearchResponse]:
         """
@@ -338,6 +315,7 @@ class SearchService:
         Args:
             queries: List of search queries
             user_id: Optional user filter
+            limit: Maximum results per query
             max_concurrent: Maximum concurrent searches
 
         Returns:
@@ -348,7 +326,7 @@ class SearchService:
         async def search_with_limit(query: str) -> tuple[str,
                                                          SearchResponse]:
             async with semaphore:
-                request = SearchRequest(query = query, limit = 10)
+                request = SearchRequest(query = query, limit = limit)
                 result = await self.search(request, user_id)
                 return query, result
 
@@ -358,8 +336,8 @@ class SearchService:
 
         return dict(results)
 
-    async def get_search_suggestions(
-        self, partial_query: str, user_id: UUID, limit: int = 5  # noqa: ARG002
+    async def get_search_suggestions(  # TODO
+        self, partial_query: str, user_id: UUID, limit: int = config.SEARCH_SUGGESTIONS_DEFAULT_LIMIT  # noqa: ARG002
     ) -> list[str]:
         """
         Get search suggestions based on partial query.
@@ -400,7 +378,7 @@ class SearchService:
         embedding2: list[float]
     ) -> float:
         """
-        Calculate cosine similarity between two embeddings.
+        Calculate cosine similarity between two embeddings
 
         Args:
             embedding1: First embedding vector
@@ -409,13 +387,10 @@ class SearchService:
         Returns:
             Similarity score (0-1)
         """
-        # Simple dot product for normalized vectors
-        # (bge-m3 embeddings are pre-normalized)
         similarity = sum(
             a * b for a, b in zip(embedding1, embedding2, strict = False)
         )
         return max(0.0, min(1.0, similarity))
 
 
-# Global instance
 search_service = SearchService()

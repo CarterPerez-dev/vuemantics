@@ -10,7 +10,10 @@ export const searchRequestSchema = z.object({
   query: z.string().min(1).max(500),
   limit: z.number().int().positive().max(100).default(20),
   similarity_threshold: z.number().min(0).max(1).default(0.25),
-  file_types: z.array(z.enum(['image', 'video'])).nullable().optional(),
+  file_types: z
+    .array(z.enum(['image', 'video']))
+    .nullable()
+    .optional(),
   date_from: z.string().nullable().optional(),
   date_to: z.string().nullable().optional(),
   user_id: z.string().uuid().nullable().optional(),
@@ -30,7 +33,7 @@ export const searchResponseSchema = z.object({
   search_time_ms: z.number().nonnegative(),
   query: z.string(),
   query_embedding_generated: z.boolean().default(true),
-  applied_filters: z.record(z.any()).nullable().optional(),
+  applied_filters: z.record(z.string(), z.any()).nullable().optional(),
 })
 
 export type SearchRequest = z.infer<typeof searchRequestSchema>
@@ -42,6 +45,10 @@ export const isValidSearchResponse = (data: unknown): data is SearchResponse => 
   if (typeof data !== 'object') return false
 
   const result = searchResponseSchema.safeParse(data)
+  if (!result.success) {
+    // biome-ignore lint/suspicious/noConsole: Debugging validation errors
+    console.error('Search response validation failed:', result.error.format())
+  }
   return result.success
 }
 

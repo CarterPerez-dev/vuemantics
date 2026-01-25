@@ -1,9 +1,9 @@
 """
-Migration: Add local_embedding column for bge-m3 (1024 dimensions).
+ⒸAngelaMos | 2026
 
-This migration adds the embedding column for local AI models.
+This migration adds the embedding column for local AI models
 ---
-/backend/migrations/add_local_embedding_column.py
+docker exec -it multimodal-backend-dev uv run python -m migrations.add_local_embedding_column.py
 """
 
 import asyncio
@@ -11,7 +11,6 @@ import logging
 import sys
 from pathlib import Path
 
-# Add parent directory to path so we can import database
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import database
@@ -22,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 async def upgrade():
     """
-    Add local_embedding column for bge-m3 embeddings (1024 dimensions).
+    Add local_embedding column for bge-m3 embeddings (1024 dimensions)
     """
     logger.info("Starting migration: add local_embedding column")
 
@@ -56,7 +55,7 @@ async def upgrade():
 
 async def downgrade():
     """
-    Remove local_embedding column.
+    Remove local_embedding column
     """
     logger.info(
         "Starting migration rollback: remove local_embedding column"
@@ -80,7 +79,7 @@ async def downgrade():
 
 async def main():
     """
-    Run migration from command line.
+    Run migration from command line
     """
     logging.basicConfig(level = logging.INFO)
 
