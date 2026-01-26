@@ -4,8 +4,8 @@ client_config.py
 """
 
 from pydantic import (
-    BaseModel, 
-    ConfigDict, 
+    BaseModel,
+    ConfigDict,
     Field,
 )
 

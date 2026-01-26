@@ -15,7 +15,7 @@ from pydantic import (
 
 from config import (
     MAX_PAGE_SIZE,
-    DEFAULT_PAGE_SIZE, 
+    DEFAULT_PAGE_SIZE,
 )
 
 
@@ -60,7 +60,7 @@ class PaginatedResponse[T](BaseModel):
     Generic paginated response wrapper
     """
     model_config = ConfigDict(
-        extra = "ignore",
+        extra = "forbid",
     )
 
     items: list[T] = Field(description = "List of items for current page")
@@ -93,6 +93,10 @@ class TimestampMixin(BaseModel):
     """
     Mixin for models with timestamps
     """
+    model_config = ConfigDict(
+        extra = "forbid",
+    )
+
     created_at: datetime = Field(description = "Creation timestamp")
-    updated_at: datetime = Field(description = "Last update timestamp")   
-     
+    updated_at: datetime = Field(description = "Last update timestamp")
+

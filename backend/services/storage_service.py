@@ -320,7 +320,7 @@ class StorageService:
                 ret, frame = cap.read()
                 if ret:
                     # Rotate portrait frames to landscape for model compatibility
-                    height, width = frame.shape[:2]
+                    height, width = frame.shape[: 2]
                     if height > width:
                         frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
 
@@ -462,7 +462,9 @@ class StorageService:
         try:
             # Get codec fourcc and decode to string
             fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
-            codec = "".join([chr((fourcc >> 8 * i) & 0xFF) for i in range(4)]).strip().lower()
+            codec: str | None = "".join(
+                [chr((fourcc >> 8 * i) & 0xFF) for i in range(4)]
+            ).strip().lower()
 
             # Normalize codec names
             if codec in ("hvc1", "hev1"):
@@ -489,7 +491,8 @@ class StorageService:
                 "file_size_mb":
                 round(stats.st_size / (1024 * 1024),
                       2),
-                "codec": codec,
+                "codec":
+                codec,
             }
         finally:
             cap.release()

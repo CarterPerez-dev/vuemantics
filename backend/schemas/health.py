@@ -6,8 +6,8 @@ Health check schemas
 from enum import Enum
 
 from pydantic import (
-    BaseModel, 
-    ConfigDict, 
+    BaseModel,
+    ConfigDict,
     Field,
 )
 

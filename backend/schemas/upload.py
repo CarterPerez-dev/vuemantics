@@ -206,4 +206,4 @@ class BulkUploadResponse(BaseModel):
         description = "Total successful uploads"
     )
     total_failed: int = Field(ge = 0, description = "Total failed uploads")
-    
+

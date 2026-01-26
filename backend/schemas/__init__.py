@@ -46,6 +46,11 @@ from .health import (
     HealthStatus,
     HealthDetailedResponse,
 )
+from .changelog import (
+    ChangelogSection,
+    ChangelogVersion,
+    ChangelogResponse,
+)
 
 __all__ = [
 
@@ -91,4 +96,9 @@ __all__ = [
     # Health
     "HealthStatus",
     "HealthDetailedResponse",
+
+    # Changelog
+    "ChangelogSection",
+    "ChangelogVersion",
+    "ChangelogResponse",
 ]

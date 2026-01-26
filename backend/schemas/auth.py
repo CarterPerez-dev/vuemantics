@@ -11,7 +11,7 @@ from pydantic import (
 )
 
 from config import (
-    MIN_PASSWORD_LENGTH, 
+    MIN_PASSWORD_LENGTH,
     MAX_PASSWORD_LENGTH,
 )
 

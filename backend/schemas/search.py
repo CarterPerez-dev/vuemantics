@@ -227,4 +227,4 @@ class SearchHistoryItem(BaseModel):
                           Any] | None = Field(
                               description = "Filters used in search"
                           )
-                          
+

@@ -3,11 +3,11 @@
 // App.tsx
 // ===========================
 
-import { useEffect } from 'react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { useEffect } from 'react'
 import { RouterProvider } from 'react-router-dom'
-import { toast, Toaster } from 'sonner'
+import { Toaster, toast } from 'sonner'
 
 import { queryClient } from '@/core/api'
 import { router } from '@/core/app/routers'

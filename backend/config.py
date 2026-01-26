@@ -15,17 +15,21 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 _ENV_FILE = _PROJECT_ROOT / ".env"
 
-
 APP_VERSION: Final[str] = "1.0.1"
 
-API_CONTACT: Final[dict[str, str]] = {
-    "name": "AngelaMos",
-    "url": "https://github.com/CarterPerez-dev/vuemantics",
-}
-API_LICENSE: Final[dict[str, str]] = {
-    "name": "GNU Affero General Public License v3.0",
-    "url": "https://www.gnu.org/licenses/agpl-3.0.html",
-}
+API_CONTACT: Final[dict[str,
+                        str]
+                   ] = {
+                       "name": "AngelaMos",
+                       "url":
+                       "https://github.com/CarterPerez-dev/vuemantics",
+                   }
+API_LICENSE: Final[dict[str,
+                        str]
+                   ] = {
+                       "name": "GNU Affero General Public License v3.0",
+                       "url": "https://www.gnu.org/licenses/agpl-3.0.html",
+                   }
 API_DESCRIPTION: Final[str] = (
     "Semantic search API for images using local AI. "
     "Upload images, search by natural language, discover similar content. "
@@ -108,7 +112,7 @@ DEFAULT_PAGE_SIZE: Final[int] = 50
 MAX_PAGE_SIZE: Final[int] = 100
 DEFAULT_QUERY_LIMIT: Final[int] = 100  # Default limit for db queries
 
-SEARCH_CACHE_TTL: Final[int] = 300  # 5 minutes 
+SEARCH_CACHE_TTL: Final[int] = 300  # 5 minutes
 USER_CACHE_TTL: Final[int] = 60  # 1 minute
 UPLOAD_COUNT_CACHE_TTL: Final[int] = 30  # seconds
 
@@ -133,7 +137,6 @@ WEBSOCKET_CLOSE_AUTH_TIMEOUT: Final[int] = 4001  # Close code for auth timeout
 WEBSOCKET_CLOSE_AUTH_REQUIRED: Final[int] = 4002  # Close code for missing auth
 WEBSOCKET_CLOSE_INVALID_TOKEN: Final[int] = 4003  # Close code for invalid token
 WEBSOCKET_CLOSE_INVALID_MESSAGE: Final[int] = 4004  # Close code for invalid message format
-
 
 
 class Settings(BaseSettings):

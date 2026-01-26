@@ -153,10 +153,16 @@ class LocalAIService:
                             upload_id
                         )
                         if metadata and metadata.get("codec"):
-                            await upload.update_video_codec(metadata["codec"])
-                            logger.info(f"Detected video codec for {upload_id}: {metadata['codec']}")
+                            await upload.update_video_codec(
+                                metadata["codec"]
+                            )
+                            logger.info(
+                                f"Detected video codec for {upload_id}: {metadata['codec']}"
+                            )
                     except Exception as codec_err:
-                        logger.warning(f"Failed to detect codec for {upload_id}: {codec_err}")
+                        logger.warning(
+                            f"Failed to detect codec for {upload_id}: {codec_err}"
+                        )
 
                 await self._publish_progress(
                     upload_id,

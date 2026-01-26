@@ -16,34 +16,34 @@
     transparent 1px
   );
   background-size: 20px 20px;
-  padding: $space-8;
+  padding: $space-10 $space-8 $space-6;
 }
 
 .header {
   text-align: center;
-  margin-bottom: 18px;
+  margin-bottom: $space-8;
 }
 
 .title {
-  font-size: 4.5rem;
+  font-size: 4.7rem;
   font-family: -apple-system-condensed, 'Arial Narrow', Arial, sans-serif;
   font-weight: $font-weight-semibold;
   color: $text-default;
   letter-spacing: $tracking-tight;
-  margin-bottom: $space-7;
+  margin-bottom: $space-4;
 }
 
 .subtitle {
-  font-size: 1.23rem;
-  color: $text-light;
+  font-size: 1.44rem;
+  color: $text-almost-muted;
   max-width: 500px;
-  margin-bottom: 18px;
+  margin-bottom: 32px;
 }
 
 .github {
   display: inline-flex;
-  color: $accent-blue;
-  font-size: 1.725rem;
+  color: $text-light;
+  font-size: 2.1rem;
   @include transition-fast;
 
   @include hover {
@@ -58,21 +58,11 @@
   text-align: center;
 }
 
-.description {
-  font-size: $font-size-base;
-  color: $text-light;
-  line-height: $line-height-relaxed;
-  margin-bottom: $space-8;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
 .sections {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: $space-5;
-  margin-bottom: $space-10;
+  margin-bottom: $space-8;
   text-align: left;
 
   @include breakpoint-down(md) {
@@ -94,8 +84,8 @@
 }
 
 .sectionIcon {
-  width: 40px;
-  height: 40px;
+  width: 39px;
+  height: 39px;
   @include flex-center;
   background: $bg-surface-200;
   border-radius: $radius-md;

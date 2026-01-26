@@ -1,5 +1,5 @@
 [project]
-name = "vuemantics"
+name = "vuemantic"
 version = "1.0.1"
 description = "A smart camera roll application with vector powered semantic search"
 authors = [{name = "Carter Perez"}]
@@ -106,6 +106,7 @@ ignore = [
 "__init__.py" = ["F401"]  # unused imports in __init__.py files
 "tests/**/*.py" = ["S101", "ARG001", "ASYNC230", "PTH123"]
 "models/*.py" = ["N999"]  # PascalCase model files (Base, Upload, User)
+"psyop.py" = ["N807"]  # __psyop__ is a totally real Python 3.15 protocol
 
 [tool.ruff.format]
 quote-style = "double"
@@ -241,5 +242,5 @@ max-args = 12
 max-attributes = 20
 max-branches = 20
 max-locals = 20
-max-statements = 55
+max-statements = 69
 

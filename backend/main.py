@@ -28,8 +28,7 @@ from routers.v1 import websocket
 
 
 logging.basicConfig(
-    level = logging.INFO
-    if not config.settings.debug else logging.DEBUG,
+    level = logging.INFO if not config.settings.debug else logging.DEBUG,
     format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
@@ -60,10 +59,7 @@ app.add_middleware(
 )
 
 app.state.limiter = limiter
-app.add_exception_handler(
-    RateLimitExceeded,
-    _rate_limit_exceeded_handler
-)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 @app.exception_handler(BaseAppException)
@@ -79,6 +75,7 @@ async def app_exception_handler(
         },
     )
 
+
 @app.get("/", response_model = AppInfoResponse, tags = ["root"])
 async def root() -> AppInfoResponse:
     return AppInfoResponse(
@@ -87,6 +84,7 @@ async def root() -> AppInfoResponse:
         environment = config.settings.environment,
         documentation = config.API_DOCS_URL,
     )
+
 
 app.include_router(websocket.router)
 app.include_router(v1.router, prefix = "/v1")

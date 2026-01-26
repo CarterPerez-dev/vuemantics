@@ -166,7 +166,7 @@ class UploadProgressPublisher:
                         pubsub.unsubscribe(),
                         timeout = 0.5
                     )
-                    await asyncio.wait_for(pubsub.aclose(), timeout = 0.5)
+                    await asyncio.wait_for(pubsub.close(), timeout = 0.5)
                 except TimeoutError:
                     logger.warning(
                         "Timeout closing pubsub connection (non-critical)"

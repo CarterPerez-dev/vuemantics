@@ -96,10 +96,11 @@ async def authenticate_websocket(websocket: WebSocket) -> str | None:
             expected_type = TokenType.ACCESS
         )
 
-        user_id = payload.get("sub")
-        if not user_id:
+        user_id_raw = payload.get("sub")
+        if not user_id_raw:
             raise AuthenticationError("Missing user ID in token")
 
+        user_id: str = str(user_id_raw)
         user = await User.find_by_id(UUID(user_id))
         if not user or not user.is_active:
             raise AuthenticationError("User not found or inactive")

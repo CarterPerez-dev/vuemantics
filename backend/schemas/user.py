@@ -27,6 +27,10 @@ class UserBase(BaseModel):
     """
     Base user fields.
     """
+    model_config = ConfigDict(
+        extra = "forbid",
+    )
+
     email: EmailStr = Field(
         description = "User's email address",
     )

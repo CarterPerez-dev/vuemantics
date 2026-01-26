@@ -659,11 +659,7 @@ class Upload(BaseModel):
             RETURNING updated_at
         """
 
-        updated_at = await database.db.fetchval(
-            query,
-            codec,
-            self.id
-        )
+        updated_at = await database.db.fetchval(query, codec, self.id)
         if updated_at:
             self.video_codec = codec
             self.updated_at = updated_at
