@@ -9,6 +9,7 @@ import {
   LuEye,
   LuEyeOff,
   LuFilter,
+  LuRefreshCw,
   LuSearch,
   LuSparkles,
   LuTrash2,
@@ -20,96 +21,80 @@ import {
   useBulkHideUploads,
   useClientConfig,
   useDeleteUpload,
+  useRegenerateDescription,
   useSearchMutation,
   useSimilarUploads,
   useToggleUploadHidden,
   useUploads,
 } from '@/api/hooks'
-import type { SearchResult, UploadListParams, UploadResponse } from '@/api/types'
+import type { SearchResult } from '@/api/types'
+import { useGalleryUIStore } from '@/core/lib/stores'
+import { useSocket, useUploadProgress } from '@/core/socket'
 import styles from './gallery.module.scss'
+import { useGalleryHandlers } from './useGalleryHandlers'
 
 export function Component(): React.ReactElement {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null)
-  const [selectedMedia, setSelectedMedia] = useState<UploadResponse | null>(null)
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [selectMode, setSelectMode] = useState(false)
-  const [showFilters, setShowFilters] = useState(false)
   const [similarResults, setSimilarResults] = useState<SearchResult[] | null>(
     null
   )
-  const [findSimilarId, setFindSimilarId] = useState<string | null>(null)
+
+  const {
+    selectMode,
+    selectedIds: selectedIdsArray,
+    showFilters,
+    filters,
+    selectedMediaId,
+    findSimilarId,
+    toggleSelectMode: storeToggleSelectMode,
+    toggleSelectedId,
+    setSelectedIds: setSelectedIdsArray,
+    toggleShowFilters,
+    updateFilters,
+    setSelectedMediaId,
+    setFindSimilarId,
+  } = useGalleryUIStore()
 
   const { data: clientConfig } = useClientConfig()
-
-  const [filters, setFilters] = useState<UploadListParams>({
-    page: 1,
-    page_size: 50, // Matches DEFAULT_PAGE_SIZE from backend
-    sort_by: 'created_at',
-    sort_order: 'desc',
-    show_hidden: false,
-  })
-
-  const { data: uploads, isLoading } = useUploads(filters)
+  const {
+    data: uploads,
+    isLoading,
+    refetch: refetchUploads,
+  } = useUploads(filters)
 
   const searchMutation = useSearchMutation()
   const deleteMutation = useDeleteUpload()
   const toggleHiddenMutation = useToggleUploadHidden()
   const bulkDeleteMutation = useBulkDeleteUploads()
   const bulkHideMutation = useBulkHideUploads()
+  const regenerateDescription = useRegenerateDescription()
+
+  const {
+    uploadProgress,
+    handleProgress,
+    handleCompleted,
+    handleFailed,
+    setProgress,
+  } = useUploadProgress()
+
+  const { subscribeToUpload } = useSocket({
+    enabled: true,
+    onProgress: handleProgress,
+    onCompleted: async (data) => {
+      await handleCompleted(data, async () => {
+        await refetchUploads()
+      })
+    },
+    onFailed: (data) => handleFailed(data),
+  })
 
   const { data: similarUploadsData, isLoading: isSimilarLoading } =
     useSimilarUploads(
       findSimilarId ?? '',
-      clientConfig?.similar_uploads_default_limit ?? 10,
+      clientConfig?.similar_uploads_default_limit ?? 6,
       true
     )
-
-  const handleDelete = (id: string): void => {
-    if (window.confirm('Delete this upload?')) {
-      deleteMutation.mutate(id, {
-        onSuccess: () => setSelectedMedia(null),
-      })
-    }
-  }
-
-  const handleToggleHidden = (id: string, currentlyHidden: boolean): void => {
-    toggleHiddenMutation.mutate(
-      { id, hidden: !currentlyHidden },
-      { onSuccess: () => setSelectedMedia(null) }
-    )
-  }
-
-  const handleSearch = (e: React.FormEvent): void => {
-    e.preventDefault()
-    if (!searchQuery.trim()) {
-      setSearchResults(null)
-      return
-    }
-
-    searchMutation.mutate(
-      {
-        query: searchQuery,
-        limit: clientConfig?.default_page_size ?? 50,
-        similarity_threshold:
-          clientConfig?.search_default_similarity_threshold ?? 0.25,
-      },
-      { onSuccess: (data) => setSearchResults(data.results) }
-    )
-  }
-
-  const handleClearSearch = (): void => {
-    setSearchQuery('')
-    setSearchResults(null)
-    setSimilarResults(null)
-    setFindSimilarId(null)
-  }
-
-  const handleFindSimilar = (upload: UploadResponse): void => {
-    setFindSimilarId(upload.id)
-    setSearchQuery('')
-    setSearchResults(null)
-  }
 
   useEffect(() => {
     if (similarUploadsData) {
@@ -117,63 +102,54 @@ export function Component(): React.ReactElement {
     }
   }, [similarUploadsData])
 
-  const toggleSelectMode = (): void => {
-    setSelectMode(!selectMode)
-    setSelectedIds(new Set())
-  }
-
-  const toggleSelectItem = (id: string): void => {
-    const newSelected = new Set(selectedIds)
-    if (newSelected.has(id)) {
-      newSelected.delete(id)
-    } else {
-      newSelected.add(id)
-    }
-    setSelectedIds(newSelected)
-  }
-
-  const selectAll = (): void => {
-    setSelectedIds(new Set(displayItems.map((item) => item.id)))
-  }
-
-  const deselectAll = (): void => {
-    setSelectedIds(new Set())
-  }
-
-  const handleBulkDelete = (): void => {
-    if (selectedIds.size === 0) return
-    if (
-      window.confirm(
-        `Delete ${selectedIds.size} upload${selectedIds.size !== 1 ? 's' : ''}?`
-      )
-    ) {
-      bulkDeleteMutation.mutate(Array.from(selectedIds), {
-        onSuccess: () => {
-          setSelectedIds(new Set())
-          setSelectMode(false)
-        },
-      })
-    }
-  }
-
-  const handleBulkHide = (hidden: boolean): void => {
-    if (selectedIds.size === 0) return
-    bulkHideMutation.mutate(
-      { ids: Array.from(selectedIds), hidden },
-      {
-        onSuccess: () => {
-          setSelectedIds(new Set())
-          setSelectMode(false)
-        },
-      }
-    )
-  }
-
   const displayItems = similarResults
     ? similarResults.map((r) => r.upload)
     : searchResults
       ? searchResults.map((r) => r.upload)
       : (uploads?.items ?? [])
+
+  const selectedIds = new Set(selectedIdsArray)
+
+  const {
+    handleDelete,
+    handleToggleHidden,
+    handleRegenerate,
+    handleSearch,
+    handleClearSearch,
+    handleFindSimilar,
+    toggleSelectMode,
+    toggleSelectItem,
+    selectAll,
+    deselectAll,
+    handleBulkDelete,
+    handleBulkHide,
+  } = useGalleryHandlers({
+    deleteMutation,
+    toggleHiddenMutation,
+    regenerateDescription,
+    searchMutation,
+    bulkDeleteMutation,
+    bulkHideMutation,
+    setSelectedMediaId,
+    setProgress,
+    setSearchQuery,
+    setSearchResults,
+    setSimilarResults,
+    setFindSimilarId,
+    setSelectedIdsArray,
+    storeToggleSelectMode,
+    toggleSelectedId,
+    searchQuery,
+    clientConfig,
+    displayItems,
+    selectedIdsArray,
+    selectedIds,
+    subscribeToUpload,
+  })
+
+  const currentUpload = selectedMediaId
+    ? (displayItems.find((item) => item.id === selectedMediaId) ?? null)
+    : null
 
   const isSearching = searchResults !== null
   const isSimilarMode = similarResults !== null
@@ -235,17 +211,17 @@ export function Component(): React.ReactElement {
           {(isSearching || isSimilarMode) && (
             <div className={styles.searchInfo}>
               <span className={styles.searchInfoText}>
-                {isSimilarMode ? (
+                {isSimilarMode && similarResults ? (
                   <>
                     Found {similarResults.length} similar image
                     {similarResults.length !== 1 ? 's' : ''}
                   </>
-                ) : (
+                ) : searchResults ? (
                   <>
                     Found {searchResults.length} result
                     {searchResults.length !== 1 ? 's' : ''} for "{searchQuery}"
                   </>
-                )}
+                ) : null}
               </span>
               <button
                 type="button"
@@ -271,7 +247,7 @@ export function Component(): React.ReactElement {
             <button
               type="button"
               className={`${styles.toolbarBtn} ${showFilters ? styles.active : ''}`}
-              onClick={() => setShowFilters(!showFilters)}
+              onClick={toggleShowFilters}
             >
               <LuFilter />
               Filters
@@ -341,8 +317,7 @@ export function Component(): React.ReactElement {
                 className={styles.filterSelect}
                 value={filters.file_type ?? ''}
                 onChange={(e) =>
-                  setFilters({
-                    ...filters,
+                  updateFilters({
                     file_type: e.target.value
                       ? (e.target.value as 'image' | 'video')
                       : undefined,
@@ -364,12 +339,15 @@ export function Component(): React.ReactElement {
                 className={styles.filterSelect}
                 value={filters.sort_by}
                 onChange={(e) => {
-                  const newSortBy = e.target.value as UploadListParams['sort_by']
+                  const newSortBy = e.target.value as
+                    | 'created_at'
+                    | 'updated_at'
+                    | 'file_size'
+                    | 'filename'
                   const defaultOrder = newSortBy === 'filename' ? 'asc' : 'desc'
-                  setFilters({
-                    ...filters,
+                  updateFilters({
                     sort_by: newSortBy,
-                    sort_order: defaultOrder,
+                    sort_order: defaultOrder as 'asc' | 'desc',
                   })
                 }}
               >
@@ -389,8 +367,7 @@ export function Component(): React.ReactElement {
                 className={styles.filterSelect}
                 value={filters.sort_order}
                 onChange={(e) =>
-                  setFilters({
-                    ...filters,
+                  updateFilters({
                     sort_order: e.target.value as 'asc' | 'desc',
                   })
                 }
@@ -409,7 +386,7 @@ export function Component(): React.ReactElement {
                   type="checkbox"
                   checked={filters.show_hidden}
                   onChange={(e) =>
-                    setFilters({ ...filters, show_hidden: e.target.checked })
+                    updateFilters({ show_hidden: e.target.checked })
                   }
                 />
                 Show hidden
@@ -420,7 +397,9 @@ export function Component(): React.ReactElement {
 
         {isLoading || isSimilarLoading ? (
           <div className={styles.loading}>
-            {isSimilarLoading ? 'Finding similar images...' : 'Loading your media...'}
+            {isSimilarLoading
+              ? 'Finding similar images...'
+              : 'Loading your media...'}
           </div>
         ) : displayItems.length === 0 ? (
           <div className={styles.empty}>
@@ -450,14 +429,14 @@ export function Component(): React.ReactElement {
                   onClick={() =>
                     selectMode
                       ? toggleSelectItem(upload.id)
-                      : setSelectedMedia(upload)
+                      : setSelectedMediaId(upload.id)
                   }
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()
                       selectMode
                         ? toggleSelectItem(upload.id)
-                        : setSelectedMedia(upload)
+                        : setSelectedMediaId(upload.id)
                     }
                   }}
                   role="button"
@@ -517,9 +496,7 @@ export function Component(): React.ReactElement {
                 <button
                   type="button"
                   className={styles.pageBtn}
-                  onClick={() =>
-                    setFilters({ ...filters, page: filters.page - 1 })
-                  }
+                  onClick={() => updateFilters({ page: filters.page - 1 })}
                   disabled={filters.page === 1}
                 >
                   Previous
@@ -530,9 +507,7 @@ export function Component(): React.ReactElement {
                 <button
                   type="button"
                   className={styles.pageBtn}
-                  onClick={() =>
-                    setFilters({ ...filters, page: filters.page + 1 })
-                  }
+                  onClick={() => updateFilters({ page: filters.page + 1 })}
                   disabled={filters.page === uploads.pages}
                 >
                   Next
@@ -543,13 +518,13 @@ export function Component(): React.ReactElement {
         )}
       </div>
 
-      {selectedMedia && (
+      {selectedMediaId && currentUpload && (
         <div
           className={styles.modal}
-          onClick={() => setSelectedMedia(null)}
+          onClick={() => setSelectedMediaId(null)}
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
-              setSelectedMedia(null)
+              setSelectedMediaId(null)
             }
           }}
           role="dialog"
@@ -564,22 +539,22 @@ export function Component(): React.ReactElement {
             <button
               type="button"
               className={styles.modalClose}
-              onClick={() => setSelectedMedia(null)}
+              onClick={() => setSelectedMediaId(null)}
               aria-label="Close"
             >
               <LuX />
             </button>
 
             <div className={styles.mediaWrapper}>
-              {selectedMedia.file_type === 'image' ? (
+              {currentUpload.file_type === 'image' ? (
                 <img
-                  src={selectedMedia.file_path}
-                  alt={selectedMedia.filename}
+                  src={currentUpload.file_path}
+                  alt={currentUpload.filename}
                   className={styles.modalImg}
                 />
               ) : (
                 <video
-                  src={selectedMedia.file_path}
+                  src={currentUpload.file_path}
                   className={styles.modalVideo}
                   controls
                 />
@@ -587,34 +562,57 @@ export function Component(): React.ReactElement {
             </div>
 
             <div className={styles.modalInfo}>
-              <h3 className={styles.modalTitle}>{selectedMedia.filename}</h3>
-              {selectedMedia.description && (
+              <h3 className={styles.modalTitle}>{currentUpload.filename}</h3>
+              {uploadProgress[currentUpload.id] ? (
+                <div className={styles.regenerating}>
+                  <div className={styles.regeneratingProgress}>
+                    <div className={styles.progressBar}>
+                      <div
+                        className={styles.progressFill}
+                        style={{
+                          width: `${uploadProgress[currentUpload.id].percent}%`,
+                        }}
+                      />
+                    </div>
+                    <div className={styles.regeneratingText}>
+                      <span className={styles.regeneratingPercent}>
+                        {uploadProgress[currentUpload.id].percent}%
+                      </span>
+                      <span className={styles.regeneratingMessage}>
+                        {uploadProgress[currentUpload.id].message}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : currentUpload.description ? (
                 <>
                   <p className={styles.modalDescription}>
-                    {selectedMedia.description}
+                    {currentUpload.description}
                   </p>
-                  {selectedMedia.description_audit_score !== null && (
+                  {currentUpload.description_audit_score !== null && (
                     <div className={styles.confidenceScore}>
-                      <span className={styles.confidenceLabel}>Description Quality:</span>
+                      <span className={styles.confidenceLabel}>
+                        Description Quality:
+                      </span>
                       <span
                         className={`${styles.confidenceValue} ${
-                          selectedMedia.description_audit_score >= 80
+                          currentUpload.description_audit_score >= 80
                             ? styles.scoreHigh
-                            : selectedMedia.description_audit_score >= 60
+                            : currentUpload.description_audit_score >= 60
                               ? styles.scoreMedium
                               : styles.scoreLow
                         }`}
                       >
-                        {selectedMedia.description_audit_score}/100
+                        {currentUpload.description_audit_score}/100
                       </span>
                     </div>
                   )}
                 </>
-              )}
+              ) : null}
               <div className={styles.modalMeta}>
-                <span>Type: {selectedMedia.file_type}</span>
-                <span>Status: {selectedMedia.processing_status}</span>
-                {selectedMedia.hidden && (
+                <span>Type: {currentUpload.file_type}</span>
+                <span>Status: {currentUpload.processing_status}</span>
+                {currentUpload.hidden && (
                   <span className={styles.hiddenTag}>Hidden</span>
                 )}
               </div>
@@ -623,29 +621,42 @@ export function Component(): React.ReactElement {
                   type="button"
                   className={styles.actionBtn}
                   onClick={() => {
-                    handleFindSimilar(selectedMedia)
-                    setSelectedMedia(null)
+                    handleFindSimilar(currentUpload)
+                    setSelectedMediaId(null)
                   }}
-                  disabled={isSimilarLoading || !selectedMedia.has_embedding}
+                  disabled={isSimilarLoading || !currentUpload.has_embedding}
                 >
                   <LuSparkles />
                   Find Similar
                 </button>
+                {currentUpload.processing_status === 'completed' && (
+                  <button
+                    type="button"
+                    className={styles.actionBtn}
+                    onClick={() => handleRegenerate(currentUpload.id)}
+                    disabled={regenerateDescription.isPending}
+                  >
+                    <LuRefreshCw />
+                    {regenerateDescription.isPending
+                      ? 'Regenerating...'
+                      : 'Regenerate'}
+                  </button>
+                )}
                 <button
                   type="button"
                   className={styles.actionBtn}
                   onClick={() =>
-                    handleToggleHidden(selectedMedia.id, selectedMedia.hidden)
+                    handleToggleHidden(currentUpload.id, currentUpload.hidden)
                   }
                   disabled={toggleHiddenMutation.isPending}
                 >
-                  {selectedMedia.hidden ? <LuEye /> : <LuEyeOff />}
-                  {selectedMedia.hidden ? 'Unhide' : 'Hide'}
+                  {currentUpload.hidden ? <LuEye /> : <LuEyeOff />}
+                  {currentUpload.hidden ? 'Unhide' : 'Hide'}
                 </button>
                 <button
                   type="button"
                   className={`${styles.actionBtn} ${styles.danger}`}
-                  onClick={() => handleDelete(selectedMedia.id)}
+                  onClick={() => handleDelete(currentUpload.id)}
                   disabled={deleteMutation.isPending}
                 >
                   <LuTrash2 />

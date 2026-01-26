@@ -45,10 +45,6 @@ export const isValidSearchResponse = (data: unknown): data is SearchResponse => 
   if (typeof data !== 'object') return false
 
   const result = searchResponseSchema.safeParse(data)
-  if (!result.success) {
-    // biome-ignore lint/suspicious/noConsole: Debugging validation errors
-    console.error('Search response validation failed:', result.error.format())
-  }
   return result.success
 }
 

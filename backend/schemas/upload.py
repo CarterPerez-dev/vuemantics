@@ -3,6 +3,7 @@
 upload.py
 """
 
+from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
@@ -102,7 +103,7 @@ class UploadResponse(TimestampMixin):
         ge = 0,
         description = "Number of times description was regenerated"
     )
-    last_regenerated_at: str | None = Field(
+    last_regenerated_at: datetime | None = Field(
         default = None,
         description = "Timestamp of last regeneration"
     )

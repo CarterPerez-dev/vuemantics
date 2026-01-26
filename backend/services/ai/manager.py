@@ -3,7 +3,6 @@
 manager.py
 """
 
-
 import httpx
 from ollama import AsyncClient
 

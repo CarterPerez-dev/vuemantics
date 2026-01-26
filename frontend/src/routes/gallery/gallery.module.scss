@@ -318,13 +318,13 @@
   width: 100%;
   height: auto;
   display: block;
-  max-height: 70vh;
+  max-height: 50vh;
   object-fit: contain;
 }
 
 .modalVideo {
   width: 100%;
-  max-height: 70vh;
+  max-height: 50vh;
   display: block;
 }
 
@@ -346,6 +346,9 @@
   color: $text-light;
   line-height: 1.5;
   margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
 }
 
 .confidenceScore {
@@ -720,4 +723,52 @@
 .pageInfo {
   font-size: $font-size-sm;
   color: $text-light;
+}
+
+.regenerating {
+  padding: 1.5rem;
+  background: $bg-surface-75;
+  border-radius: $radius-md;
+  margin: 0.5rem 0;
+}
+
+.regeneratingProgress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.progressBar {
+  width: 100%;
+  height: 6px;
+  background: $bg-surface-100;
+  border-radius: $radius-sm;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: $accent-blue;
+  border-radius: $radius-sm;
+  transition: width 300ms ease-out;
+}
+
+.regeneratingText {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.regeneratingPercent {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $accent-blue;
+  font-variant-numeric: tabular-nums;
+}
+
+.regeneratingMessage {
+  font-size: $font-size-sm;
+  color: $text-lighter;
+  text-align: right;
 }

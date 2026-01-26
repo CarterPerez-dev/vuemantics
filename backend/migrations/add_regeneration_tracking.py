@@ -71,7 +71,9 @@ async def downgrade():
     """
     Remove regeneration tracking columns.
     """
-    logger.info("Starting migration rollback: remove regeneration tracking")
+    logger.info(
+        "Starting migration rollback: remove regeneration tracking"
+    )
 
     try:
         await database.db.execute(

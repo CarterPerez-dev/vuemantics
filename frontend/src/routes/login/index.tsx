@@ -1,7 +1,7 @@
-/**
- * ©AngelaMos | 2025
- * index.tsx
- */
+// ===================
+// © AngelaMos | 2026
+// index.tsx
+// ===================
 
 import { useState } from 'react'
 import { LuEye, LuEyeOff } from 'react-icons/lu'
@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import { useLogin } from '@/api/hooks'
 import { loginRequestSchema } from '@/api/types'
 import { ROUTES } from '@/config'
-import { useAuthFormStore } from '@/core/lib'
+import { useAuthFormStore } from '@/core/lib/stores'
 import styles from './login.module.scss'
 
 export function Component(): React.ReactElement {

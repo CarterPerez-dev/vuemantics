@@ -157,7 +157,6 @@ async def find_similar_uploads(
             upload = upload,
             user_id = current_user.id,
             limit = limit,
-            include_same_user = include_own,
         )
 
         logger.info(

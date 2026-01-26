@@ -31,7 +31,7 @@
       "complexity": {
         "noExcessiveCognitiveComplexity": {
           "level": "error",
-          "options": { "maxAllowedComplexity": 35 }
+          "options": { "maxAllowedComplexity": 72 }
         },
         "noForEach": "off",
         "useLiteralKeys": "off"

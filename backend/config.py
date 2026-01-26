@@ -22,7 +22,7 @@ APP_VERSION: Final[str] = "1.0.1"
 # Important
 # ======================================================
 SEARCH_DEFAULT_SIMILARITY_THRESHOLD: Final[float] = 0.48  # Default for search queries
-SIMILAR_UPLOADS_SIMILARITY_THRESHOLD: Final[float] = 0.5  # Threshold for "find similar"
+SIMILAR_UPLOADS_SIMILARITY_THRESHOLD: Final[float] = 0.48  # Threshold for "find similar"
 # ======================================================
 
 
@@ -49,7 +49,7 @@ BATCH_EMBEDDING_MAX_CONCURRENT: Final[int] = 3  # Max parallel embedding generat
 SEARCH_RESULT_MULTIPLIER: Final[int] = 2  # Multiply limit for pre-filtering
 BATCH_SEARCH_MAX_CONCURRENT: Final[int] = 3  # Max parallel searches in batch
 BATCH_SEARCH_DEFAULT_LIMIT: Final[int] = 10  # Default results per query in batch
-SIMILAR_UPLOADS_DEFAULT_LIMIT: Final[int] = 30  # Default similar uploads to return
+SIMILAR_UPLOADS_DEFAULT_LIMIT: Final[int] = 6  # Default similar uploads to return
 SEARCH_SUGGESTIONS_DEFAULT_LIMIT: Final[int] = 5  # Default search suggestions to return
 
 # Processing queue settings
@@ -62,7 +62,7 @@ THUMBNAIL_QUALITY: Final[int] = 85  # JPEG quality for thumbnails
 THUMBNAIL_FILENAME: Final[str] = "thumb_256.jpg"  # Thumbnail filename
 VIDEO_SAMPLE_FPS: Final[float] = 1.0  # Extract 1 frame per second for video analysis
 MAX_VIDEO_FRAMES: Final[int] = 10  # Maximum frames to extract from video
-MAX_VIDEO_FRAMES_FOR_ANALYSIS: Final[int] = 5  # Maximum frames to send to vision model
+MAX_VIDEO_FRAMES_FOR_ANALYSIS: Final[int] = 10  # Maximum frames to send to vision model
 
 # Description audit configuration
 DESCRIPTION_MIN_LENGTH: Final[int] = 50
@@ -110,6 +110,14 @@ REFRESH_TOKEN_EXPIRE_DAYS: Final[int] = 30  # 30 days
 MIN_PASSWORD_LENGTH: Final[int] = 8
 MAX_PASSWORD_LENGTH: Final[int] = 72  # bcrypt max
 SPECIAL_CHARACTERS: Final[str] = "!@#$%^&*()_+-=[]{}|;:,.<>?"
+
+# WebSocket configuration
+WEBSOCKET_AUTH_TIMEOUT: Final[float] = 5.0  # Seconds to wait for auth message
+WEBSOCKET_HEARTBEAT_INTERVAL: Final[int] = 30  # Seconds between heartbeats
+WEBSOCKET_CLOSE_AUTH_TIMEOUT: Final[int] = 4001  # Close code for auth timeout
+WEBSOCKET_CLOSE_AUTH_REQUIRED: Final[int] = 4002  # Close code for missing auth
+WEBSOCKET_CLOSE_INVALID_TOKEN: Final[int] = 4003  # Close code for invalid token
+WEBSOCKET_CLOSE_INVALID_MESSAGE: Final[int] = 4004  # Close code for invalid message format
 
 
 class Settings(BaseSettings):
@@ -167,6 +175,11 @@ class Settings(BaseSettings):
         default = True,
         description = "Decode Redis responses to strings"
     )
+    redis_pool_max_size: int = Field(
+        default = 50,
+        ge = 1,
+        description = "Max Redis connections in pool"
+    )
 
     rate_limit_upload: str = Field(
         default = "100/minute",
@@ -203,7 +216,7 @@ class Settings(BaseSettings):
         description = "Ollama vision model for image/video analysis"
     )
     local_embedding_model: str = Field(
-        default = "BAAI/bge-m3",
+        default = "bge-m3",
         description = "Local embedding model (bge-m3)"
     )
     local_embedding_dimensions: int = Field(
@@ -235,7 +248,10 @@ class Settings(BaseSettings):
     cors_origins: list[str] = Field(
         default = [
             "http://localhost:3000",
+            "http://192.168.1.167:3000",
             "http://localhost:5173",
+            "http://localhost:856",
+            "http://192.168.1.167:856",
             "http://localhost"
         ],
         description = "Allowed CORS origins",

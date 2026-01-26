@@ -24,10 +24,6 @@ export const isValidClientConfigResponse = (
   if (typeof data !== 'object') return false
 
   const result = clientConfigResponseSchema.safeParse(data)
-  if (!result.success) {
-    // biome-ignore lint/suspicious/noConsole: Debugging validation errors
-    console.error('Client config validation failed:', result.error.format())
-  }
   return result.success
 }
 

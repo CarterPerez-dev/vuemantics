@@ -35,9 +35,9 @@ def create_access_token(user_id: UUID, token_version: int = 0) -> str:
     """
     Create a JWT access token for API requests
     """
-    expire = datetime.now(
-        UTC
-    ) + timedelta(minutes = config.ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(UTC) + timedelta(
+        minutes = config.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
 
     payload = {
         "sub": str(user_id),
@@ -46,20 +46,23 @@ def create_access_token(user_id: UUID, token_version: int = 0) -> str:
         "token_version": token_version,
     }
 
-    return cast(str, jwt.encode(
-        payload,
-        config.settings.secret_key,
-        algorithm = config.settings.algorithm
-    ))
+    return cast(
+        str,
+        jwt.encode(
+            payload,
+            config.settings.secret_key,
+            algorithm = config.settings.algorithm
+        )
+    )
 
 
 def create_refresh_token(user_id: UUID) -> str:
     """
     Create a JWT refresh token for getting new access tokens
     """
-    expire = datetime.now(
-        UTC
-    ) + timedelta(days = config.REFRESH_TOKEN_EXPIRE_DAYS)
+    expire = datetime.now(UTC) + timedelta(
+        days = config.REFRESH_TOKEN_EXPIRE_DAYS
+    )
 
     payload = {
         "sub": str(user_id),
@@ -67,11 +70,14 @@ def create_refresh_token(user_id: UUID) -> str:
         "type": TokenType.REFRESH,
     }
 
-    return cast(str, jwt.encode(
-        payload,
-        config.settings.secret_key,
-        algorithm = config.settings.algorithm
-    ))
+    return cast(
+        str,
+        jwt.encode(
+            payload,
+            config.settings.secret_key,
+            algorithm = config.settings.algorithm
+        )
+    )
 
 
 def create_token_pair(user_id: UUID,
@@ -95,11 +101,15 @@ def decode_token(token: str,
     Decode and validate a JWT token
     """
     try:
-        payload = cast(dict[str, Any], jwt.decode(
-            token,
-            config.settings.secret_key,
-            algorithms = [config.settings.algorithm]
-        ))
+        payload = cast(
+            dict[str,
+                 Any],
+            jwt.decode(
+                token,
+                config.settings.secret_key,
+                algorithms = [config.settings.algorithm]
+            )
+        )
 
         if expected_type and payload.get("type") != expected_type:
             raise AuthenticationError(

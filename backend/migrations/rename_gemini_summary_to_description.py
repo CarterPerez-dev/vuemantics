@@ -9,6 +9,7 @@ import asyncio
 import sys
 from pathlib import Path
 
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from database import init_db, close_db, db
@@ -32,7 +33,9 @@ async def main():
         result = await db.fetchrow(check_query)
 
         if not result:
-            print("Column 'gemini_summary' does not exist. Checking for 'description'...")
+            print(
+                "Column 'gemini_summary' does not exist. Checking for 'description'..."
+            )
 
             check_desc = """
                 SELECT column_name
@@ -46,7 +49,9 @@ async def main():
             if desc_exists:
                 print("Column already renamed to 'description'")
             else:
-                print("Neither 'gemini_summary' nor 'description' column found!")
+                print(
+                    "Neither 'gemini_summary' nor 'description' column found!"
+                )
 
             return
 
@@ -81,4 +86,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    

@@ -1,7 +1,7 @@
-/**
- * ©AngelaMos | 2025
- * index.tsx
- */
+// ===================
+// © AngelaMos | 2026
+// index.tsx
+// ===================
 
 import { useState } from 'react'
 import { LuEye, LuEyeOff } from 'react-icons/lu'
@@ -11,7 +11,7 @@ import { z } from 'zod'
 import { useRegister } from '@/api/hooks'
 import { registerRequestSchema } from '@/api/types'
 import { PASSWORD_CONSTRAINTS, ROUTES } from '@/config'
-import { useAuthFormStore } from '@/core/lib'
+import { useAuthFormStore } from '@/core/lib/stores'
 import styles from './register.module.scss'
 
 const registerFormSchema = registerRequestSchema

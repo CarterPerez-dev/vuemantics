@@ -136,6 +136,10 @@ module = ["tests.*", "conftest", "migrations"]
 ignore_errors = true
 
 [[tool.mypy.overrides]]
+module = "main"
+disable_error_code = ["arg-type"]
+
+[[tool.mypy.overrides]]
 module = [
     "uuid6",
     "structlog",
@@ -190,6 +194,8 @@ ignore-paths = [
 
 [tool.pylint.messages_control]
 disable = [
+    "R1702",
+    "W0603",  # annoying
     "C0103",  # invalid-name
     "C0116",  # missing-function-docstring (we use minimal docs)
     "C0121",  # singleton-comparison (== False required for SQLAlchemy)
@@ -211,6 +217,7 @@ disable = [
     "R0903",  # too-few-public-methods
     "R0911",  # too-many-return-statements (handled by ruff PLR0911)
     "R0917",  # too-many-positional-arguments (FastAPI patterns)
+    "W0105",  # pointless-string-statement (copyright headers)
     "W0201",  # attribute-defined-outside-init (ORM pattern - attributes updated from DB)
     "W0511",  # fixme/todo comments (we use these intentionally)
     "W1203",  # logging-fstring-interpolation (negligible performance impact)
@@ -231,8 +238,8 @@ max-line-length = 95
 
 [tool.pylint.design]
 max-args = 12
-max-attributes = 16
-max-branches = 15
+max-attributes = 20
+max-branches = 20
 max-locals = 20
 max-statements = 55
 

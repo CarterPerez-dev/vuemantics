@@ -1,20 +1,11 @@
 """
+ⒸAngelaMos | 2026
 Routers package for FastAPI endpoints.
 """
 
-from . import (
-    auth,
-    client_config,
-    health,
-    upload,
-    search,
-)
+from . import v1
 
 
 __all__ = [
-    "auth",
-    "client_config",
-    "health",
-    "upload",
-    "search",
+    "v1",
 ]

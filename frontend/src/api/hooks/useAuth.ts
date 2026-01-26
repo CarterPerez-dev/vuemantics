@@ -24,7 +24,7 @@ import {
 } from '@/api/types'
 import { API_ENDPOINTS, QUERY_KEYS, ROUTES } from '@/config'
 import { apiClient, QUERY_STRATEGIES } from '@/core/api'
-import { useAuthStore } from '@/core/lib'
+import { useAuthStore } from '@/core/lib/stores'
 
 export const authQueries = {
   all: () => QUERY_KEYS.AUTH.ALL,

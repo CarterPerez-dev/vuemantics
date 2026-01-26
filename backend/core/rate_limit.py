@@ -9,7 +9,6 @@ from slowapi.util import get_remote_address
 from starlette.requests import Request
 
 
-
 def get_identifier(request: Request) -> str:
     """
     Get rate limit identifier.
