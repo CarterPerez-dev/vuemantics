@@ -30,6 +30,10 @@ export const API_ENDPOINTS = {
   HEALTH: `/health`,
 } as const
 
+export const WEBSOCKET_ENDPOINTS = {
+  UPLOADS: `/api/ws/uploads`,
+} as const
+
 export const QUERY_KEYS = {
   AUTH: {
     ALL: ['auth'] as const,

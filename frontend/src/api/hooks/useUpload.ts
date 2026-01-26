@@ -139,7 +139,6 @@ export const useCreateUpload = (): UseMutationResult<
     mutationFn: createUpload,
     onSuccess: (_data: UploadResponse): void => {
       queryClient.invalidateQueries({ queryKey: uploadQueries.all() })
-      toast.success(UPLOAD_SUCCESS_MESSAGES.UPLOAD_COMPLETE)
     },
     onError: (error: Error): void => {
       const message =

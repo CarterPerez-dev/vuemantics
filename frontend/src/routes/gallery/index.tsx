@@ -3,12 +3,13 @@
 // index.tsx
 // ===================
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   LuCheck,
   LuEye,
   LuEyeOff,
   LuFilter,
+  LuRefreshCw,
   LuSearch,
   LuSparkles,
   LuTrash2,
@@ -20,64 +21,141 @@ import {
   useBulkHideUploads,
   useClientConfig,
   useDeleteUpload,
+  useRegenerateDescription,
   useSearchMutation,
   useSimilarUploads,
   useToggleUploadHidden,
   useUploads,
 } from '@/api/hooks'
-import type { SearchResult, UploadListParams, UploadResponse } from '@/api/types'
+import type { SearchResult, UploadResponse } from '@/api/types'
+import {
+  useSocket,
+  type UploadProgressUpdate,
+  type UploadCompleted,
+  type UploadFailed,
+} from '@/core/socket'
+import { useGalleryUIStore } from '@/core/lib/stores'
 import styles from './gallery.module.scss'
 
 export function Component(): React.ReactElement {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null)
-  const [selectedMedia, setSelectedMedia] = useState<UploadResponse | null>(null)
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [selectMode, setSelectMode] = useState(false)
-  const [showFilters, setShowFilters] = useState(false)
-  const [similarResults, setSimilarResults] = useState<SearchResult[] | null>(
-    null
-  )
-  const [findSimilarId, setFindSimilarId] = useState<string | null>(null)
+  const [similarResults, setSimilarResults] = useState<SearchResult[] | null>(null)
+
+  const {
+    selectMode,
+    selectedIds: selectedIdsArray,
+    showFilters,
+    filters,
+    selectedMediaId,
+    findSimilarId,
+    toggleSelectMode: storeToggleSelectMode,
+    toggleSelectedId,
+    setSelectedIds: setSelectedIdsArray,
+    toggleShowFilters,
+    updateFilters,
+    setSelectedMediaId,
+    setFindSimilarId,
+  } = useGalleryUIStore()
+
+  const selectedIds = new Set(selectedIdsArray)
 
   const { data: clientConfig } = useClientConfig()
-
-  const [filters, setFilters] = useState<UploadListParams>({
-    page: 1,
-    page_size: 50, // Matches DEFAULT_PAGE_SIZE from backend
-    sort_by: 'created_at',
-    sort_order: 'desc',
-    show_hidden: false,
-  })
-
-  const { data: uploads, isLoading } = useUploads(filters)
+  const { data: uploads, isLoading, refetch: refetchUploads } = useUploads(filters)
 
   const searchMutation = useSearchMutation()
   const deleteMutation = useDeleteUpload()
   const toggleHiddenMutation = useToggleUploadHidden()
   const bulkDeleteMutation = useBulkDeleteUploads()
   const bulkHideMutation = useBulkHideUploads()
+  const regenerateDescription = useRegenerateDescription()
+
+  const [uploadProgress, setUploadProgress] = useState<
+    Record<string, { percent: number; stage: string; message: string }>
+  >({})
+
+  const handleProgress = useCallback((data: UploadProgressUpdate) => {
+    const { upload_id, progress_percent, stage, message } = data.payload
+    setUploadProgress((prev) => ({
+      ...prev,
+      [upload_id]: { percent: progress_percent, stage, message },
+    }))
+  }, [])
+
+  const handleCompleted = useCallback(
+    async (data: UploadCompleted) => {
+      setUploadProgress((prev) => ({
+        ...prev,
+        [data.upload_id]: {
+          percent: 100,
+          stage: 'completed',
+          message: 'Refreshing...',
+        },
+      }))
+
+      await refetchUploads()
+
+      setUploadProgress((prev) => {
+        const next = { ...prev }
+        delete next[data.upload_id]
+        return next
+      })
+    },
+    [refetchUploads]
+  )
+
+  const handleFailed = useCallback(
+    (data: UploadFailed) => {
+      setUploadProgress((prev) => {
+        const next = { ...prev }
+        delete next[data.upload_id]
+        return next
+      })
+    },
+    [refetchUploads]
+  )
+
+  const { subscribeToUpload } = useSocket({
+    enabled: true,
+    onProgress: handleProgress,
+    onCompleted: handleCompleted,
+    onFailed: handleFailed,
+  })
 
   const { data: similarUploadsData, isLoading: isSimilarLoading } =
     useSimilarUploads(
       findSimilarId ?? '',
-      clientConfig?.similar_uploads_default_limit ?? 10,
+      clientConfig?.similar_uploads_default_limit ?? 30,
       true
     )
 
   const handleDelete = (id: string): void => {
     if (window.confirm('Delete this upload?')) {
-      deleteMutation.mutate(id, {
-        onSuccess: () => setSelectedMedia(null),
-      })
+      setSelectedMediaId(null)
+      deleteMutation.mutate(id)
     }
   }
 
   const handleToggleHidden = (id: string, currentlyHidden: boolean): void => {
-    toggleHiddenMutation.mutate(
-      { id, hidden: !currentlyHidden },
-      { onSuccess: () => setSelectedMedia(null) }
-    )
+    setSelectedMediaId(null)
+    toggleHiddenMutation.mutate({ id, hidden: !currentlyHidden })
+  }
+
+  const handleRegenerate = (uploadId: string): void => {
+    setUploadProgress((prev) => ({
+      ...prev,
+      [uploadId]: {
+        percent: 0,
+        stage: 'starting',
+        message: 'Starting regeneration...',
+      },
+    }))
+
+    regenerateDescription.mutate(uploadId, {
+      onSuccess: () => {
+        subscribeToUpload(uploadId)
+      },
+    })
   }
 
   const handleSearch = (e: React.FormEvent): void => {
@@ -90,9 +168,9 @@ export function Component(): React.ReactElement {
     searchMutation.mutate(
       {
         query: searchQuery,
-        limit: clientConfig?.default_page_size ?? 50,
+        limit: clientConfig?.default_page_size ?? 48,
         similarity_threshold:
-          clientConfig?.search_default_similarity_threshold ?? 0.25,
+          clientConfig?.search_default_similarity_threshold ?? 0.48,
       },
       { onSuccess: (data) => setSearchResults(data.results) }
     )
@@ -118,26 +196,19 @@ export function Component(): React.ReactElement {
   }, [similarUploadsData])
 
   const toggleSelectMode = (): void => {
-    setSelectMode(!selectMode)
-    setSelectedIds(new Set())
+    storeToggleSelectMode()
   }
 
   const toggleSelectItem = (id: string): void => {
-    const newSelected = new Set(selectedIds)
-    if (newSelected.has(id)) {
-      newSelected.delete(id)
-    } else {
-      newSelected.add(id)
-    }
-    setSelectedIds(newSelected)
+    toggleSelectedId(id)
   }
 
   const selectAll = (): void => {
-    setSelectedIds(new Set(displayItems.map((item) => item.id)))
+    setSelectedIdsArray(displayItems.map((item) => item.id))
   }
 
   const deselectAll = (): void => {
-    setSelectedIds(new Set())
+    setSelectedIdsArray([])
   }
 
   const handleBulkDelete = (): void => {
@@ -147,10 +218,10 @@ export function Component(): React.ReactElement {
         `Delete ${selectedIds.size} upload${selectedIds.size !== 1 ? 's' : ''}?`
       )
     ) {
-      bulkDeleteMutation.mutate(Array.from(selectedIds), {
+      bulkDeleteMutation.mutate(selectedIdsArray, {
         onSuccess: () => {
-          setSelectedIds(new Set())
-          setSelectMode(false)
+          setSelectedIdsArray([])
+          storeToggleSelectMode()
         },
       })
     }
@@ -159,11 +230,11 @@ export function Component(): React.ReactElement {
   const handleBulkHide = (hidden: boolean): void => {
     if (selectedIds.size === 0) return
     bulkHideMutation.mutate(
-      { ids: Array.from(selectedIds), hidden },
+      { ids: selectedIdsArray, hidden },
       {
         onSuccess: () => {
-          setSelectedIds(new Set())
-          setSelectMode(false)
+          setSelectedIdsArray([])
+          storeToggleSelectMode()
         },
       }
     )
@@ -174,6 +245,10 @@ export function Component(): React.ReactElement {
     : searchResults
       ? searchResults.map((r) => r.upload)
       : (uploads?.items ?? [])
+
+  const currentUpload = selectedMediaId
+    ? displayItems.find((item) => item.id === selectedMediaId) ?? null
+    : null
 
   const isSearching = searchResults !== null
   const isSimilarMode = similarResults !== null
@@ -271,7 +346,7 @@ export function Component(): React.ReactElement {
             <button
               type="button"
               className={`${styles.toolbarBtn} ${showFilters ? styles.active : ''}`}
-              onClick={() => setShowFilters(!showFilters)}
+              onClick={toggleShowFilters}
             >
               <LuFilter />
               Filters
@@ -341,8 +416,7 @@ export function Component(): React.ReactElement {
                 className={styles.filterSelect}
                 value={filters.file_type ?? ''}
                 onChange={(e) =>
-                  setFilters({
-                    ...filters,
+                  updateFilters({
                     file_type: e.target.value
                       ? (e.target.value as 'image' | 'video')
                       : undefined,
@@ -364,12 +438,11 @@ export function Component(): React.ReactElement {
                 className={styles.filterSelect}
                 value={filters.sort_by}
                 onChange={(e) => {
-                  const newSortBy = e.target.value as UploadListParams['sort_by']
+                  const newSortBy = e.target.value as 'created_at' | 'updated_at' | 'file_size' | 'filename'
                   const defaultOrder = newSortBy === 'filename' ? 'asc' : 'desc'
-                  setFilters({
-                    ...filters,
+                  updateFilters({
                     sort_by: newSortBy,
-                    sort_order: defaultOrder,
+                    sort_order: defaultOrder as 'asc' | 'desc',
                   })
                 }}
               >
@@ -389,8 +462,7 @@ export function Component(): React.ReactElement {
                 className={styles.filterSelect}
                 value={filters.sort_order}
                 onChange={(e) =>
-                  setFilters({
-                    ...filters,
+                  updateFilters({
                     sort_order: e.target.value as 'asc' | 'desc',
                   })
                 }
@@ -409,7 +481,7 @@ export function Component(): React.ReactElement {
                   type="checkbox"
                   checked={filters.show_hidden}
                   onChange={(e) =>
-                    setFilters({ ...filters, show_hidden: e.target.checked })
+                    updateFilters({ show_hidden: e.target.checked })
                   }
                 />
                 Show hidden
@@ -450,14 +522,14 @@ export function Component(): React.ReactElement {
                   onClick={() =>
                     selectMode
                       ? toggleSelectItem(upload.id)
-                      : setSelectedMedia(upload)
+                      : setSelectedMediaId(upload.id)
                   }
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()
                       selectMode
                         ? toggleSelectItem(upload.id)
-                        : setSelectedMedia(upload)
+                        : setSelectedMediaId(upload.id)
                     }
                   }}
                   role="button"
@@ -518,7 +590,7 @@ export function Component(): React.ReactElement {
                   type="button"
                   className={styles.pageBtn}
                   onClick={() =>
-                    setFilters({ ...filters, page: filters.page - 1 })
+                    updateFilters({ page: filters.page - 1 })
                   }
                   disabled={filters.page === 1}
                 >
@@ -531,7 +603,7 @@ export function Component(): React.ReactElement {
                   type="button"
                   className={styles.pageBtn}
                   onClick={() =>
-                    setFilters({ ...filters, page: filters.page + 1 })
+                    updateFilters({ page: filters.page + 1 })
                   }
                   disabled={filters.page === uploads.pages}
                 >
@@ -543,13 +615,13 @@ export function Component(): React.ReactElement {
         )}
       </div>
 
-      {selectedMedia && (
+      {selectedMediaId && currentUpload && (
         <div
           className={styles.modal}
-          onClick={() => setSelectedMedia(null)}
+          onClick={() => setSelectedMediaId(null)}
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
-              setSelectedMedia(null)
+              setSelectedMediaId(null)
             }
           }}
           role="dialog"
@@ -564,22 +636,22 @@ export function Component(): React.ReactElement {
             <button
               type="button"
               className={styles.modalClose}
-              onClick={() => setSelectedMedia(null)}
+              onClick={() => setSelectedMediaId(null)}
               aria-label="Close"
             >
               <LuX />
             </button>
 
             <div className={styles.mediaWrapper}>
-              {selectedMedia.file_type === 'image' ? (
+              {currentUpload.file_type === 'image' ? (
                 <img
-                  src={selectedMedia.file_path}
-                  alt={selectedMedia.filename}
+                  src={currentUpload.file_path}
+                  alt={currentUpload.filename}
                   className={styles.modalImg}
                 />
               ) : (
                 <video
-                  src={selectedMedia.file_path}
+                  src={currentUpload.file_path}
                   className={styles.modalVideo}
                   controls
                 />
@@ -587,34 +659,53 @@ export function Component(): React.ReactElement {
             </div>
 
             <div className={styles.modalInfo}>
-              <h3 className={styles.modalTitle}>{selectedMedia.filename}</h3>
-              {selectedMedia.description && (
+              <h3 className={styles.modalTitle}>{currentUpload.filename}</h3>
+{uploadProgress[currentUpload.id] ? (
+                <div className={styles.regenerating}>
+                  <div className={styles.regeneratingProgress}>
+                    <div className={styles.progressBar}>
+                      <div
+                        className={styles.progressFill}
+                        style={{ width: `${uploadProgress[currentUpload.id].percent}%` }}
+                      />
+                    </div>
+                    <div className={styles.regeneratingText}>
+                      <span className={styles.regeneratingPercent}>
+                        {uploadProgress[currentUpload.id].percent}%
+                      </span>
+                      <span className={styles.regeneratingMessage}>
+                        {uploadProgress[currentUpload.id].message}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : currentUpload.description ? (
                 <>
                   <p className={styles.modalDescription}>
-                    {selectedMedia.description}
+                    {currentUpload.description}
                   </p>
-                  {selectedMedia.description_audit_score !== null && (
+                  {currentUpload.description_audit_score !== null && (
                     <div className={styles.confidenceScore}>
                       <span className={styles.confidenceLabel}>Description Quality:</span>
                       <span
                         className={`${styles.confidenceValue} ${
-                          selectedMedia.description_audit_score >= 80
+                          currentUpload.description_audit_score >= 80
                             ? styles.scoreHigh
-                            : selectedMedia.description_audit_score >= 60
+                            : currentUpload.description_audit_score >= 60
                               ? styles.scoreMedium
                               : styles.scoreLow
                         }`}
                       >
-                        {selectedMedia.description_audit_score}/100
+                        {currentUpload.description_audit_score}/100
                       </span>
                     </div>
                   )}
                 </>
-              )}
+              ) : null}
               <div className={styles.modalMeta}>
-                <span>Type: {selectedMedia.file_type}</span>
-                <span>Status: {selectedMedia.processing_status}</span>
-                {selectedMedia.hidden && (
+                <span>Type: {currentUpload.file_type}</span>
+                <span>Status: {currentUpload.processing_status}</span>
+                {currentUpload.hidden && (
                   <span className={styles.hiddenTag}>Hidden</span>
                 )}
               </div>
@@ -623,29 +714,40 @@ export function Component(): React.ReactElement {
                   type="button"
                   className={styles.actionBtn}
                   onClick={() => {
-                    handleFindSimilar(selectedMedia)
-                    setSelectedMedia(null)
+                    handleFindSimilar(currentUpload)
+                    setSelectedMediaId(null)
                   }}
-                  disabled={isSimilarLoading || !selectedMedia.has_embedding}
+                  disabled={isSimilarLoading || !currentUpload.has_embedding}
                 >
                   <LuSparkles />
                   Find Similar
                 </button>
+                {currentUpload.processing_status === 'completed' && (
+                  <button
+                    type="button"
+                    className={styles.actionBtn}
+                    onClick={() => handleRegenerate(currentUpload.id)}
+                    disabled={regenerateDescription.isPending}
+                  >
+                    <LuRefreshCw />
+                    {regenerateDescription.isPending ? 'Regenerating...' : 'Regenerate'}
+                  </button>
+                )}
                 <button
                   type="button"
                   className={styles.actionBtn}
                   onClick={() =>
-                    handleToggleHidden(selectedMedia.id, selectedMedia.hidden)
+                    handleToggleHidden(currentUpload.id, currentUpload.hidden)
                   }
                   disabled={toggleHiddenMutation.isPending}
                 >
-                  {selectedMedia.hidden ? <LuEye /> : <LuEyeOff />}
-                  {selectedMedia.hidden ? 'Unhide' : 'Hide'}
+                  {currentUpload.hidden ? <LuEye /> : <LuEyeOff />}
+                  {currentUpload.hidden ? 'Unhide' : 'Hide'}
                 </button>
                 <button
                   type="button"
                   className={`${styles.actionBtn} ${styles.danger}`}
-                  onClick={() => handleDelete(selectedMedia.id)}
+                  onClick={() => handleDelete(currentUpload.id)}
                   disabled={deleteMutation.isPending}
                 >
                   <LuTrash2 />

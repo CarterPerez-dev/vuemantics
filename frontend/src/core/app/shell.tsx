@@ -5,23 +5,24 @@
 
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { GiExitDoor } from 'react-icons/gi'
+import { ImImages } from "react-icons/im";
+import { GrCloudUpload } from "react-icons/gr";
+import { GiExitDoor, GiCloudUpload } from 'react-icons/gi'
 import {
   LuChevronLeft,
   LuChevronRight,
-  LuImages,
   LuMenu,
   LuUpload,
 } from 'react-icons/lu'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useLogout } from '@/api/hooks'
 import { ROUTES } from '@/config'
-import { useUIStore, useUser } from '@/core/lib'
+import { useUIStore, useUser } from '@/core/lib/stores'
 import styles from './shell.module.scss'
 
 const NAV_ITEMS = [
-  { path: ROUTES.UPLOAD, label: 'Upload', icon: LuUpload },
-  { path: ROUTES.GALLERY, label: 'Gallery', icon: LuImages },
+  { path: ROUTES.UPLOAD, label: 'Upload', icon: GrCloudUpload },
+  { path: ROUTES.GALLERY, label: 'Gallery', icon: ImImages },
 ]
 
 function ShellErrorFallback({ error }: { error: unknown }): React.ReactElement {

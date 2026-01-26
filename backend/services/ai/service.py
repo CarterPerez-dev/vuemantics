@@ -5,12 +5,21 @@ service.py
 
 import asyncio
 import logging
+from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
 import config
 from core import VisionError
 from core.validators import DescriptionAuditor
+from core.websocket import (
+    get_publisher,
+    ProcessingStage,
+    UploadProgressUpdate,
+    UploadProgressPayload,
+    UploadCompleted,
+    UploadFailed,
+)
 from models.Upload import Upload, ProcessingStatus
 from services.storage_service import storage_service
 from services.ai.embedding import EmbeddingService
@@ -50,6 +59,46 @@ class LocalAIService:
 
         logger.info("Local AI service initialized (Ollama-based)")
 
+    async def _publish_progress(
+        self,
+        upload_id: UUID,
+        status: ProcessingStatus,
+        stage: ProcessingStage,
+        progress_percent: int,
+        message: str,
+        error_message: str | None = None,
+        audit_score: int | None = None,
+    ) -> None:
+        """
+        Publish upload progress via WebSocket
+
+        Args:
+            upload_id: Upload's ID
+            status: Current processing status
+            stage: Current processing stage
+            progress_percent: Progress percentage (0-100)
+            message: Human-readable message
+            error_message: Error details if failed
+            audit_score: Description quality score if available
+        """
+        try:
+            publisher = get_publisher()
+            progress_msg = UploadProgressUpdate(
+                payload=UploadProgressPayload(
+                    upload_id=str(upload_id),
+                    status=status,
+                    stage=stage,
+                    progress_percent=progress_percent,
+                    message=message,
+                    error_message=error_message,
+                    description_audit_score=audit_score,
+                ),
+                timestamp=datetime.utcnow(),
+            )
+            await publisher.publish_progress(str(upload_id), progress_msg)
+        except Exception as e:
+            logger.warning(f"Failed to publish progress for {upload_id}: {e}")
+
     async def analyze_media(self, upload_id: UUID) -> None:
         """
         Analyze media file and generate embeddings.
@@ -69,6 +118,13 @@ class LocalAIService:
 
         try:
             await upload.update_status(ProcessingStatus.ANALYZING)
+            await self._publish_progress(
+                upload_id,
+                ProcessingStatus.ANALYZING,
+                ProcessingStage.QUEUED,
+                0,
+                "Starting AI analysis"
+            )
             logger.info(
                 f"Starting local AI analysis for upload {upload_id}"
             )
@@ -80,6 +136,23 @@ class LocalAIService:
             max_retries = 2
 
             for attempt in range(max_retries):
+                if upload.file_type == "video":
+                    await self._publish_progress(
+                        upload_id,
+                        ProcessingStatus.ANALYZING,
+                        ProcessingStage.EXTRACTING_FRAMES,
+                        10,
+                        "Extracting video frames"
+                    )
+
+                await self._publish_progress(
+                    upload_id,
+                    ProcessingStatus.ANALYZING,
+                    ProcessingStage.VISION_ANALYSIS,
+                    20,
+                    f"Analyzing {upload.file_type} with vision model"
+                )
+
                 if upload.file_type == "image":
                     description = await self._vision.analyze_image(
                         file_path
@@ -95,6 +168,14 @@ class LocalAIService:
                     raise VisionError(
                         "Vision model returned empty description"
                     )
+
+                await self._publish_progress(
+                    upload_id,
+                    ProcessingStatus.ANALYZING,
+                    ProcessingStage.DESCRIPTION_AUDIT,
+                    50,
+                    "Auditing description quality"
+                )
 
                 audit_result = DescriptionAuditor.audit(description)
                 logger.info(
@@ -125,6 +206,14 @@ class LocalAIService:
             )
 
             await upload.update_status(ProcessingStatus.EMBEDDING)
+            await self._publish_progress(
+                upload_id,
+                ProcessingStatus.EMBEDDING,
+                ProcessingStage.EMBEDDING_GENERATION,
+                60,
+                "Generating embeddings",
+                audit_score=audit_result.score
+            )
 
             logger.info(f"Starting embedding generation for {upload_id}")
             embedding = await self._embedding.generate_embedding(
@@ -132,6 +221,15 @@ class LocalAIService:
             )
             logger.info(
                 f"Generated embedding for {upload_id}: {len(embedding)} dimensions"
+            )
+
+            await self._publish_progress(
+                upload_id,
+                ProcessingStatus.EMBEDDING,
+                ProcessingStage.INDEXING,
+                90,
+                "Updating database",
+                audit_score=audit_result.score
             )
 
             logger.info(
@@ -143,6 +241,15 @@ class LocalAIService:
                 use_local = True,
                 description_audit_score = audit_result.score,
             )
+
+            # Publish completion
+            completed_msg = UploadCompleted(
+                upload_id=str(upload_id),
+                description=description,
+                audit_score=audit_result.score,
+                timestamp=datetime.utcnow(),
+            )
+            await get_publisher().publish_progress(str(upload_id), completed_msg)
 
             logger.info(
                 f"Local AI processing completed for upload {upload_id}"
@@ -156,6 +263,14 @@ class LocalAIService:
                 ProcessingStatus.FAILED,
                 error_message = f"AI processing failed: {str(e)[:500]}",
             )
+
+            # Publish failure
+            failed_msg = UploadFailed(
+                upload_id=str(upload_id),
+                error_message=str(e)[:500],
+                timestamp=datetime.utcnow(),
+            )
+            await get_publisher().publish_progress(str(upload_id), failed_msg)
 
     async def _analyze_video_with_frames(
         self,

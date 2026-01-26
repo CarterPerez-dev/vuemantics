@@ -19,7 +19,7 @@ export default function App(): React.ReactElement {
         <RouterProvider router={router} />
         <Toaster
           position="top-right"
-          duration={2000}
+          duration={1469}
           theme="dark"
           toastOptions={{
             style: {

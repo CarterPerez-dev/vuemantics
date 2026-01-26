@@ -8,6 +8,7 @@ from . import (
     health,
     upload,
     search,
+    websocket,
 )
 
 
@@ -17,4 +18,5 @@ __all__ = [
     "health",
     "upload",
     "search",
+    "websocket",
 ]

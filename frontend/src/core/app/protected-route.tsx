@@ -5,7 +5,7 @@
 
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { ROUTES } from '@/config'
-import { useAuthStore } from '@/core/lib'
+import { useAuthStore } from '@/core/lib/stores'
 
 interface ProtectedRouteProps {
   redirectTo?: string

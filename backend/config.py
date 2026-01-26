@@ -22,7 +22,7 @@ APP_VERSION: Final[str] = "1.0.1"
 # Important
 # ======================================================
 SEARCH_DEFAULT_SIMILARITY_THRESHOLD: Final[float] = 0.48  # Default for search queries
-SIMILAR_UPLOADS_SIMILARITY_THRESHOLD: Final[float] = 0.5  # Threshold for "find similar"
+SIMILAR_UPLOADS_SIMILARITY_THRESHOLD: Final[float] = 0.48  # Threshold for "find similar"
 # ======================================================
 
 
@@ -111,6 +111,14 @@ MIN_PASSWORD_LENGTH: Final[int] = 8
 MAX_PASSWORD_LENGTH: Final[int] = 72  # bcrypt max
 SPECIAL_CHARACTERS: Final[str] = "!@#$%^&*()_+-=[]{}|;:,.<>?"
 
+# WebSocket configuration
+WEBSOCKET_AUTH_TIMEOUT: Final[float] = 5.0  # Seconds to wait for auth message
+WEBSOCKET_HEARTBEAT_INTERVAL: Final[int] = 30  # Seconds between heartbeats
+WEBSOCKET_CLOSE_AUTH_TIMEOUT: Final[int] = 4001  # Close code for auth timeout
+WEBSOCKET_CLOSE_AUTH_REQUIRED: Final[int] = 4002  # Close code for missing auth
+WEBSOCKET_CLOSE_INVALID_TOKEN: Final[int] = 4003  # Close code for invalid token
+WEBSOCKET_CLOSE_INVALID_MESSAGE: Final[int] = 4004  # Close code for invalid message format
+
 
 class Settings(BaseSettings):
     """
@@ -167,6 +175,11 @@ class Settings(BaseSettings):
         default = True,
         description = "Decode Redis responses to strings"
     )
+    redis_pool_max_size: int = Field(
+        default = 50,
+        ge = 1,
+        description = "Max Redis connections in pool"
+    )
 
     rate_limit_upload: str = Field(
         default = "100/minute",
@@ -203,7 +216,7 @@ class Settings(BaseSettings):
         description = "Ollama vision model for image/video analysis"
     )
     local_embedding_model: str = Field(
-        default = "BAAI/bge-m3",
+        default = "bge-m3",
         description = "Local embedding model (bge-m3)"
     )
     local_embedding_dimensions: int = Field(
@@ -235,7 +248,10 @@ class Settings(BaseSettings):
     cors_origins: list[str] = Field(
         default = [
             "http://localhost:3000",
+            "192.168.1.167:856:3000",            
             "http://localhost:5173",
+            "http://localhost:856",
+            "192.168.1.167:856",
             "http://localhost"
         ],
         description = "Allowed CORS origins",

@@ -9,7 +9,7 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios'
 import { API_ENDPOINTS, HTTP_STATUS, ROUTES } from '@/config'
-import { useAuthStore } from '@/core/lib'
+import { useAuthStore } from '@/core/lib/stores'
 import { ApiError, ApiErrorCode, transformAxiosError } from './errors'
 
 interface RequestConfig extends InternalAxiosRequestConfig {

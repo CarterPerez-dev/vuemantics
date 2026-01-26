@@ -1,7 +1,7 @@
-/**
- * ©AngelaMos | 2026
- * index.tsx
- */
+// ===================
+// © AngelaMos | 2026
+// index.tsx
+// ===================
 
 import { FiGithub } from 'react-icons/fi'
 import { Link } from 'react-router-dom'
