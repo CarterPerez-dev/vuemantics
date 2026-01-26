@@ -40,7 +40,7 @@ class RedisPool:
 
         async with self._lock:
             if self._pool is not None:
-                return
+                return  # type: ignore[unreachable]  # Double-check locking pattern
 
             try:
                 self._pool = redis.ConnectionPool.from_url(
@@ -71,11 +71,11 @@ class RedisPool:
         Close all Redis connections
         """
         if self._client is not None:
-            await self._client.aclose()
+            await self._client.close()
             self._client = None
 
         if self._pool is not None:
-            await self._pool.aclose()
+            await self._pool.disconnect()
             self._pool = None
 
         logger.info("Redis pool closed")

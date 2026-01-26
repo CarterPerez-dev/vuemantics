@@ -3,9 +3,10 @@
 // index.tsx
 // ===================
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { GiCloudUpload } from 'react-icons/gi'
 import { LuRefreshCw, LuX } from 'react-icons/lu'
+import { TfiFaceSad } from 'react-icons/tfi'
 import { toast } from 'sonner'
 import {
   useClientConfig,
@@ -31,6 +32,9 @@ const ACCEPTED_TYPES = {
 export function Component(): React.ReactElement {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [videoPoster, setVideoPoster] = useState<string | null>(null)
+  const [thumbnailFailed, setThumbnailFailed] = useState(false)
+  const hasShownPendingToast = useRef(false)
 
   const {
     pendingFile,
@@ -44,7 +48,8 @@ export function Component(): React.ReactElement {
   const maxFileSizeBytes = (clientConfig?.max_upload_size_mb ?? 100) * 1024 * 1024
 
   useEffect(() => {
-    if (pendingFile && !selectedFile) {
+    if (pendingFile && !selectedFile && !hasShownPendingToast.current) {
+      hasShownPendingToast.current = true
       toast.info(
         `You had a pending upload: ${pendingFile.name}. Please re-select the file.`
       )
@@ -119,8 +124,12 @@ export function Component(): React.ReactElement {
       const file = e.dataTransfer.files[0]
       if (validateFile(file)) {
         setSelectedFile(file)
-        setPreviewUrl(URL.createObjectURL(file))
+        const url = URL.createObjectURL(file)
+        setPreviewUrl(url)
         setPendingFile({ name: file.name, size: file.size, type: file.type })
+        if (file.type.startsWith('video/')) {
+          generateVideoThumbnail(url)
+        }
       }
     }
   }
@@ -130,8 +139,12 @@ export function Component(): React.ReactElement {
       const file = e.target.files[0]
       if (validateFile(file)) {
         setSelectedFile(file)
-        setPreviewUrl(URL.createObjectURL(file))
+        const url = URL.createObjectURL(file)
+        setPreviewUrl(url)
         setPendingFile({ name: file.name, size: file.size, type: file.type })
+        if (file.type.startsWith('video/')) {
+          generateVideoThumbnail(url)
+        }
       }
     }
   }
@@ -149,6 +162,8 @@ export function Component(): React.ReactElement {
           URL.revokeObjectURL(previewUrl)
           setPreviewUrl(null)
         }
+        setVideoPoster(null)
+        setThumbnailFailed(false)
       },
     })
   }
@@ -160,6 +175,8 @@ export function Component(): React.ReactElement {
       URL.revokeObjectURL(previewUrl)
       setPreviewUrl(null)
     }
+    setVideoPoster(null)
+    setThumbnailFailed(false)
   }
 
   const handleRegenerate = (uploadId: string): void => {
@@ -179,6 +196,47 @@ export function Component(): React.ReactElement {
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
+  const generateVideoThumbnail = (videoUrl: string): void => {
+    const video = document.createElement('video')
+    video.src = videoUrl
+    video.muted = true
+    video.playsInline = true
+    video.preload = 'metadata'
+
+    const captureFrame = (): void => {
+      const canvas = document.createElement('canvas')
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      const ctx = canvas.getContext('2d')
+      if (ctx && canvas.width > 0 && canvas.height > 0) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+        const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8)
+        setVideoPoster(thumbnailUrl)
+        setThumbnailFailed(false)
+      } else {
+        setThumbnailFailed(true)
+      }
+    }
+
+    video.addEventListener('loadedmetadata', () => {
+      video.currentTime = Math.min(0.5, video.duration / 10)
+    })
+
+    video.addEventListener('seeked', captureFrame, { once: true })
+
+    video.addEventListener('error', () => {
+      setThumbnailFailed(true)
+    })
+
+    setTimeout(() => {
+      if (!videoPoster) {
+        setThumbnailFailed(true)
+      }
+    }, 3000)
+
+    video.load()
   }
 
   return (
@@ -204,11 +262,20 @@ export function Component(): React.ReactElement {
                         alt={selectedFile.name}
                         className={styles.previewImg}
                       />
+                    ) : thumbnailFailed ? (
+                      <div className={styles.hevcWarning}>
+                        <TfiFaceSad className={styles.hevcIcon} />
+                        <p className={styles.hevcText}>
+                          Video codec (likely HEVC) cannot be previewed in browser
+                        </p>
+                        <p className={styles.hevcSubtext}>womp womp</p>
+                      </div>
                     ) : (
                       <video
                         src={previewUrl}
                         className={styles.previewVideo}
                         controls
+                        poster={videoPoster || undefined}
                       />
                     )}
                   </div>

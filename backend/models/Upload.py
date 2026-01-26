@@ -101,6 +101,7 @@ class Upload(BaseModel):
             self.embedding_local = embedding_local_raw
 
         self.thumbnail_path: str | None = kwargs.get("thumbnail_path")
+        self.video_codec: str | None = kwargs.get("video_codec")
         self.error_message: str | None = kwargs.get("error_message")
         self.hidden: bool = kwargs.get("hidden", False)
         self.regeneration_count: int = kwargs.get("regeneration_count", 0)
@@ -145,6 +146,7 @@ class Upload(BaseModel):
 
                 -- Metadata
                 thumbnail_path TEXT,
+                video_codec VARCHAR(20),  -- h264, hevc, vp9, av1, etc (videos only)
                 error_message TEXT,
                 metadata JSONB,
                 hidden BOOLEAN NOT NULL DEFAULT FALSE,
@@ -637,6 +639,29 @@ class Upload(BaseModel):
         )
         if updated_at:
             self.thumbnail_path = thumbnail_path
+            self.updated_at = updated_at
+
+    async def update_video_codec(self, codec: str) -> None:
+        """
+        Update video codec
+
+        Args:
+            codec: Video codec (h264, hevc, vp9, av1, etc)
+        """
+        if self.id is None:
+            raise ValueError("Cannot update codec for unsaved upload")
+
+        query = """
+            UPDATE uploads
+            SET video_codec = $1,
+                updated_at = NOW()
+            WHERE id = $2
+            RETURNING updated_at
+        """
+
+        updated_at = await database.db.fetchval(query, codec, self.id)
+        if updated_at:
+            self.video_codec = codec
             self.updated_at = updated_at
 
     async def update_hidden(self, hidden: bool) -> None:

@@ -31,7 +31,7 @@ router = APIRouter(tags = ["websocket"])
 
 
 @router.websocket("/ws/uploads")
-async def upload_progress_websocket(websocket: WebSocket):
+async def upload_progress_websocket(websocket: WebSocket) -> None:
     """
     WebSocket endpoint for real time upload progress updates
 
@@ -56,7 +56,7 @@ async def upload_progress_websocket(websocket: WebSocket):
     manager = get_manager()
     await manager.connect(user_id, websocket)
 
-    async def send_heartbeat():
+    async def send_heartbeat() -> None:
         """
         Send periodic heartbeat to keep connection alive
         """
@@ -68,7 +68,7 @@ async def upload_progress_websocket(websocket: WebSocket):
         except Exception as e:
             logger.debug(f"Heartbeat task stopped: {e}")
 
-    async def receive_messages():
+    async def receive_messages() -> None:
         """
         Handle incoming client messages
         """
@@ -78,29 +78,26 @@ async def upload_progress_websocket(websocket: WebSocket):
                     action = raw_message.get("action")
 
                     if action == "subscribe_upload":
-                        msg = SubscribeUpload.model_validate(raw_message)
+                        sub_msg = SubscribeUpload.model_validate(raw_message)
                         await manager.subscribe_upload(
                             user_id,
-                            msg.upload_id
+                            sub_msg.upload_id
                         )
                         logger.info(
-                            f"User {user_id} subscribed to upload {msg.upload_id}"
+                            f"User {user_id} subscribed to upload {sub_msg.upload_id}"
                         )
 
                     elif action == "unsubscribe_upload":
-                        msg = UnsubscribeUpload.model_validate(raw_message)
+                        unsub_msg = UnsubscribeUpload.model_validate(raw_message)
                         await manager.unsubscribe_upload(
                             user_id,
-                            msg.upload_id
+                            unsub_msg.upload_id
                         )
                         logger.info(
-                            f"User {user_id} unsubscribed from upload {msg.upload_id}"
+                            f"User {user_id} unsubscribed from upload {unsub_msg.upload_id}"
                         )
 
-                    elif action == "pong":
-                        pass
-                        #🏓
-                    elif action == "ping":
+                    elif action in ("pong", "ping"):
                         pass
 
                     else:

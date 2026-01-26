@@ -30,6 +30,7 @@ export const API_ENDPOINTS = {
     STATS: `/${API_VERSION}/search/stats`,
   },
   CLIENT_CONFIG: `/${API_VERSION}/client-config`,
+  CHANGELOG: `/${API_VERSION}/changelog`,
   HEALTH: `/${API_VERSION}/health`,
 } as const
 

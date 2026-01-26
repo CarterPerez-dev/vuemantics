@@ -7,6 +7,7 @@ from fastapi import APIRouter
 
 from . import (
     auth,
+    changelog,
     client_config,
     health,
     upload,
@@ -17,6 +18,7 @@ from . import (
 router = APIRouter()
 
 router.include_router(auth.router, tags = ["auth"])
+router.include_router(changelog.router, tags = ["system"])
 router.include_router(client_config.router, tags = ["config"])
 router.include_router(health.router, tags = ["health"])
 router.include_router(upload.router, tags = ["uploads"])
@@ -25,6 +27,7 @@ router.include_router(search.router, tags = ["search"])
 __all__ = [
     "router",
     "auth",
+    "changelog",
     "client_config",
     "health",
     "upload",

@@ -8,6 +8,9 @@ from .base import (
     PaginatedResponse,
     TimestampMixin,
 )
+from .common import (
+    AppInfoResponse,
+)
 from .auth import (
     LoginRequest,
     TokenResponse,
@@ -43,6 +46,11 @@ from .health import (
     HealthStatus,
     HealthDetailedResponse,
 )
+from .changelog import (
+    ChangelogSection,
+    ChangelogVersion,
+    ChangelogResponse,
+)
 
 __all__ = [
 
@@ -50,6 +58,9 @@ __all__ = [
     "PaginationParams",
     "PaginatedResponse",
     "TimestampMixin",
+
+    # Common
+    "AppInfoResponse",
 
     # Auth
     "LoginRequest",
@@ -85,4 +96,9 @@ __all__ = [
     # Health
     "HealthStatus",
     "HealthDetailedResponse",
+
+    # Changelog
+    "ChangelogSection",
+    "ChangelogVersion",
+    "ChangelogResponse",
 ]

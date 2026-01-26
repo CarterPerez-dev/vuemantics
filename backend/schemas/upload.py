@@ -22,32 +22,11 @@ from schemas import PaginationParams, TimestampMixin
 
 class UploadResponse(TimestampMixin):
     """
-    Upload response with all fields including embedding.
-
-    Note: Full embedding is included for similarity calculations.
+    Upload response with all fields including embedding
     """
     model_config = ConfigDict(
-        extra = "ignore",  # Allow extra fields for MVP flexibility
+        extra = "forbid",
         from_attributes = True,
-        json_schema_extra = {
-            "example": {
-                "id": "550e8400-e29b-41d4-a716-446655440000",
-                "user_id": "660e8400-e29b-41d4-a716-446655440000",
-                "filename": "vacation_photo.jpg",
-                "file_path": "/storage/uploads/user123/file456/vacation_photo.jpg",
-                "file_type": "image",
-                "file_size": 2048576,
-                "mime_type": "image/jpeg",
-                "processing_status": "completed",
-                "description": "A beach scene with palm trees and sunset",
-                "embedding_local": [0.123, -0.456, 0.789],  # ... 1024 dimensions
-                "thumbnail_path": "/storage/uploads/user123/file456/thumb_vacation_photo.jpg",
-                "error_message": None,
-                "metadata": {"width": 1920, "height": 1080},
-                "created_at": "2024-01-15T10:30:00Z",
-                "updated_at": "2024-01-15T10:31:00Z",
-            }
-        },
     )
 
     id: UUID = Field(description = "Upload's unique identifier")
@@ -62,7 +41,7 @@ class UploadResponse(TimestampMixin):
     )
     description: str | None = Field(
         default = None,
-        description = "AI-generated description from vision model"
+        description = "AI generated description from vision model"
     )
     description_audit_score: int | None = Field(
         default = None,
@@ -84,6 +63,10 @@ class UploadResponse(TimestampMixin):
     thumbnail_path: str | None = Field(
         default = None,
         description = "Path to generated thumbnail"
+    )
+    video_codec: str | None = Field(
+        default = None,
+        description = "Video codec (h264, hevc, vp9, av1, etc) - videos only"
     )
     error_message: str | None = Field(
         default = None,
@@ -143,7 +126,7 @@ class UploadResponse(TimestampMixin):
 
 class UploadListParams(PaginationParams):
     """
-    Parameters for listing uploads with filters.
+    Parameters for listing uploads with filters
     """
     file_type: FileType | None = Field(
         default = None,
@@ -173,11 +156,10 @@ class UploadListParams(PaginationParams):
 
 class UploadStats(BaseModel):
     """
-    Upload statistics by type and status.
+    Upload statistics by type and status
     """
-
     model_config = ConfigDict(
-        extra = "ignore",  # Allow extra fields for MVP flexibility
+        extra = "forbid",
     )
 
     total_count: int = Field(ge = 0, description = "Total uploads")
@@ -186,25 +168,12 @@ class UploadStats(BaseModel):
         description = "Total size in bytes"
     )
 
-    by_type: dict[str,
-                  int] = Field(
-                      description = "Counts by file type",
-                      examples = [{
-                          "image": 150,
-                          "video": 50
-                      }]
-                  )
-    by_status: dict[str,
-                    int] = Field(
-                        description = "Counts by processing status",
-                        examples = [
-                            {
-                                "completed": 180,
-                                "failed": 5,
-                                "pending": 15
-                            }
-                        ],
-                    )
+    by_type: dict[str, int] = Field(
+        description = "Counts by file type",
+    )
+    by_status: dict[str, int] = Field(
+        description = "Counts by processing status",
+    )
 
     average_processing_time_seconds: float | None = Field(
         ge = 0,
@@ -214,10 +183,10 @@ class UploadStats(BaseModel):
 
 class BulkUploadResponse(BaseModel):
     """
-    Response for bulk upload operations.
+    Response for bulk upload operations
     """
     model_config = ConfigDict(
-        extra = "ignore",  # Allow extra fields for MVP flexibility
+        extra = "forbid",
     )
 
     successful: list[UploadResponse] = Field(
@@ -227,14 +196,6 @@ class BulkUploadResponse(BaseModel):
                       str]
                  ] = Field(
                      description = "Failed uploads with error messages",
-                     examples = [
-                         [
-                             {
-                                 "filename": "bad.txt",
-                                 "error": "Unsupported file type"
-                             }
-                         ]
-                     ],
                  )
     total_processed: int = Field(
         ge = 0,
@@ -245,3 +206,4 @@ class BulkUploadResponse(BaseModel):
         description = "Total successful uploads"
     )
     total_failed: int = Field(ge = 0, description = "Total failed uploads")
+

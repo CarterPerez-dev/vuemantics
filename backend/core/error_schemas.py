@@ -10,7 +10,7 @@ class ErrorDetail(BaseModel):
     """
     Standard error response format.
     """
-    model_config = ConfigDict(extra = "ignore")
+    model_config = ConfigDict(extra = "forbid")
 
     detail: str = Field(description = "Human readable error message")
     type: str = Field(description = "Exception class name")

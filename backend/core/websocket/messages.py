@@ -151,4 +151,4 @@ class Pong(BaseModel):
     action: Literal["pong"] = "pong"
 
 
-ClientMessage = (AuthMessage | SubscribeUpload | UnsubscribeUpload | Pong)
+ClientMessage = AuthMessage | SubscribeUpload | UnsubscribeUpload | Pong

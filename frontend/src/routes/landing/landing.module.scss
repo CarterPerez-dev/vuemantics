@@ -16,32 +16,34 @@
     transparent 1px
   );
   background-size: 20px 20px;
-  padding: $space-8;
+  padding: $space-10 $space-8 $space-6;
 }
 
 .header {
   text-align: center;
-  margin-bottom: $space-5;
+  margin-bottom: $space-8;
 }
 
 .title {
-  font-size: $font-size-4xl;
+  font-size: 4.7rem;
+  font-family: -apple-system-condensed, 'Arial Narrow', Arial, sans-serif;
   font-weight: $font-weight-semibold;
   color: $text-default;
   letter-spacing: $tracking-tight;
-  margin-bottom: $space-2;
+  margin-bottom: $space-4;
 }
 
 .subtitle {
-  font-size: $font-size-lg;
-  color: $text-light;
-  margin-bottom: $space-3;
+  font-size: 1.44rem;
+  color: $text-almost-muted;
+  max-width: 500px;
+  margin-bottom: 32px;
 }
 
 .github {
   display: inline-flex;
-  color: $text-muted;
-  font-size: $font-size-2xl;
+  color: $text-light;
+  font-size: 2.1rem;
   @include transition-fast;
 
   @include hover {
@@ -52,22 +54,15 @@
 }
 
 .content {
-  max-width: 800px;
+  max-width: 900px;
   text-align: center;
-}
-
-.description {
-  font-size: $font-size-base;
-  color: $text-light;
-  line-height: $line-height-relaxed;
-  margin-bottom: $space-8;
 }
 
 .sections {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: $space-6;
-  margin-bottom: $space-10;
+  gap: $space-5;
+  margin-bottom: $space-8;
   text-align: left;
 
   @include breakpoint-down(md) {
@@ -77,38 +72,43 @@
 
 .section {
   padding: $space-5;
-  background-color: $bg-surface-75;
+  background-color: $bg-landing-card;
+  background-image: radial-gradient(
+    circle,
+    $bg-landing-card-dot 1px,
+    transparent 1px
+  );
+  background-size: 13px 13px;
   border: 1px solid $border-muted;
   border-radius: $radius-lg;
 }
 
-.sectionTitle {
-  font-size: $font-size-sm;
-  font-weight: $font-weight-semibold;
-  color: $text-default;
+.sectionIcon {
+  width: 39px;
+  height: 39px;
+  @include flex-center;
+  background: $bg-surface-200;
+  border-radius: $radius-md;
   margin-bottom: $space-3;
-  letter-spacing: $tracking-wide;
-  text-transform: uppercase;
+  color: $accent-blue;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
 }
 
-.features {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: $space-2;
+.sectionTitle {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $text-default;
+  margin-bottom: $space-2;
+}
 
-  li {
-    font-size: $font-size-sm;
-    color: $text-muted;
-
-    &::before {
-      content: '→';
-      margin-right: $space-2;
-      color: $text-lighter;
-    }
-  }
+.sectionText {
+  font-size: $font-size-sm;
+  color: $text-light;
+  line-height: $line-height-relaxed;
 }
 
 .actions {
@@ -125,15 +125,15 @@
   padding: $space-3 $space-5;
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;
-  color: $bg-default;
-  background-color: $text-default;
+  color: $white;
+  background-color: $accent-blue;
   border-radius: $radius-md;
   text-decoration: none;
   @include transition-fast;
 
   @include hover {
     &:hover {
-      filter: brightness(0.9);
+      filter: brightness(1.1);
     }
   }
 }

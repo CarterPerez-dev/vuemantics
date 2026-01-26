@@ -4,9 +4,9 @@ config.py
 """
 
 import warnings
-from functools import lru_cache
 from pathlib import Path
 from typing import Final
+from functools import lru_cache
 
 from pydantic import Field, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -15,9 +15,33 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 _ENV_FILE = _PROJECT_ROOT / ".env"
 
-
-# Ver.
 APP_VERSION: Final[str] = "1.0.1"
+
+API_CONTACT: Final[dict[str,
+                        str]
+                   ] = {
+                       "name": "AngelaMos",
+                       "url":
+                       "https://github.com/CarterPerez-dev/vuemantics",
+                   }
+API_LICENSE: Final[dict[str,
+                        str]
+                   ] = {
+                       "name": "GNU Affero General Public License v3.0",
+                       "url": "https://www.gnu.org/licenses/agpl-3.0.html",
+                   }
+API_DESCRIPTION: Final[str] = (
+    "Semantic search API for images using local AI. "
+    "Upload images, search by natural language, discover similar content. "
+    "Built with FastAPI, PostgreSQL, pgvector, and Ollama."
+)
+
+OPENAPI_VERSION: Final[str] = "3.1.0"
+API_ROOT_PATH: Final[str] = "/api"
+API_DOCS_URL: Final[str] = "/docs"
+API_REDOC_URL: Final[str] = "/redoc"
+API_OPENAPI_URL: Final[str] = "/openapi.json"
+
 
 # Important
 # ======================================================
@@ -26,15 +50,14 @@ SIMILAR_UPLOADS_SIMILARITY_THRESHOLD: Final[float] = 0.48  # Threshold for "find
 # ======================================================
 
 
-
 EMBEDDING_DIMENSIONS: Final[int] = 1024  # bge-m3 dimensions
 IVFFLAT_INDEX_LISTS: Final[int] = 100  # IVFFlat clusters for pgvector
 
 # AI Model config
 OLLAMA_VISION_TEMPERATURE: Final[float] = 0.3
 OLLAMA_VISION_NUM_PREDICT_IMAGE: Final[int] = 512  # Max tokens for image analysis
-OLLAMA_VISION_NUM_PREDICT_VIDEO: Final[int] = 1024  # Max tokens for video analysis
-OLLAMA_VISION_NUM_CTX: Final[int] = 2048  # Context window
+OLLAMA_VISION_NUM_PREDICT_VIDEO: Final[int] = 2048  # Max tokens for video analysis (videos need detailed descriptions)
+OLLAMA_VISION_NUM_CTX: Final[int] = 8192  # Context window (qwen2.5vl supports up to 128K)
 
 # Text processing limits
 MAX_EMBEDDING_TEXT_LENGTH: Final[int] = 32000  # Max chars for embedding generation
@@ -58,18 +81,18 @@ PROCESSING_RETRY_ATTEMPTS: Final[int] = 3  # Retry failed processing 3 times
 PENDING_UPLOADS_LIMIT: Final[int] = 10  # Max pending uploads to fetch for processing
 
 # File processing constants
-THUMBNAIL_QUALITY: Final[int] = 85  # JPEG quality for thumbnails
-THUMBNAIL_FILENAME: Final[str] = "thumb_256.jpg"  # Thumbnail filename
+THUMBNAIL_QUALITY: Final[int] = 85  # JPEG
+THUMBNAIL_FILENAME: Final[str] = "thumb_256.jpg"
 VIDEO_SAMPLE_FPS: Final[float] = 1.0  # Extract 1 frame per second for video analysis
 MAX_VIDEO_FRAMES: Final[int] = 10  # Maximum frames to extract from video
-MAX_VIDEO_FRAMES_FOR_ANALYSIS: Final[int] = 10  # Maximum frames to send to vision model
+MAX_VIDEO_FRAMES_FOR_ANALYSIS: Final[int] = 10  # Maximum frames to send to vision model (8K context is plenty)
 
 # Description audit configuration
 DESCRIPTION_MIN_LENGTH: Final[int] = 50
 DESCRIPTION_MAX_LENGTH: Final[int] = 5000
 DESCRIPTION_MIN_WORD_DIVERSITY: Final[float] = 0.20  # 20% unique words minimum
 DESCRIPTION_MAX_CONSECUTIVE_REPEATS: Final[int] = 3  # Flag if 4+ same words in a row
-DESCRIPTION_MAX_GIBBERISH_RATIO: Final[float] = 0.30  # 30% non-alpha max
+DESCRIPTION_MAX_GIBBERISH_RATIO: Final[float] = 0.30  # 30% non alpha max
 DESCRIPTION_AUDIT_PASS_THRESHOLD: Final[int] = 60  # Score must be >= 60 to pass
 
 # Audit penalties (deducted from 100)
@@ -82,36 +105,32 @@ AUDIT_PENALTY_HIGH_GIBBERISH: Final[int] = 25
 
 
 
-# File upload chunk size
-FILE_UPLOAD_CHUNK_SIZE: Final[int] = 1024 * 1024  # 1MB chunks
 
-# Pagination defaults
+FILE_UPLOAD_CHUNK_SIZE: Final[int] = 1024 * 1024  # 1MB
+
 DEFAULT_PAGE_SIZE: Final[int] = 50
 MAX_PAGE_SIZE: Final[int] = 100
-DEFAULT_QUERY_LIMIT: Final[int] = 100  # Default limit for database queries
+DEFAULT_QUERY_LIMIT: Final[int] = 100  # Default limit for db queries
 
-SEARCH_CACHE_TTL: Final[int] = 300  # 5 minutes for search results
-USER_CACHE_TTL: Final[int] = 60  # 1 minute for user data
-UPLOAD_COUNT_CACHE_TTL: Final[int] = 30  # 30 seconds for upload counts
+SEARCH_CACHE_TTL: Final[int] = 300  # 5 minutes
+USER_CACHE_TTL: Final[int] = 60  # 1 minute
+UPLOAD_COUNT_CACHE_TTL: Final[int] = 30  # seconds
 
-# Query validation
 MIN_QUERY_LENGTH: Final[int] = 1
 MAX_QUERY_LENGTH: Final[int] = 500
 
-MAX_BULK_UPLOAD_DELETE: Final[int] = 100  # Max uploads to delete at once
-MAX_BULK_UPLOAD_UPDATE: Final[int] = 100  # Max uploads to update at once
+MAX_BULK_UPLOAD_DELETE: Final[int] = 100
+MAX_BULK_UPLOAD_UPDATE: Final[int] = 100
 
-BCRYPT_ROUNDS: Final[int] = 14  # bcrypt salt rounds
+BCRYPT_ROUNDS: Final[int] = 14  # salt rounds
 
-# JWT Token configuration
-ACCESS_TOKEN_EXPIRE_MINUTES: Final[int] = 30  # 30 minutes
-REFRESH_TOKEN_EXPIRE_DAYS: Final[int] = 30  # 30 days
+ACCESS_TOKEN_EXPIRE_MINUTES: Final[int] = 30
+REFRESH_TOKEN_EXPIRE_DAYS: Final[int] = 30
 
 MIN_PASSWORD_LENGTH: Final[int] = 8
 MAX_PASSWORD_LENGTH: Final[int] = 72  # bcrypt max
 SPECIAL_CHARACTERS: Final[str] = "!@#$%^&*()_+-=[]{}|;:,.<>?"
 
-# WebSocket configuration
 WEBSOCKET_AUTH_TIMEOUT: Final[float] = 5.0  # Seconds to wait for auth message
 WEBSOCKET_HEARTBEAT_INTERVAL: Final[int] = 30  # Seconds between heartbeats
 WEBSOCKET_CLOSE_AUTH_TIMEOUT: Final[int] = 4001  # Close code for auth timeout

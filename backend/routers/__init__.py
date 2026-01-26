@@ -1,6 +1,6 @@
 """
 ⒸAngelaMos | 2026
-Routers package for FastAPI endpoints.
+Routers package for FastAPI endpoints
 """
 
 from . import v1
