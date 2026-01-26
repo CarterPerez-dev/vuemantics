@@ -261,7 +261,7 @@
 
   &.connected {
     background: #22c55e;
-    box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+    box-shadow: 0 0 8px rgb(34, 197, 94, 50%);
   }
 }
 
@@ -396,6 +396,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }

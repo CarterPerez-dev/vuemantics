@@ -54,5 +54,4 @@ export const useUploadUIStore = create<UploadUIStore>()(
 
 export const usePendingFile = (): PendingFile | null =>
   useUploadUIStore((s) => s.pendingFile)
-export const useDragActive = (): boolean =>
-  useUploadUIStore((s) => s.dragActive)
+export const useDragActive = (): boolean => useUploadUIStore((s) => s.dragActive)

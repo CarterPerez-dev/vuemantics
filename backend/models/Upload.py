@@ -374,7 +374,10 @@ class Upload(BaseModel):
         """
         await cls.ensure_table_exists()
 
-        filters: dict[str, Any] = {"processing_status": ProcessingStatus.COMPLETED}
+        filters: dict[str,
+                      Any] = {
+                          "processing_status": ProcessingStatus.COMPLETED
+                      }
         if user_id:
             filters["user_id"] = user_id
 
@@ -814,7 +817,9 @@ class Upload(BaseModel):
         Check if upload has an embedding generated.
         Used by Pydantic schemas with from_attributes.
         """
-        return self.embedding_local is not None and len(self.embedding_local) > 0
+        return self.embedding_local is not None and len(
+            self.embedding_local
+        ) > 0
 
     def to_dict(self, exclude: set[str] | None = None) -> dict[str, Any]:
         """

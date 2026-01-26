@@ -3,16 +3,16 @@
 // useSocket.ts
 // ===================
 
-import { useEffect, useRef, useState, useCallback } from "react"
-import { VuemanticWebSocket } from "./socket.client"
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { WEBSOCKET_ENDPOINTS } from '@/config'
+import { useAccessToken } from '@/core/lib/stores'
+import { VuemanticWebSocket } from './socket.client'
 import type {
-  UploadProgressUpdate,
   UploadCompleted,
   UploadFailed,
-} from "./socket.types"
-import { WebSocketError, WEBSOCKET_ERROR_MESSAGES } from "./socket.types"
-import { useAccessToken } from "@/core/lib/stores"
-import { WEBSOCKET_ENDPOINTS } from "@/config"
+  UploadProgressUpdate,
+  WebSocketError,
+} from './socket.types'
 
 interface UseSocketOptions {
   enabled?: boolean
@@ -67,11 +67,10 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
     }
 
     if (!accessToken) {
-      console.warn(WEBSOCKET_ERROR_MESSAGES.NO_TOKEN)
       return
     }
 
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:"
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const wsUrl = `${protocol}//${window.location.host}${WEBSOCKET_ENDPOINTS.UPLOADS}`
 
     try {
@@ -82,13 +81,11 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
         onCompleted: (data) => onCompletedRef.current?.(data),
         onFailed: (data) => onFailedRef.current?.(data),
         onError: (error) => {
-          console.error("WebSocket error:", error)
           onErrorRef.current?.(error)
         },
         onReconnect: () => setIsConnected(true),
       })
-    } catch (error) {
-      console.error("Failed to create WebSocket:", error)
+    } catch {
       return
     }
 
@@ -105,7 +102,7 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
       }
       setIsConnected(false)
     }
-  }, [enabled, accessToken])
+  }, [enabled, accessToken, getToken])
 
   return {
     isConnected,

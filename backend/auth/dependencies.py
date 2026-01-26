@@ -4,6 +4,7 @@ dependencies.py
 """
 
 import asyncio
+import contextlib
 import logging
 from uuid import UUID
 
@@ -54,45 +55,45 @@ async def authenticate_websocket(websocket: WebSocket) -> str | None:
     try:
         auth_data = await asyncio.wait_for(
             websocket.receive_json(),
-            timeout=config.WEBSOCKET_AUTH_TIMEOUT
+            timeout = config.WEBSOCKET_AUTH_TIMEOUT
         )
-    except asyncio.TimeoutError:
+    except TimeoutError:
         await websocket.send_json(
-            AuthError(message="Authentication timeout").model_dump()
+            AuthError(message = "Authentication timeout").model_dump()
         )
         await websocket.close(
-            code=config.WEBSOCKET_CLOSE_AUTH_TIMEOUT,
-            reason="Authentication timeout"
+            code = config.WEBSOCKET_CLOSE_AUTH_TIMEOUT,
+            reason = "Authentication timeout"
         )
         return None
     except WebSocketDisconnect:
-        logger.debug("WebSocket disconnected before auth (likely React StrictMode)")
+        logger.debug(
+            "WebSocket disconnected before auth (likely React StrictMode)"
+        )
         return None
     except Exception as e:
         logger.error(f"Error receiving auth message: {e}")
-        try:
+        with contextlib.suppress(RuntimeError):
             await websocket.close(
-                code=config.WEBSOCKET_CLOSE_INVALID_MESSAGE,
-                reason="Invalid message format"
+                code = config.WEBSOCKET_CLOSE_INVALID_MESSAGE,
+                reason = "Invalid message format"
             )
-        except RuntimeError:
-            pass
         return None
 
     if auth_data.get("type") != "auth" or not auth_data.get("token"):
         await websocket.send_json(
-            AuthError(message="Authentication required").model_dump()
+            AuthError(message = "Authentication required").model_dump()
         )
         await websocket.close(
-            code=config.WEBSOCKET_CLOSE_AUTH_REQUIRED,
-            reason="Authentication required"
+            code = config.WEBSOCKET_CLOSE_AUTH_REQUIRED,
+            reason = "Authentication required"
         )
         return None
 
     try:
         payload = decode_token(
             auth_data["token"],
-            expected_type=TokenType.ACCESS
+            expected_type = TokenType.ACCESS
         )
 
         user_id = payload.get("sub")
@@ -108,18 +109,16 @@ async def authenticate_websocket(websocket: WebSocket) -> str | None:
             raise AuthenticationError("Token has been invalidated")
 
         await websocket.send_json(
-            AuthSuccess(user_id=user_id).model_dump()
+            AuthSuccess(user_id = user_id).model_dump()
         )
 
         return user_id
 
     except AuthenticationError as e:
         logger.warning(f"WebSocket auth failed: {e}")
-        await websocket.send_json(
-            AuthError(message=str(e)).model_dump()
-        )
+        await websocket.send_json(AuthError(message = str(e)).model_dump())
         await websocket.close(
-            code=config.WEBSOCKET_CLOSE_INVALID_TOKEN,
-            reason="Invalid token"
+            code = config.WEBSOCKET_CLOSE_INVALID_TOKEN,
+            reason = "Invalid token"
         )
         return None

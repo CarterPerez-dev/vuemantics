@@ -20,7 +20,7 @@ server {
         add_header Content-Type text/plain;
     }
 
-    # WebSocket support (before /api/ to match first)
+    # WebSocket support
     location /api/ws/ {
         limit_req zone=api_limit burst=50 nodelay;
         limit_conn conn_limit 100;

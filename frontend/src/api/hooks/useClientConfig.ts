@@ -6,8 +6,8 @@
 import { type UseQueryResult, useQuery } from '@tanstack/react-query'
 import {
   CLIENT_CONFIG_ERROR_MESSAGES,
-  type ClientConfigResponse,
   ClientConfigError,
+  type ClientConfigResponse,
   isValidClientConfigResponse,
 } from '@/api/types'
 import { API_ENDPOINTS, QUERY_CONFIG, QUERY_KEYS } from '@/config'

@@ -19,29 +19,27 @@ from core import (
     limiter,
 )
 from core.lifespan import lifespan
-from routers import (
-    auth,
-    client_config,
-    health,
-    search,
-    upload,
-    websocket,
-)
+
+from routers import v1
+from routers.v1 import websocket
+
 
 logging.basicConfig(
-    level = logging.INFO if not config.settings.debug else logging.DEBUG,
+    level = logging.INFO
+    if not config.settings.debug else logging.DEBUG,
     format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
-
 app = FastAPI(
     title = config.settings.app_name,
-    description =
-    "Semantic Search ❤️",
+    description = (
+        "something something rust better"
+        "something something more rustslop saar"
+    ),
     version = config.APP_VERSION,
-    openapi_version = "3.1.0",   
-    root_path = "/api",     
+    openapi_version = "3.1.0",
+    root_path = "/api",
     lifespan = lifespan,
     docs_url = "/docs",
     redoc_url = "/redoc",
@@ -49,7 +47,11 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
+app.add_exception_handler(
+    RateLimitExceeded,
+    _rate_limit_exceeded_handler
+)
+
 
 @app.exception_handler(BaseAppException)
 async def app_exception_handler(
@@ -67,6 +69,7 @@ async def app_exception_handler(
         },
     )
 
+
 app.add_middleware(CorrelationIdMiddleware)
 app.add_middleware(
     CORSMiddleware,
@@ -76,6 +79,7 @@ app.add_middleware(
     allow_headers = ["*"],
     expose_headers = ["X-Correlation-ID"],
 )
+
 
 @app.get(
     "/",
@@ -94,13 +98,9 @@ async def root() -> dict[str, Any]:
         "documentation": "/docs",
     }
 
-app.include_router(auth.router)
-app.include_router(client_config.router)
-app.include_router(health.router)
-app.include_router(upload.router)
-app.include_router(search.router)
+# ws | v1
 app.include_router(websocket.router)
-
+app.include_router(v1.router, prefix = "/v1")
 """
 ⣿⣿⣿⣿⣿⣷⣿⣿⣿⡅⡹⢿⠆⠙⠋⠉⠻⠿⣿⣿⣿⣿⣿⣿⣮⠻⣦⡙⢷⡑⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣌⠡⠌⠂⣙⠻⣛⠻⠷⠐⠈⠛⢱⣮⣷⣽⣿
 ⣿⣿⣿⣿⡇⢿⢹⣿⣶⠐⠁⠀⣀⣠⣤⠄⠀⠀⠈⠙⠻⣿⣿⣿⣦⣵⣌⠻⣷⢝⠦⠚⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢟⣻⣿⣊⡃⠀⣙⠿⣿⣿⣿⣎⢮⡀⢮⣽⣿⣿

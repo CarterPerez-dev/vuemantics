@@ -49,7 +49,7 @@ BATCH_EMBEDDING_MAX_CONCURRENT: Final[int] = 3  # Max parallel embedding generat
 SEARCH_RESULT_MULTIPLIER: Final[int] = 2  # Multiply limit for pre-filtering
 BATCH_SEARCH_MAX_CONCURRENT: Final[int] = 3  # Max parallel searches in batch
 BATCH_SEARCH_DEFAULT_LIMIT: Final[int] = 10  # Default results per query in batch
-SIMILAR_UPLOADS_DEFAULT_LIMIT: Final[int] = 30  # Default similar uploads to return
+SIMILAR_UPLOADS_DEFAULT_LIMIT: Final[int] = 6  # Default similar uploads to return
 SEARCH_SUGGESTIONS_DEFAULT_LIMIT: Final[int] = 5  # Default search suggestions to return
 
 # Processing queue settings
@@ -62,7 +62,7 @@ THUMBNAIL_QUALITY: Final[int] = 85  # JPEG quality for thumbnails
 THUMBNAIL_FILENAME: Final[str] = "thumb_256.jpg"  # Thumbnail filename
 VIDEO_SAMPLE_FPS: Final[float] = 1.0  # Extract 1 frame per second for video analysis
 MAX_VIDEO_FRAMES: Final[int] = 10  # Maximum frames to extract from video
-MAX_VIDEO_FRAMES_FOR_ANALYSIS: Final[int] = 5  # Maximum frames to send to vision model
+MAX_VIDEO_FRAMES_FOR_ANALYSIS: Final[int] = 10  # Maximum frames to send to vision model
 
 # Description audit configuration
 DESCRIPTION_MIN_LENGTH: Final[int] = 50
@@ -248,10 +248,10 @@ class Settings(BaseSettings):
     cors_origins: list[str] = Field(
         default = [
             "http://localhost:3000",
-            "192.168.1.167:856:3000",            
+            "http://192.168.1.167:3000",
             "http://localhost:5173",
             "http://localhost:856",
-            "192.168.1.167:856",
+            "http://192.168.1.167:856",
             "http://localhost"
         ],
         description = "Allowed CORS origins",

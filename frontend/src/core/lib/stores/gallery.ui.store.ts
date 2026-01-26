@@ -84,7 +84,9 @@ export const useGalleryUIStore = create<GalleryUIStore>()(
         removeSelectedId: (id) =>
           set(
             (state) => ({
-              selectedIds: state.selectedIds.filter((selectedId) => selectedId !== id),
+              selectedIds: state.selectedIds.filter(
+                (selectedId) => selectedId !== id
+              ),
             }),
             false,
             'gallery/removeSelectedId'
@@ -114,8 +116,7 @@ export const useGalleryUIStore = create<GalleryUIStore>()(
             'gallery/toggleShowFilters'
           ),
 
-        setFilters: (filters) =>
-          set({ filters }, false, 'gallery/setFilters'),
+        setFilters: (filters) => set({ filters }, false, 'gallery/setFilters'),
 
         updateFilters: (partial) =>
           set(
@@ -131,11 +132,7 @@ export const useGalleryUIStore = create<GalleryUIStore>()(
           set({ findSimilarId: id }, false, 'gallery/setFindSimilarId'),
 
         resetSearchState: () =>
-          set(
-            { findSimilarId: null },
-            false,
-            'gallery/resetSearchState'
-          ),
+          set({ findSimilarId: null }, false, 'gallery/resetSearchState'),
       }),
       {
         name: 'gallery-ui-storage',
@@ -145,8 +142,7 @@ export const useGalleryUIStore = create<GalleryUIStore>()(
   )
 )
 
-export const useSelectMode = (): boolean =>
-  useGalleryUIStore((s) => s.selectMode)
+export const useSelectMode = (): boolean => useGalleryUIStore((s) => s.selectMode)
 export const useSelectedIds = (): string[] =>
   useGalleryUIStore((s) => s.selectedIds)
 export const useShowFilters = (): boolean =>

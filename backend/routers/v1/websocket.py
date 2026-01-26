@@ -6,28 +6,34 @@ websocket.py
 import asyncio
 import logging
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import (
+    APIRouter,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from pydantic import ValidationError
 
-from auth.dependencies import authenticate_websocket
-from core.websocket import get_manager
+import config
+from auth.dependencies import (
+    authenticate_websocket,
+)
 from core.websocket.messages import (
     Heartbeat,
     SubscribeUpload,
     UnsubscribeUpload,
 )
-import config
+from core.websocket import get_manager
 
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["websocket"])
+router = APIRouter(tags = ["websocket"])
 
 
 @router.websocket("/ws/uploads")
 async def upload_progress_websocket(websocket: WebSocket):
     """
-    WebSocket endpoint for real-time upload progress updates
+    WebSocket endpoint for real time upload progress updates
 
     Flow:
         1. Client connects
@@ -35,7 +41,7 @@ async def upload_progress_websocket(websocket: WebSocket):
         3. Client sends {"type": "auth", "token": "..."}
         4. Server validates JWT and sends auth_success
         5. Client subscribes to specific uploads
-        6. Server streams progress updates in real-time
+        6. Server streams progress updates in real time
 
     Close codes:
         4001: Authentication timeout
@@ -73,23 +79,28 @@ async def upload_progress_websocket(websocket: WebSocket):
 
                     if action == "subscribe_upload":
                         msg = SubscribeUpload.model_validate(raw_message)
-                        await manager.subscribe_upload(user_id, msg.upload_id)
+                        await manager.subscribe_upload(
+                            user_id,
+                            msg.upload_id
+                        )
                         logger.info(
                             f"User {user_id} subscribed to upload {msg.upload_id}"
                         )
 
                     elif action == "unsubscribe_upload":
                         msg = UnsubscribeUpload.model_validate(raw_message)
-                        await manager.unsubscribe_upload(user_id, msg.upload_id)
+                        await manager.unsubscribe_upload(
+                            user_id,
+                            msg.upload_id
+                        )
                         logger.info(
                             f"User {user_id} unsubscribed from upload {msg.upload_id}"
                         )
 
                     elif action == "pong":
                         pass
-
+                        #🏓
                     elif action == "ping":
-                        # Client sent ping, respond with pong
                         pass
 
                     else:
@@ -103,7 +114,9 @@ async def upload_progress_websocket(websocket: WebSocket):
                     logger.error(f"Error processing message: {e}")
 
         except WebSocketDisconnect:
-            logger.info(f"User {user_id} disconnected (WebSocketDisconnect)")
+            logger.info(
+                f"User {user_id} disconnected (WebSocketDisconnect)"
+            )
 
     try:
         await asyncio.gather(

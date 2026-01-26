@@ -3,23 +3,18 @@
 // index.tsx
 // ===================
 
-import { useState, useCallback, useEffect } from 'react'
-import { LuX, LuRefreshCw } from 'react-icons/lu'
-import { GiCloudUpload } from "react-icons/gi";
+import { useEffect, useState } from 'react'
+import { GiCloudUpload } from 'react-icons/gi'
+import { LuRefreshCw, LuX } from 'react-icons/lu'
 import { toast } from 'sonner'
 import {
   useClientConfig,
   useCreateUpload,
-  useUploads,
   useRegenerateDescription,
+  useUploads,
 } from '@/api/hooks'
-import {
-  useSocket,
-  type UploadProgressUpdate,
-  type UploadCompleted,
-  type UploadFailed,
-} from '@/core/socket'
 import { useUploadUIStore } from '@/core/lib/stores'
+import { useSocket, useUploadProgress } from '@/core/socket'
 import styles from './upload.module.scss'
 
 const ACCEPTED_TYPES = {
@@ -36,20 +31,23 @@ const ACCEPTED_TYPES = {
 export function Component(): React.ReactElement {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [uploadProgress, setUploadProgress] = useState<Record<string, {
-    percent: number
-    stage: string
-    message: string
-  }>>({})
 
-  const { pendingFile, setPendingFile, clearPendingFile, setDragActive, dragActive } = useUploadUIStore()
+  const {
+    pendingFile,
+    setPendingFile,
+    clearPendingFile,
+    setDragActive,
+    dragActive,
+  } = useUploadUIStore()
 
   const { data: clientConfig } = useClientConfig()
   const maxFileSizeBytes = (clientConfig?.max_upload_size_mb ?? 100) * 1024 * 1024
 
   useEffect(() => {
     if (pendingFile && !selectedFile) {
-      toast.info(`You had a pending upload: ${pendingFile.name}. Please re-select the file.`)
+      toast.info(
+        `You had a pending upload: ${pendingFile.name}. Please re-select the file.`
+      )
       clearPendingFile()
     }
   }, [pendingFile, selectedFile, clearPendingFile])
@@ -64,43 +62,27 @@ export function Component(): React.ReactElement {
     show_hidden: false,
   })
 
-  const handleProgress = useCallback((data: UploadProgressUpdate) => {
-    const { upload_id, progress_percent, stage, message } = data.payload
-    setUploadProgress((prev) => ({
-      ...prev,
-      [upload_id]: {
-        percent: progress_percent,
-        stage,
-        message,
-      },
-    }))
-  }, [])
-
-  const handleCompleted = useCallback((data: UploadCompleted) => {
-    toast.success('Upload processed successfully!')
-    setUploadProgress((prev) => {
-      const next = { ...prev }
-      delete next[data.upload_id]
-      return next
-    })
-    refetchUploads()
-  }, [refetchUploads])
-
-  const handleFailed = useCallback((data: UploadFailed) => {
-    toast.error(`Processing failed: ${data.error_message}`)
-    setUploadProgress((prev) => {
-      const next = { ...prev }
-      delete next[data.upload_id]
-      return next
-    })
-    refetchUploads()
-  }, [refetchUploads])
+  const {
+    uploadProgress,
+    handleProgress,
+    handleCompleted,
+    handleFailed,
+    setProgress,
+  } = useUploadProgress()
 
   const { isConnected, subscribeToUpload } = useSocket({
     enabled: true,
     onProgress: handleProgress,
-    onCompleted: handleCompleted,
-    onFailed: handleFailed,
+    onCompleted: async (data) => {
+      toast.success('Upload processed successfully!')
+      await handleCompleted(data, async () => {
+        await refetchUploads()
+      })
+    },
+    onFailed: (data) => {
+      toast.error(`Processing failed: ${data.error_message}`)
+      handleFailed(data, refetchUploads)
+    },
   })
 
   const validateFile = (file: File): boolean => {
@@ -181,6 +163,11 @@ export function Component(): React.ReactElement {
   }
 
   const handleRegenerate = (uploadId: string): void => {
+    setProgress(uploadId, {
+      percent: 0,
+      stage: 'regenerating',
+      message: 'Regenerating description...',
+    })
     regenerateDescription.mutate(uploadId, {
       onSuccess: () => {
         subscribeToUpload(uploadId)
@@ -288,7 +275,9 @@ export function Component(): React.ReactElement {
             <div className={styles.sectionHeader}>
               <h2 className={styles.sectionTitle}>Recent Uploads</h2>
               <div className={styles.wsStatus}>
-                <span className={`${styles.indicator} ${isConnected ? styles.connected : ''}`} />
+                <span
+                  className={`${styles.indicator} ${isConnected ? styles.connected : ''}`}
+                />
                 {isConnected ? 'Live' : 'Offline'}
               </div>
             </div>

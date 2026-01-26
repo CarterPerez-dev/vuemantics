@@ -48,7 +48,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         await init_redis()
         logger.info("Redis connection pool initialized")
 
-        await redis_pool.client.ping() # type: ignore[union-attr]
+        await redis_pool.client.ping()  # type: ignore[union-attr]
         logger.info("Redis is ready")
 
         init_manager()
@@ -76,4 +76,3 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
     await close_db()
     logger.info("Database connection pool closed")
-    

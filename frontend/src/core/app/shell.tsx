@@ -5,15 +5,10 @@
 
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { ImImages } from "react-icons/im";
-import { GrCloudUpload } from "react-icons/gr";
-import { GiExitDoor, GiCloudUpload } from 'react-icons/gi'
-import {
-  LuChevronLeft,
-  LuChevronRight,
-  LuMenu,
-  LuUpload,
-} from 'react-icons/lu'
+import { GiExitDoor } from 'react-icons/gi'
+import { GrCloudUpload } from 'react-icons/gr'
+import { ImImages } from 'react-icons/im'
+import { LuChevronLeft, LuChevronRight, LuMenu } from 'react-icons/lu'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useLogout } from '@/api/hooks'
 import { ROUTES } from '@/config'

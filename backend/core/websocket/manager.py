@@ -57,7 +57,8 @@ class ConnectionManager:
             del self.user_connections[user_id]
 
             # Clean up all subscriptions for this user
-            for upload_id in list(self.user_subscriptions.get(user_id, [])):
+            for upload_id in list(self.user_subscriptions.get(user_id,
+                                                              [])):
                 await self.unsubscribe_upload(user_id, upload_id)
 
         logger.info(f"User {user_id} disconnected")
@@ -74,7 +75,11 @@ class ConnectionManager:
         self.user_subscriptions[user_id].add(upload_id)
         logger.debug(f"User {user_id} subscribed to upload {upload_id}")
 
-    async def unsubscribe_upload(self, user_id: str, upload_id: str) -> None:
+    async def unsubscribe_upload(
+        self,
+        user_id: str,
+        upload_id: str
+    ) -> None:
         """
         Unsubscribe user from upload updates
 
@@ -90,7 +95,11 @@ class ConnectionManager:
         if not self.user_subscriptions[user_id]:
             del self.user_subscriptions[user_id]
 
-    async def send_to_user(self, user_id: str, message: ServerMessage) -> None:
+    async def send_to_user(
+        self,
+        user_id: str,
+        message: ServerMessage
+    ) -> None:
         """
         Send message to all connections for a specific user
 
@@ -103,7 +112,7 @@ class ConnectionManager:
 
         for ws in connections:
             try:
-                await ws.send_json(message.model_dump(mode="json"))
+                await ws.send_json(message.model_dump(mode = "json"))
             except Exception as e:
                 logger.warning(f"Failed to send to user {user_id}: {e}")
                 dead_connections.add(ws)
@@ -146,12 +155,18 @@ class ConnectionManager:
             connections = list(self.user_connections.get(user_id, set()))
             for ws in connections:
                 try:
-                    await ws.close(code=1012, reason="Server reloading")
+                    await ws.close(
+                        code = 1012,
+                        reason = "Server reloading"
+                    )
                 except Exception as e:
-                    logger.debug(f"Error closing websocket for user {user_id}: {e}")
+                    logger.debug(
+                        f"Error closing websocket for user {user_id}: {e}"
+                    )
 
             # Clear subscriptions
-            for upload_id in list(self.user_subscriptions.get(user_id, [])):
+            for upload_id in list(self.user_subscriptions.get(user_id,
+                                                              [])):
                 await self.unsubscribe_upload(user_id, upload_id)
 
         # Clear all dictionaries
@@ -180,6 +195,7 @@ def get_manager() -> ConnectionManager:
     Get connection manager instance
     """
     if _manager is None:
-        raise RuntimeError("ConnectionManager not initialized. Call init_manager()")
+        raise RuntimeError(
+            "ConnectionManager not initialized. Call init_manager()"
+        )
     return _manager
-    

@@ -45,18 +45,20 @@ class RedisPool:
             try:
                 self._pool = redis.ConnectionPool.from_url(
                     config.settings.redis_url,
-                    decode_responses=config.settings.redis_decode_responses,
-                    max_connections=config.settings.redis_pool_max_size,
+                    decode_responses = config.settings.
+                    redis_decode_responses,
+                    max_connections = config.settings.redis_pool_max_size,
                 )
 
-                self._client = redis.Redis(connection_pool=self._pool)
+                self._client = redis.Redis(connection_pool = self._pool)
 
                 await self._client.ping()
 
                 logger.info(
                     "Redis pool created successfully",
-                    extra={
-                        "max_connections": config.settings.redis_pool_max_size,
+                    extra = {
+                        "max_connections":
+                        config.settings.redis_pool_max_size,
                     },
                 )
 
@@ -165,4 +167,3 @@ async def close_redis() -> None:
     Should be called during application shutdown
     """
     await redis_pool.disconnect()
-    

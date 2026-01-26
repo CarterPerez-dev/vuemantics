@@ -3,7 +3,7 @@
 // index.tsx
 // ===================
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   LuCheck,
   LuEye,
@@ -27,20 +27,18 @@ import {
   useToggleUploadHidden,
   useUploads,
 } from '@/api/hooks'
-import type { SearchResult, UploadResponse } from '@/api/types'
-import {
-  useSocket,
-  type UploadProgressUpdate,
-  type UploadCompleted,
-  type UploadFailed,
-} from '@/core/socket'
+import type { SearchResult } from '@/api/types'
 import { useGalleryUIStore } from '@/core/lib/stores'
+import { useSocket, useUploadProgress } from '@/core/socket'
 import styles from './gallery.module.scss'
+import { useGalleryHandlers } from './useGalleryHandlers'
 
 export function Component(): React.ReactElement {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null)
-  const [similarResults, setSimilarResults] = useState<SearchResult[] | null>(null)
+  const [similarResults, setSimilarResults] = useState<SearchResult[] | null>(
+    null
+  )
 
   const {
     selectMode,
@@ -58,10 +56,12 @@ export function Component(): React.ReactElement {
     setFindSimilarId,
   } = useGalleryUIStore()
 
-  const selectedIds = new Set(selectedIdsArray)
-
   const { data: clientConfig } = useClientConfig()
-  const { data: uploads, isLoading, refetch: refetchUploads } = useUploads(filters)
+  const {
+    data: uploads,
+    isLoading,
+    refetch: refetchUploads,
+  } = useUploads(filters)
 
   const searchMutation = useSearchMutation()
   const deleteMutation = useDeleteUpload()
@@ -70,124 +70,31 @@ export function Component(): React.ReactElement {
   const bulkHideMutation = useBulkHideUploads()
   const regenerateDescription = useRegenerateDescription()
 
-  const [uploadProgress, setUploadProgress] = useState<
-    Record<string, { percent: number; stage: string; message: string }>
-  >({})
-
-  const handleProgress = useCallback((data: UploadProgressUpdate) => {
-    const { upload_id, progress_percent, stage, message } = data.payload
-    setUploadProgress((prev) => ({
-      ...prev,
-      [upload_id]: { percent: progress_percent, stage, message },
-    }))
-  }, [])
-
-  const handleCompleted = useCallback(
-    async (data: UploadCompleted) => {
-      setUploadProgress((prev) => ({
-        ...prev,
-        [data.upload_id]: {
-          percent: 100,
-          stage: 'completed',
-          message: 'Refreshing...',
-        },
-      }))
-
-      await refetchUploads()
-
-      setUploadProgress((prev) => {
-        const next = { ...prev }
-        delete next[data.upload_id]
-        return next
-      })
-    },
-    [refetchUploads]
-  )
-
-  const handleFailed = useCallback(
-    (data: UploadFailed) => {
-      setUploadProgress((prev) => {
-        const next = { ...prev }
-        delete next[data.upload_id]
-        return next
-      })
-    },
-    [refetchUploads]
-  )
+  const {
+    uploadProgress,
+    handleProgress,
+    handleCompleted,
+    handleFailed,
+    setProgress,
+  } = useUploadProgress()
 
   const { subscribeToUpload } = useSocket({
     enabled: true,
     onProgress: handleProgress,
-    onCompleted: handleCompleted,
-    onFailed: handleFailed,
+    onCompleted: async (data) => {
+      await handleCompleted(data, async () => {
+        await refetchUploads()
+      })
+    },
+    onFailed: (data) => handleFailed(data),
   })
 
   const { data: similarUploadsData, isLoading: isSimilarLoading } =
     useSimilarUploads(
       findSimilarId ?? '',
-      clientConfig?.similar_uploads_default_limit ?? 30,
+      clientConfig?.similar_uploads_default_limit ?? 6,
       true
     )
-
-  const handleDelete = (id: string): void => {
-    if (window.confirm('Delete this upload?')) {
-      setSelectedMediaId(null)
-      deleteMutation.mutate(id)
-    }
-  }
-
-  const handleToggleHidden = (id: string, currentlyHidden: boolean): void => {
-    setSelectedMediaId(null)
-    toggleHiddenMutation.mutate({ id, hidden: !currentlyHidden })
-  }
-
-  const handleRegenerate = (uploadId: string): void => {
-    setUploadProgress((prev) => ({
-      ...prev,
-      [uploadId]: {
-        percent: 0,
-        stage: 'starting',
-        message: 'Starting regeneration...',
-      },
-    }))
-
-    regenerateDescription.mutate(uploadId, {
-      onSuccess: () => {
-        subscribeToUpload(uploadId)
-      },
-    })
-  }
-
-  const handleSearch = (e: React.FormEvent): void => {
-    e.preventDefault()
-    if (!searchQuery.trim()) {
-      setSearchResults(null)
-      return
-    }
-
-    searchMutation.mutate(
-      {
-        query: searchQuery,
-        limit: clientConfig?.default_page_size ?? 48,
-        similarity_threshold:
-          clientConfig?.search_default_similarity_threshold ?? 0.48,
-      },
-      { onSuccess: (data) => setSearchResults(data.results) }
-    )
-  }
-
-  const handleClearSearch = (): void => {
-    setSearchQuery('')
-    setSearchResults(null)
-    setSimilarResults(null)
-    setFindSimilarId(null)
-  }
-
-  const handleFindSimilar = (upload: UploadResponse): void => {
-    setFindSimilarId(upload.id)
-    setSearchQuery('')
-    setSearchResults(null)
-  }
 
   useEffect(() => {
     if (similarUploadsData) {
@@ -195,59 +102,53 @@ export function Component(): React.ReactElement {
     }
   }, [similarUploadsData])
 
-  const toggleSelectMode = (): void => {
-    storeToggleSelectMode()
-  }
-
-  const toggleSelectItem = (id: string): void => {
-    toggleSelectedId(id)
-  }
-
-  const selectAll = (): void => {
-    setSelectedIdsArray(displayItems.map((item) => item.id))
-  }
-
-  const deselectAll = (): void => {
-    setSelectedIdsArray([])
-  }
-
-  const handleBulkDelete = (): void => {
-    if (selectedIds.size === 0) return
-    if (
-      window.confirm(
-        `Delete ${selectedIds.size} upload${selectedIds.size !== 1 ? 's' : ''}?`
-      )
-    ) {
-      bulkDeleteMutation.mutate(selectedIdsArray, {
-        onSuccess: () => {
-          setSelectedIdsArray([])
-          storeToggleSelectMode()
-        },
-      })
-    }
-  }
-
-  const handleBulkHide = (hidden: boolean): void => {
-    if (selectedIds.size === 0) return
-    bulkHideMutation.mutate(
-      { ids: selectedIdsArray, hidden },
-      {
-        onSuccess: () => {
-          setSelectedIdsArray([])
-          storeToggleSelectMode()
-        },
-      }
-    )
-  }
-
   const displayItems = similarResults
     ? similarResults.map((r) => r.upload)
     : searchResults
       ? searchResults.map((r) => r.upload)
       : (uploads?.items ?? [])
 
+  const selectedIds = new Set(selectedIdsArray)
+
+  const {
+    handleDelete,
+    handleToggleHidden,
+    handleRegenerate,
+    handleSearch,
+    handleClearSearch,
+    handleFindSimilar,
+    toggleSelectMode,
+    toggleSelectItem,
+    selectAll,
+    deselectAll,
+    handleBulkDelete,
+    handleBulkHide,
+  } = useGalleryHandlers({
+    deleteMutation,
+    toggleHiddenMutation,
+    regenerateDescription,
+    searchMutation,
+    bulkDeleteMutation,
+    bulkHideMutation,
+    setSelectedMediaId,
+    setProgress,
+    setSearchQuery,
+    setSearchResults,
+    setSimilarResults,
+    setFindSimilarId,
+    setSelectedIdsArray,
+    storeToggleSelectMode,
+    toggleSelectedId,
+    searchQuery,
+    clientConfig,
+    displayItems,
+    selectedIdsArray,
+    selectedIds,
+    subscribeToUpload,
+  })
+
   const currentUpload = selectedMediaId
-    ? displayItems.find((item) => item.id === selectedMediaId) ?? null
+    ? (displayItems.find((item) => item.id === selectedMediaId) ?? null)
     : null
 
   const isSearching = searchResults !== null
@@ -310,17 +211,17 @@ export function Component(): React.ReactElement {
           {(isSearching || isSimilarMode) && (
             <div className={styles.searchInfo}>
               <span className={styles.searchInfoText}>
-                {isSimilarMode ? (
+                {isSimilarMode && similarResults ? (
                   <>
                     Found {similarResults.length} similar image
                     {similarResults.length !== 1 ? 's' : ''}
                   </>
-                ) : (
+                ) : searchResults ? (
                   <>
                     Found {searchResults.length} result
                     {searchResults.length !== 1 ? 's' : ''} for "{searchQuery}"
                   </>
-                )}
+                ) : null}
               </span>
               <button
                 type="button"
@@ -438,7 +339,11 @@ export function Component(): React.ReactElement {
                 className={styles.filterSelect}
                 value={filters.sort_by}
                 onChange={(e) => {
-                  const newSortBy = e.target.value as 'created_at' | 'updated_at' | 'file_size' | 'filename'
+                  const newSortBy = e.target.value as
+                    | 'created_at'
+                    | 'updated_at'
+                    | 'file_size'
+                    | 'filename'
                   const defaultOrder = newSortBy === 'filename' ? 'asc' : 'desc'
                   updateFilters({
                     sort_by: newSortBy,
@@ -492,7 +397,9 @@ export function Component(): React.ReactElement {
 
         {isLoading || isSimilarLoading ? (
           <div className={styles.loading}>
-            {isSimilarLoading ? 'Finding similar images...' : 'Loading your media...'}
+            {isSimilarLoading
+              ? 'Finding similar images...'
+              : 'Loading your media...'}
           </div>
         ) : displayItems.length === 0 ? (
           <div className={styles.empty}>
@@ -589,9 +496,7 @@ export function Component(): React.ReactElement {
                 <button
                   type="button"
                   className={styles.pageBtn}
-                  onClick={() =>
-                    updateFilters({ page: filters.page - 1 })
-                  }
+                  onClick={() => updateFilters({ page: filters.page - 1 })}
                   disabled={filters.page === 1}
                 >
                   Previous
@@ -602,9 +507,7 @@ export function Component(): React.ReactElement {
                 <button
                   type="button"
                   className={styles.pageBtn}
-                  onClick={() =>
-                    updateFilters({ page: filters.page + 1 })
-                  }
+                  onClick={() => updateFilters({ page: filters.page + 1 })}
                   disabled={filters.page === uploads.pages}
                 >
                   Next
@@ -660,13 +563,15 @@ export function Component(): React.ReactElement {
 
             <div className={styles.modalInfo}>
               <h3 className={styles.modalTitle}>{currentUpload.filename}</h3>
-{uploadProgress[currentUpload.id] ? (
+              {uploadProgress[currentUpload.id] ? (
                 <div className={styles.regenerating}>
                   <div className={styles.regeneratingProgress}>
                     <div className={styles.progressBar}>
                       <div
                         className={styles.progressFill}
-                        style={{ width: `${uploadProgress[currentUpload.id].percent}%` }}
+                        style={{
+                          width: `${uploadProgress[currentUpload.id].percent}%`,
+                        }}
                       />
                     </div>
                     <div className={styles.regeneratingText}>
@@ -686,7 +591,9 @@ export function Component(): React.ReactElement {
                   </p>
                   {currentUpload.description_audit_score !== null && (
                     <div className={styles.confidenceScore}>
-                      <span className={styles.confidenceLabel}>Description Quality:</span>
+                      <span className={styles.confidenceLabel}>
+                        Description Quality:
+                      </span>
                       <span
                         className={`${styles.confidenceValue} ${
                           currentUpload.description_audit_score >= 80
@@ -730,7 +637,9 @@ export function Component(): React.ReactElement {
                     disabled={regenerateDescription.isPending}
                   >
                     <LuRefreshCw />
-                    {regenerateDescription.isPending ? 'Regenerating...' : 'Regenerate'}
+                    {regenerateDescription.isPending
+                      ? 'Regenerating...'
+                      : 'Regenerate'}
                   </button>
                 )}
                 <button

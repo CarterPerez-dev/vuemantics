@@ -84,20 +84,22 @@ class LocalAIService:
         try:
             publisher = get_publisher()
             progress_msg = UploadProgressUpdate(
-                payload=UploadProgressPayload(
-                    upload_id=str(upload_id),
-                    status=status,
-                    stage=stage,
-                    progress_percent=progress_percent,
-                    message=message,
-                    error_message=error_message,
-                    description_audit_score=audit_score,
+                payload = UploadProgressPayload(
+                    upload_id = str(upload_id),
+                    status = status,
+                    stage = stage,
+                    progress_percent = progress_percent,
+                    message = message,
+                    error_message = error_message,
+                    description_audit_score = audit_score,
                 ),
-                timestamp=datetime.utcnow(),
+                timestamp = datetime.utcnow(),
             )
             await publisher.publish_progress(str(upload_id), progress_msg)
         except Exception as e:
-            logger.warning(f"Failed to publish progress for {upload_id}: {e}")
+            logger.warning(
+                f"Failed to publish progress for {upload_id}: {e}"
+            )
 
     async def analyze_media(self, upload_id: UUID) -> None:
         """
@@ -212,7 +214,7 @@ class LocalAIService:
                 ProcessingStage.EMBEDDING_GENERATION,
                 60,
                 "Generating embeddings",
-                audit_score=audit_result.score
+                audit_score = audit_result.score
             )
 
             logger.info(f"Starting embedding generation for {upload_id}")
@@ -229,7 +231,7 @@ class LocalAIService:
                 ProcessingStage.INDEXING,
                 90,
                 "Updating database",
-                audit_score=audit_result.score
+                audit_score = audit_result.score
             )
 
             logger.info(
@@ -244,12 +246,15 @@ class LocalAIService:
 
             # Publish completion
             completed_msg = UploadCompleted(
-                upload_id=str(upload_id),
-                description=description,
-                audit_score=audit_result.score,
-                timestamp=datetime.utcnow(),
+                upload_id = str(upload_id),
+                description = description,
+                audit_score = audit_result.score,
+                timestamp = datetime.utcnow(),
             )
-            await get_publisher().publish_progress(str(upload_id), completed_msg)
+            await get_publisher().publish_progress(
+                str(upload_id),
+                completed_msg
+            )
 
             logger.info(
                 f"Local AI processing completed for upload {upload_id}"
@@ -266,11 +271,14 @@ class LocalAIService:
 
             # Publish failure
             failed_msg = UploadFailed(
-                upload_id=str(upload_id),
-                error_message=str(e)[:500],
-                timestamp=datetime.utcnow(),
+                upload_id = str(upload_id),
+                error_message = str(e)[: 500],
+                timestamp = datetime.utcnow(),
             )
-            await get_publisher().publish_progress(str(upload_id), failed_msg)
+            await get_publisher().publish_progress(
+                str(upload_id),
+                failed_msg
+            )
 
     async def _analyze_video_with_frames(
         self,

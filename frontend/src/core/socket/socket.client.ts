@@ -5,14 +5,13 @@
 
 import {
   type ServerMessage,
-  type UploadProgressUpdate,
+  serverMessageSchema,
   type UploadCompleted,
   type UploadFailed,
-  serverMessageSchema,
+  type UploadProgressUpdate,
   WEBSOCKET_ERROR_MESSAGES,
-  WEBSOCKET_SUCCESS_MESSAGES,
   WebSocketError,
-} from "./socket.types"
+} from './socket.types'
 
 type ProgressHandler = (data: UploadProgressUpdate) => void
 type CompletedHandler = (data: UploadCompleted) => void
@@ -48,22 +47,18 @@ export class VuemanticWebSocket {
   private connect(): void {
     const token = this.config.getToken()
     if (!token) {
-      console.error(WEBSOCKET_ERROR_MESSAGES.NO_TOKEN)
-      this.config.onError?.(
-        new WebSocketError(WEBSOCKET_ERROR_MESSAGES.NO_TOKEN)
-      )
+      this.config.onError?.(new WebSocketError(WEBSOCKET_ERROR_MESSAGES.NO_TOKEN))
       return
     }
 
     this.ws = new WebSocket(this.config.url)
 
     this.ws.onopen = () => {
-      console.log(WEBSOCKET_SUCCESS_MESSAGES.CONNECTED)
       this.attempt = 0
 
       this.ws?.send(
         JSON.stringify({
-          type: "auth",
+          type: 'auth',
           token: token,
         })
       )
@@ -77,51 +72,44 @@ export class VuemanticWebSocket {
         const result = serverMessageSchema.safeParse(rawData)
 
         if (!result.success) {
-          console.error("Invalid WebSocket message:", result.error.format())
           return
         }
 
         const data: ServerMessage = result.data
 
         switch (data.action) {
-          case "auth_success":
-            console.log(WEBSOCKET_SUCCESS_MESSAGES.AUTHENTICATED)
+          case 'auth_success':
             this.config.onReconnect?.()
             break
 
-          case "auth_error":
-            console.error(WEBSOCKET_ERROR_MESSAGES.AUTH_FAILED, data.message)
-            this.config.onError?.(
-              new WebSocketError(data.message)
-            )
+          case 'auth_error':
+            this.config.onError?.(new WebSocketError(data.message))
             this.close()
             break
 
-          case "upload_progress":
+          case 'upload_progress':
             this.config.onProgress?.(data)
             break
 
-          case "upload_completed":
+          case 'upload_completed':
             this.config.onCompleted?.(data)
             break
 
-          case "upload_failed":
+          case 'upload_failed':
             this.config.onFailed?.(data)
             break
 
-          case "ping":
-            this.ws?.send(JSON.stringify({ action: "pong" }))
+          case 'ping':
+            this.ws?.send(JSON.stringify({ action: 'pong' }))
             break
         }
-      } catch (error) {
-        console.error("Failed to parse WebSocket message:", error)
+      } catch {
+        // Invalid message format, silently ignore
       }
     }
 
     this.ws.onclose = (event) => {
       this.stopHeartbeat()
-
-      console.log(`WebSocket closed: code=${event.code}, reason=${event.reason}`)
 
       if (this.isIntentionallyClosed) {
         return
@@ -132,7 +120,6 @@ export class VuemanticWebSocket {
       }
 
       if (event.code >= 4001 && event.code <= 4004) {
-        console.error("WebSocket auth error, not reconnecting")
         this.config.onError?.(
           new WebSocketError(WEBSOCKET_ERROR_MESSAGES.AUTH_FAILED, event.code)
         )
@@ -142,8 +129,7 @@ export class VuemanticWebSocket {
       this.scheduleReconnect()
     }
 
-    this.ws.onerror = (error) => {
-      console.error("WebSocket error:", error)
+    this.ws.onerror = () => {
       this.config.onError?.(
         new WebSocketError(WEBSOCKET_ERROR_MESSAGES.CONNECTION_FAILED)
       )
@@ -152,7 +138,6 @@ export class VuemanticWebSocket {
 
   private scheduleReconnect(): void {
     if (this.attempt >= this.maxRetries) {
-      console.error(WEBSOCKET_ERROR_MESSAGES.MAX_RETRIES)
       this.config.onError?.(
         new WebSocketError(WEBSOCKET_ERROR_MESSAGES.MAX_RETRIES)
       )
@@ -162,17 +147,12 @@ export class VuemanticWebSocket {
     this.attempt++
 
     const baseDelay = Math.min(
-      this.initialDelay * Math.pow(2, this.attempt - 1),
+      this.initialDelay * 2 ** (this.attempt - 1),
       this.maxDelay
     )
 
     const jitter = Math.random() * 3000
     const delay = baseDelay + jitter
-
-    console.log(
-      `Reconnecting WebSocket in ${Math.round(delay / 1000)}s ` +
-      `(attempt ${this.attempt}/${this.maxRetries})`
-    )
 
     this.reconnectTimer = window.setTimeout(() => {
       this.connect()
@@ -182,7 +162,7 @@ export class VuemanticWebSocket {
   private startHeartbeat(): void {
     this.heartbeatTimer = window.setInterval(() => {
       if (this.ws?.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify({ action: "ping" }))
+        this.ws.send(JSON.stringify({ action: 'ping' }))
       }
     }, 30000)
   }
@@ -198,13 +178,10 @@ export class VuemanticWebSocket {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(
         JSON.stringify({
-          action: "subscribe_upload",
+          action: 'subscribe_upload',
           upload_id: uploadId,
         })
       )
-      console.log(WEBSOCKET_SUCCESS_MESSAGES.SUBSCRIBED, uploadId)
-    } else {
-      console.warn(WEBSOCKET_ERROR_MESSAGES.NOT_CONNECTED)
     }
   }
 
@@ -212,11 +189,10 @@ export class VuemanticWebSocket {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(
         JSON.stringify({
-          action: "unsubscribe_upload",
+          action: 'unsubscribe_upload',
           upload_id: uploadId,
         })
       )
-      console.log(WEBSOCKET_SUCCESS_MESSAGES.UNSUBSCRIBED, uploadId)
     }
   }
 
@@ -231,7 +207,7 @@ export class VuemanticWebSocket {
     this.stopHeartbeat()
 
     if (this.ws) {
-      this.ws.close(1000, "Client closing connection")
+      this.ws.close(1000, 'Client closing connection')
       this.ws = null
     }
   }

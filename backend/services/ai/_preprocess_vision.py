@@ -86,7 +86,11 @@ def preprocess_image_for_vision_model(image_data: bytes) -> bytes:
                 f"Preprocessing image: {width}x{height} → {new_width}x{new_height} "
                 f"(format: {original_format})"
             )
-            img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            img = img.resize(
+                (new_width,
+                 new_height),
+                Image.Resampling.LANCZOS
+            )
 
         # Convert to RGB if needed (handles RGBA, P, LA, etc.)
         if img.mode not in ("RGB", "L"):
@@ -94,7 +98,7 @@ def preprocess_image_for_vision_model(image_data: bytes) -> bytes:
                 # Create white background for transparency
                 background = Image.new("RGB", img.size, (255, 255, 255))
                 if img.mode == "RGBA":
-                    background.paste(img, mask=img.split()[3])
+                    background.paste(img, mask = img.split()[3])
                 else:
                     background.paste(img)
                 img = background
@@ -120,11 +124,9 @@ def preprocess_image_for_vision_model(image_data: bytes) -> bytes:
                 "optimize": True
             }
 
-        img.save(output, format=save_format, **save_kwargs)
+        img.save(output, format = save_format, **save_kwargs)
         return output.getvalue()
 
     except Exception as e:
-        logger.warning(
-            f"Image preprocessing failed, using original: {e}"
-        )
+        logger.warning(f"Image preprocessing failed, using original: {e}")
         return image_data

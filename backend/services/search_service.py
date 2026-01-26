@@ -268,7 +268,6 @@ class SearchService:
         upload: Upload,
         user_id: UUID,
         limit: int = config.SIMILAR_UPLOADS_DEFAULT_LIMIT,
-        include_same_user: bool = True,
     ) -> list[SearchResult]:
         """
         Find uploads similar to a specific upload.
@@ -277,7 +276,6 @@ class SearchService:
             upload: Upload object (already validated with embedding)
             user_id: Current user ID
             limit: Maximum results
-            include_same_user: Whether to include user's own uploads
 
         Returns:
             List of similar uploads ordered by similarity
@@ -295,9 +293,7 @@ class SearchService:
         )
 
         # Exclude the source upload from results
-        filtered_results = [
-            r for r in results if r.upload.id != upload.id
-        ]
+        filtered_results = [r for r in results if r.upload.id != upload.id]
 
         return filtered_results[: limit]
 

@@ -3,31 +3,34 @@
 // config.ts
 // ===================
 
+const API_VERSION = 'v1'
+
 export const API_ENDPOINTS = {
   AUTH: {
-    REGISTER: `/auth/register`,
-    LOGIN: `/auth/token`,
-    REFRESH: `/auth/token/refresh`,
-    ME: `/auth/me`,
+    REGISTER: `/${API_VERSION}/auth/register`,
+    LOGIN: `/${API_VERSION}/auth/token`,
+    REFRESH: `/${API_VERSION}/auth/token/refresh`,
+    ME: `/${API_VERSION}/auth/me`,
   },
   UPLOADS: {
-    BASE: `/uploads`,
-    BY_ID: (id: string) => `/uploads/${id}`,
-    METADATA: (id: string) => `/uploads/${id}/metadata`,
-    HIDE: (id: string) => `/uploads/${id}/hide`,
-    REGENERATE: (id: string) => `/uploads/${id}/regenerate-description`,
-    BULK_DELETE: `/uploads/bulk/delete`,
-    BULK_HIDE: `/uploads/bulk/hide`,
+    BASE: `/${API_VERSION}/uploads`,
+    BY_ID: (id: string) => `/${API_VERSION}/uploads/${id}`,
+    METADATA: (id: string) => `/${API_VERSION}/uploads/${id}/metadata`,
+    HIDE: (id: string) => `/${API_VERSION}/uploads/${id}/hide`,
+    REGENERATE: (id: string) =>
+      `/${API_VERSION}/uploads/${id}/regenerate-description`,
+    BULK_DELETE: `/${API_VERSION}/uploads/bulk/delete`,
+    BULK_HIDE: `/${API_VERSION}/uploads/bulk/hide`,
   },
   SEARCH: {
-    BASE: `/search`,
-    SIMILAR: (uploadId: string) => `/search/similar/${uploadId}`,
-    SUGGESTIONS: `/search/suggestions`,
-    BATCH: `/search/batch`,
-    STATS: `/search/stats`,
+    BASE: `/${API_VERSION}/search`,
+    SIMILAR: (uploadId: string) => `/${API_VERSION}/search/similar/${uploadId}`,
+    SUGGESTIONS: `/${API_VERSION}/search/suggestions`,
+    BATCH: `/${API_VERSION}/search/batch`,
+    STATS: `/${API_VERSION}/search/stats`,
   },
-  CLIENT_CONFIG: `/client-config`,
-  HEALTH: `/health`,
+  CLIENT_CONFIG: `/${API_VERSION}/client-config`,
+  HEALTH: `/${API_VERSION}/health`,
 } as const
 
 export const WEBSOCKET_ENDPOINTS = {
@@ -74,7 +77,7 @@ export const STORAGE_KEYS = {
 export const QUERY_CONFIG = {
   STALE_TIME: {
     USER: 1000 * 60 * 5,
-    STATIC: Infinity,
+    STATIC: 1000 * 60 * 60, // 1 hour (was Infinity)
     FREQUENT: 1000 * 30,
   },
   GC_TIME: {

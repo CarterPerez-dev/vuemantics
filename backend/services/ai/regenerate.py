@@ -28,9 +28,8 @@ async def regenerate_upload_description(upload: Upload) -> None:
             "Upload is already being analyzed. Please wait for completion."
         )
 
-    if upload.processing_status not in (
-            ProcessingStatus.COMPLETED,
-            ProcessingStatus.FAILED):
+    if upload.processing_status not in (ProcessingStatus.COMPLETED,
+                                        ProcessingStatus.FAILED):
         raise ValidationError(
             f"Cannot regenerate description for upload with status: "
             f"{upload.processing_status}. Only 'completed' or 'failed' "
@@ -54,4 +53,3 @@ async def regenerate_upload_description(upload: Upload) -> None:
         f"Queued AI analysis for upload {upload.id} "
         f"(regeneration #{upload.regeneration_count})"
     )
-    

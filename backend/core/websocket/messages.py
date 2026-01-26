@@ -5,7 +5,7 @@ messages.py
 
 from datetime import datetime
 from enum import Enum
-from typing import Literal, Union
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -31,24 +31,28 @@ class UploadProgressPayload(BaseModel):
     """
     Detailed progress information for an upload
     """
-    upload_id: str = Field(description="Upload UUID")
-    status: ProcessingStatus = Field(description="Current processing status")
-    stage: ProcessingStage = Field(description="Current processing stage")
-    progress_percent: int = Field(
-        ge=0,
-        le=100,
-        description="Progress percentage"
+    upload_id: str = Field(description = "Upload UUID")
+    status: ProcessingStatus = Field(
+        description = "Current processing status"
     )
-    message: str = Field(description="Human-readable progress message")
+    stage: ProcessingStage = Field(
+        description = "Current processing stage"
+    )
+    progress_percent: int = Field(
+        ge = 0,
+        le = 100,
+        description = "Progress percentage"
+    )
+    message: str = Field(description = "Human-readable progress message")
     error_message: str | None = Field(
-        default=None,
-        description="Error details if failed"
+        default = None,
+        description = "Error details if failed"
     )
     description_audit_score: int | None = Field(
-        default=None,
-        ge=0,
-        le=100,
-        description="Description quality score"
+        default = None,
+        ge = 0,
+        le = 100,
+        description = "Description quality score"
     )
 
 
@@ -58,7 +62,7 @@ class UploadProgressUpdate(BaseModel):
     """
     action: Literal["upload_progress"] = "upload_progress"
     payload: UploadProgressPayload
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory = datetime.utcnow)
 
 
 class UploadCompleted(BaseModel):
@@ -69,7 +73,7 @@ class UploadCompleted(BaseModel):
     upload_id: str
     description: str
     audit_score: int
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory = datetime.utcnow)
 
 
 class UploadFailed(BaseModel):
@@ -79,7 +83,7 @@ class UploadFailed(BaseModel):
     action: Literal["upload_failed"] = "upload_failed"
     upload_id: str
     error_message: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory = datetime.utcnow)
 
 
 class AuthSuccess(BaseModel):
@@ -105,14 +109,14 @@ class Heartbeat(BaseModel):
     action: Literal["ping"] = "ping"
 
 
-ServerMessage = Union[
-    UploadProgressUpdate,
-    UploadCompleted,
-    UploadFailed,
-    AuthSuccess,
-    AuthError,
-    Heartbeat,
-]
+ServerMessage = (
+    UploadProgressUpdate
+    | UploadCompleted
+    | UploadFailed
+    | AuthSuccess
+    | AuthError
+    | Heartbeat
+)
 
 
 # Client
@@ -147,10 +151,4 @@ class Pong(BaseModel):
     action: Literal["pong"] = "pong"
 
 
-ClientMessage = Union[
-    AuthMessage,
-    SubscribeUpload,
-    UnsubscribeUpload,
-    Pong,
-]
-
+ClientMessage = (AuthMessage | SubscribeUpload | UnsubscribeUpload | Pong)

@@ -44,13 +44,17 @@ async def get_client_config(request: Request) -> ClientConfigResponse:
     """
     try:
         return ClientConfigResponse(
-            search_default_similarity_threshold = config.SEARCH_DEFAULT_SIMILARITY_THRESHOLD,
-            similar_uploads_similarity_threshold = config.SIMILAR_UPLOADS_SIMILARITY_THRESHOLD,
-            similar_uploads_default_limit = config.SIMILAR_UPLOADS_DEFAULT_LIMIT,
+            search_default_similarity_threshold = config.
+            SEARCH_DEFAULT_SIMILARITY_THRESHOLD,
+            similar_uploads_similarity_threshold = config.
+            SIMILAR_UPLOADS_SIMILARITY_THRESHOLD,
+            similar_uploads_default_limit = config.
+            SIMILAR_UPLOADS_DEFAULT_LIMIT,
             max_query_length = config.MAX_QUERY_LENGTH,
             default_page_size = config.DEFAULT_PAGE_SIZE,
             max_page_size = config.MAX_PAGE_SIZE,
-            max_upload_size_mb = config.settings.max_upload_size // (1024 * 1024),
+            max_upload_size_mb = config.settings.max_upload_size //
+            (1024 * 1024),
         )
     except Exception as e:
         logger.error(f"Failed to load client config: {e}")

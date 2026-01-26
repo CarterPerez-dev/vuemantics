@@ -4,7 +4,6 @@ publisher.py
 """
 
 import asyncio
-import json
 import logging
 
 from fastapi import WebSocket
@@ -51,11 +50,13 @@ class UploadProgressPublisher:
         if self._listener_task:
             self._listener_task.cancel()
             try:
-                await asyncio.wait_for(self._listener_task, timeout=2.0)
+                await asyncio.wait_for(self._listener_task, timeout = 2.0)
             except asyncio.CancelledError:
                 pass
-            except asyncio.TimeoutError:
-                logger.warning("Redis listener task did not stop within timeout, forcing shutdown")
+            except TimeoutError:
+                logger.warning(
+                    "Redis listener task did not stop within timeout, forcing shutdown"
+                )
             except Exception as e:
                 logger.error(f"Error stopping Redis listener: {e}")
 
@@ -98,8 +99,8 @@ class UploadProgressPublisher:
             while self._running:
                 try:
                     message = await pubsub.get_message(
-                        ignore_subscribe_messages=True,
-                        timeout=0.1
+                        ignore_subscribe_messages = True,
+                        timeout = 0.1
                     )
 
                     if message is None:
@@ -119,7 +120,6 @@ class UploadProgressPublisher:
                     payload = message["data"]
                     if isinstance(payload, bytes):
                         payload = payload.decode("utf-8")
-                    message_data = json.loads(payload)
 
                     # Get local connection manager
                     manager = get_manager()
@@ -129,7 +129,10 @@ class UploadProgressPublisher:
 
                     # Forward to each subscribed user
                     for user_id in user_ids:
-                        connections = list(manager.user_connections.get(user_id, set()))
+                        connections = list(
+                            manager.user_connections.get(user_id,
+                                                         set())
+                        )
                         dead_connections: set[WebSocket] = set()
 
                         for ws in connections:
@@ -159,10 +162,15 @@ class UploadProgressPublisher:
         finally:
             if pubsub:
                 try:
-                    await asyncio.wait_for(pubsub.unsubscribe(), timeout=0.5)
-                    await asyncio.wait_for(pubsub.aclose(), timeout=0.5)
-                except asyncio.TimeoutError:
-                    logger.warning("Timeout closing pubsub connection (non-critical)")
+                    await asyncio.wait_for(
+                        pubsub.unsubscribe(),
+                        timeout = 0.5
+                    )
+                    await asyncio.wait_for(pubsub.aclose(), timeout = 0.5)
+                except TimeoutError:
+                    logger.warning(
+                        "Timeout closing pubsub connection (non-critical)"
+                    )
                 except Exception as e:
                     logger.error(f"Error closing pubsub: {e}")
 
@@ -189,4 +197,3 @@ def get_publisher() -> UploadProgressPublisher:
             "UploadProgressPublisher not initialized. Call init_publisher()"
         )
     return _publisher
-    

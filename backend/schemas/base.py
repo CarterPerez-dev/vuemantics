@@ -13,7 +13,10 @@ from pydantic import (
     Field,
 )
 
-from config import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
+from config import (
+    MAX_PAGE_SIZE,
+    DEFAULT_PAGE_SIZE, 
+)
 
 
 class PaginationParams(BaseModel):
@@ -88,7 +91,8 @@ class PaginatedResponse[T](BaseModel):
 
 class TimestampMixin(BaseModel):
     """
-    Mixin for models with timestamps.
+    Mixin for models with timestamps
     """
     created_at: datetime = Field(description = "Creation timestamp")
-    updated_at: datetime = Field(description = "Last update timestamp")
+    updated_at: datetime = Field(description = "Last update timestamp")   
+     

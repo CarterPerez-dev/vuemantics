@@ -35,6 +35,17 @@ export const apiClient: AxiosInstance = axios.create({
 let isRefreshing = false
 let refreshSubscribers: RefreshSubscriber[] = []
 
+const isTokenExpiringSoon = (token: string): boolean => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    const expiresAt = payload.exp * 1000
+    const now = Date.now()
+    return expiresAt - now < 60000
+  } catch {
+    return true
+  }
+}
+
 const processRefreshQueue = (error: Error | null, token: string | null): void => {
   refreshSubscribers.forEach((subscriber) => {
     if (error !== null) {
@@ -99,9 +110,35 @@ const handleAuthFailure = (): void => {
 }
 
 apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
-    const token = useAuthStore.getState().accessToken
+  async (
+    config: InternalAxiosRequestConfig
+  ): Promise<InternalAxiosRequestConfig> => {
+    let token = useAuthStore.getState().accessToken
+
     if (token !== null && token.length > 0) {
+      if (isTokenExpiringSoon(token) && !isRefreshing) {
+        try {
+          isRefreshing = true
+          const newToken = await handleTokenRefresh()
+          useAuthStore.getState().setAccessToken(newToken)
+          token = newToken
+          processRefreshQueue(null, newToken)
+        } catch (error) {
+          const apiError =
+            error instanceof ApiError
+              ? error
+              : new ApiError(
+                  'Token refresh failed',
+                  ApiErrorCode.AUTHENTICATION_ERROR,
+                  HTTP_STATUS.UNAUTHORIZED
+                )
+          processRefreshQueue(apiError, null)
+          throw apiError
+        } finally {
+          isRefreshing = false
+        }
+      }
+
       config.headers.Authorization = `Bearer ${token}`
     }
     return config

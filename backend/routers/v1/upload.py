@@ -20,7 +20,7 @@ from fastapi import (
 
 import config
 from auth import (
-    get_current_user, 
+    get_current_user,
     verify_upload_ownership,
 )
 from core import (
@@ -32,7 +32,6 @@ from core import (
     SERVER_ERROR_500,
     UNSUPPORTED_MEDIA_415,
     VALIDATION_422,
-    ConflictError,
     NotFoundError,
     StorageError,
     ValidationError,
@@ -48,7 +47,7 @@ from schemas import (
 from services.ai import (
     local_ai_service,
     regenerate_upload_description,
-)    
+)
 from services.storage_service import storage_service
 
 
@@ -438,7 +437,8 @@ async def bulk_hide_uploads(
     response_model = UploadResponse,
     status_code = status.HTTP_200_OK,
     summary = "Regenerate AI description",
-    description = "Re-run AI analysis to generate new description and embedding",
+    description =
+    "Re-run AI analysis to generate new description and embedding",
 )
 @limiter.limit(config.settings.rate_limit_upload)
 async def regenerate_description(
@@ -459,4 +459,3 @@ async def regenerate_description(
     )
 
     return UploadResponse.model_validate(upload)
-    

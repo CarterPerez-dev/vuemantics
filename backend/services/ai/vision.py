@@ -23,7 +23,11 @@ import config
 from core import VisionError
 from services.ai.manager import OllamaManager
 from services.ai._preprocess_vision import preprocess_image_for_vision_model
-from services.ai.prompts import IMAGE_ANALYSIS_PROMPT, VIDEO_ANALYSIS_PROMPT
+from services.ai.prompts import (
+    IMAGE_ANALYSIS_PROMPT,
+    VIDEO_FRAME_PROMPT,
+    VIDEO_SYNTHESIS_PROMPT,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -82,7 +86,8 @@ class VisionService:
                     image_data
                 )
 
-                image_b64 = base64.b64encode(preprocessed_data).decode("utf-8")
+                image_b64 = base64.b64encode(preprocessed_data
+                                             ).decode("utf-8")
 
                 client = await self._ollama.get_client()
                 response = await client.chat(
@@ -114,13 +119,57 @@ class VisionService:
             logger.error(f"Image analysis failed: {e}")
             raise VisionError(f"Failed to analyze image: {e!s}") from e
 
+    async def _analyze_single_frame(self, frame_path: Path) -> str:
+        """
+        Analyze a single video frame
+
+        Args:
+            frame_path: Path to frame image
+
+        Returns:
+            Text description of frame content
+        """
+        async with aiofiles.open(frame_path, "rb") as f:
+            frame_data = await f.read()
+
+        loop = asyncio.get_event_loop()
+        preprocessed_frame = await loop.run_in_executor(
+            None,
+            preprocess_image_for_vision_model,
+            frame_data
+        )
+
+        frame_b64 = base64.b64encode(preprocessed_frame).decode("utf-8")
+
+        client = await self._ollama.get_client()
+        response = await client.chat(
+            model = config.settings.vision_model,
+            messages = [
+                {
+                    "role": "user",
+                    "content": VIDEO_FRAME_PROMPT,
+                    "images": [frame_b64],
+                }
+            ],
+            options = {
+                "temperature": config.OLLAMA_VISION_TEMPERATURE,
+                "num_predict": config.OLLAMA_VISION_NUM_PREDICT_IMAGE,
+                "num_ctx": config.OLLAMA_VISION_NUM_CTX,
+            },
+        )
+
+        return response["message"]["content"].strip()  # type: ignore[no-any-return]
+
     async def analyze_video(
         self,
         frame_paths: list[Path],
         max_frames: int = config.MAX_VIDEO_FRAMES_FOR_ANALYSIS
     ) -> str:
         """
-        Analyze video frames with Qwen2.5-VL via Ollama
+        Analyze video by processing frames individually and synthesizing
+
+        Processes each frame separately to avoid qwen2.5vl multi-image bug
+        Then combines frame descriptions into cohesive video description
 
         Args:
             frame_paths: List of paths to extracted frames
@@ -136,27 +185,26 @@ class VisionService:
                         "No frames provided for video analysis"
                     )
 
-                # Preprocess frames
-                loop = asyncio.get_event_loop()
-                frames_b64 = []
+                frames_to_process = frame_paths[: max_frames]
+                logger.info(
+                    f"Analyzing {len(frames_to_process)} video frames individually"
+                )
 
-                for frame_path in frame_paths[: max_frames]:
-                    async with aiofiles.open(frame_path, "rb") as f:
-                        frame_data = await f.read()
-
-                    # Preprocess frame in executor
-                    preprocessed_frame = await loop.run_in_executor(
-                        None,
-                        preprocess_image_for_vision_model,
-                        frame_data
+                # Analyze each frame separately (workaround for qwen2.5vl bug)
+                frame_descriptions = []
+                for i, frame_path in enumerate(frames_to_process, 1):
+                    logger.debug(
+                        f"Analyzing frame {i}/{len(frames_to_process)}"
                     )
-
-                    frames_b64.append(
-                        base64.b64encode(preprocessed_frame).decode("utf-8")
+                    description = await self._analyze_single_frame(
+                        frame_path
                     )
+                    frame_descriptions.append(f"Frame {i}: {description}")
 
-                prompt = VIDEO_ANALYSIS_PROMPT.format(
-                    frame_count=len(frames_b64)
+                # Synthesize frame descriptions into cohesive video description
+                synthesis_prompt = VIDEO_SYNTHESIS_PROMPT.format(
+                    frame_count = len(frame_descriptions),
+                    frame_descriptions = "\n\n".join(frame_descriptions)
                 )
 
                 client = await self._ollama.get_client()
@@ -165,8 +213,7 @@ class VisionService:
                     messages = [
                         {
                             "role": "user",
-                            "content": prompt,
-                            "images": frames_b64,
+                            "content": synthesis_prompt,
                         }
                     ],
                     options = {
@@ -177,6 +224,7 @@ class VisionService:
                     },
                 )
 
+                logger.info("Video analysis completed successfully")
                 return response["message"]["content"].strip()  # type: ignore[no-any-return]
 
         except Exception as e:

@@ -406,7 +406,11 @@ class StorageService:
 
         return None
 
-    async def _get_image_metadata(self, file_path: Path, stats: os.stat_result) -> dict:
+    async def _get_image_metadata(
+        self,
+        file_path: Path,
+        stats: os.stat_result
+    ) -> dict:
         """
         Extract image metadata
         """
@@ -418,7 +422,11 @@ class StorageService:
             stats
         )
 
-    def _get_image_metadata_sync(self, file_path: Path, stats: os.stat_result) -> dict:
+    def _get_image_metadata_sync(
+        self,
+        file_path: Path,
+        stats: os.stat_result
+    ) -> dict:
         """
         Synchronous image metadata extraction
         """
@@ -432,7 +440,11 @@ class StorageService:
                                       2),
             }
 
-    async def _get_video_metadata(self, file_path: Path, stats: os.stat_result) -> dict:
+    async def _get_video_metadata(
+        self,
+        file_path: Path,
+        stats: os.stat_result
+    ) -> dict:
         """
         Extract video metadata
         """
@@ -444,7 +456,11 @@ class StorageService:
             stats
         )
 
-    def _get_video_metadata_sync(self, file_path: Path, stats: os.stat_result) -> dict:
+    def _get_video_metadata_sync(
+        self,
+        file_path: Path,
+        stats: os.stat_result
+    ) -> dict:
         """
         Synchronous video metadata extraction
         """

@@ -3,11 +3,7 @@
 // query.config.ts
 // ===================
 
-import {
-  MutationCache,
-  QueryCache,
-  QueryClient,
-} from '@tanstack/react-query'
+import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { QUERY_CONFIG } from '@/config'
 import { ApiError, ApiErrorCode } from './errors'

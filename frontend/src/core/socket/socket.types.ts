@@ -3,25 +3,25 @@
 // socket.types.ts
 // ===================
 
-import { z } from "zod"
+import { z } from 'zod'
 
 export const processingStatusSchema = z.enum([
-  "pending",
-  "analyzing",
-  "embedding",
-  "completed",
-  "failed",
+  'pending',
+  'analyzing',
+  'embedding',
+  'completed',
+  'failed',
 ])
 
 export const processingStageSchema = z.enum([
-  "queued",
-  "extracting_frames",
-  "vision_analysis",
-  "description_audit",
-  "embedding_generation",
-  "indexing",
-  "completed",
-  "failed",
+  'queued',
+  'extracting_frames',
+  'vision_analysis',
+  'description_audit',
+  'embedding_generation',
+  'indexing',
+  'completed',
+  'failed',
 ])
 
 export const uploadProgressPayloadSchema = z.object({
@@ -35,13 +35,13 @@ export const uploadProgressPayloadSchema = z.object({
 })
 
 export const uploadProgressUpdateSchema = z.object({
-  action: z.literal("upload_progress"),
+  action: z.literal('upload_progress'),
   payload: uploadProgressPayloadSchema,
   timestamp: z.string(),
 })
 
 export const uploadCompletedSchema = z.object({
-  action: z.literal("upload_completed"),
+  action: z.literal('upload_completed'),
   upload_id: z.string().uuid(),
   description: z.string(),
   audit_score: z.number().int().min(0).max(100),
@@ -49,27 +49,27 @@ export const uploadCompletedSchema = z.object({
 })
 
 export const uploadFailedSchema = z.object({
-  action: z.literal("upload_failed"),
+  action: z.literal('upload_failed'),
   upload_id: z.string().uuid(),
   error_message: z.string(),
   timestamp: z.string(),
 })
 
 export const authSuccessSchema = z.object({
-  action: z.literal("auth_success"),
+  action: z.literal('auth_success'),
   user_id: z.string(),
 })
 
 export const authErrorSchema = z.object({
-  action: z.literal("auth_error"),
+  action: z.literal('auth_error'),
   message: z.string(),
 })
 
 export const heartbeatSchema = z.object({
-  action: z.literal("ping"),
+  action: z.literal('ping'),
 })
 
-export const serverMessageSchema = z.discriminatedUnion("action", [
+export const serverMessageSchema = z.discriminatedUnion('action', [
   uploadProgressUpdateSchema,
   uploadCompletedSchema,
   uploadFailedSchema,
@@ -79,25 +79,25 @@ export const serverMessageSchema = z.discriminatedUnion("action", [
 ])
 
 export const authMessageSchema = z.object({
-  type: z.literal("auth"),
+  type: z.literal('auth'),
   token: z.string(),
 })
 
 export const subscribeUploadSchema = z.object({
-  action: z.literal("subscribe_upload"),
+  action: z.literal('subscribe_upload'),
   upload_id: z.string().uuid(),
 })
 
 export const unsubscribeUploadSchema = z.object({
-  action: z.literal("unsubscribe_upload"),
+  action: z.literal('unsubscribe_upload'),
   upload_id: z.string().uuid(),
 })
 
 export const pongSchema = z.object({
-  action: z.literal("pong"),
+  action: z.literal('pong'),
 })
 
-export const clientMessageSchema = z.discriminatedUnion("action", [
+export const clientMessageSchema = z.discriminatedUnion('action', [
   subscribeUploadSchema,
   unsubscribeUploadSchema,
   pongSchema,
@@ -121,12 +121,9 @@ export type ClientMessage = z.infer<typeof clientMessageSchema>
 
 export const isValidServerMessage = (data: unknown): data is ServerMessage => {
   if (data === null || data === undefined) return false
-  if (typeof data !== "object") return false
+  if (typeof data !== 'object') return false
 
   const result = serverMessageSchema.safeParse(data)
-  if (!result.success) {
-    console.error("WebSocket message validation failed:", result.error.format())
-  }
   return result.success
 }
 
@@ -135,25 +132,25 @@ export class WebSocketError extends Error {
 
   constructor(message: string, code?: number) {
     super(message)
-    this.name = "WebSocketError"
+    this.name = 'WebSocketError'
     this.code = code
     Object.setPrototypeOf(this, WebSocketError.prototype)
   }
 }
 
 export const WEBSOCKET_ERROR_MESSAGES = {
-  NO_TOKEN: "No authentication token available",
-  AUTH_FAILED: "WebSocket authentication failed",
-  CONNECTION_FAILED: "WebSocket connection failed",
-  MAX_RETRIES: "Max reconnection attempts reached",
-  NOT_CONNECTED: "WebSocket is not connected",
+  NO_TOKEN: 'No authentication token available',
+  AUTH_FAILED: 'WebSocket authentication failed',
+  CONNECTION_FAILED: 'WebSocket connection failed',
+  MAX_RETRIES: 'Max reconnection attempts reached',
+  NOT_CONNECTED: 'WebSocket is not connected',
 } as const
 
 export const WEBSOCKET_SUCCESS_MESSAGES = {
-  CONNECTED: "WebSocket connected",
-  AUTHENTICATED: "WebSocket authenticated",
-  SUBSCRIBED: "Subscribed to upload",
-  UNSUBSCRIBED: "Unsubscribed from upload",
+  CONNECTED: 'WebSocket connected',
+  AUTHENTICATED: 'WebSocket authenticated',
+  SUBSCRIBED: 'Subscribed to upload',
+  UNSUBSCRIBED: 'Unsubscribed from upload',
 } as const
 
 export type WebSocketErrorMessage =
