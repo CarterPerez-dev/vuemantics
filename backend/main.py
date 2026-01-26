@@ -18,6 +18,7 @@ from core import (
     RateLimitExceeded,
     limiter,
 )
+from core.docs import TAGS_METADATA
 from core.lifespan import lifespan
 
 from routers import v1
@@ -33,11 +34,11 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title = config.settings.app_name,
-    description = (
-        "something something rust better"
-        "something something more rustslop saar"
-    ),
+    description = config.API_DESCRIPTION,
     version = config.APP_VERSION,
+    contact = config.API_CONTACT,
+    license_info = config.API_LICENSE,
+    openapi_tags = TAGS_METADATA,
     openapi_version = "3.1.0",
     root_path = "/api",
     lifespan = lifespan,

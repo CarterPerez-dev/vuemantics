@@ -37,6 +37,8 @@
     border: 1px solid $border-default;
     background: $bg-surface-100;
     color: $text-default;
+    cursor: pointer;
+    user-select: none;
 
     [data-title] {
       font-weight: $font-weight-medium;

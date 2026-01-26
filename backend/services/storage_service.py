@@ -79,7 +79,7 @@ class StorageService:
         extension: str,
     ) -> str:
         """
-        Save uploaded file to storage.
+        Save uploaded file to storage
 
         Args:
             file_content: File content as binary stream
@@ -90,7 +90,7 @@ class StorageService:
         Returns:
             Relative path to saved file
         """
-        # Create directory structure
+        # Create dir structure
         upload_dir = self._get_upload_dir(user_id, upload_id)
         upload_dir.mkdir(parents = True, exist_ok = True)
 
@@ -98,14 +98,12 @@ class StorageService:
         filename = f"original.{extension}"
         file_path = upload_dir / filename
 
-        # Write file asynchronously
         async with aiofiles.open(file_path, "wb") as f:
             # Read chunks to handle large files
             while chunk := file_content.read(config.FILE_UPLOAD_CHUNK_SIZE
                                              ):
                 await f.write(chunk)
 
-        # Return relative path for database storage
         relative_path = file_path.relative_to(self.base_path)
         logger.info(f"Saved upload to: {relative_path}")
 
@@ -162,7 +160,6 @@ class StorageService:
         """
         Generate thumbnail for image
         """
-        # Run in thread pool to avoid blocking
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(
             None,
@@ -219,7 +216,6 @@ class StorageService:
         """
         Generate thumbnail from video first frame
         """
-        # Run in thread pool to avoid blocking
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(
             None,
@@ -238,13 +234,12 @@ class StorageService:
         """
         cap = cv2.VideoCapture(str(source_path))
         try:
-            # Read first frame
             ret, frame = cap.read()
             if ret:
-                # Convert BGR to RGB
+                # BGR to RGB
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-                # Convert to PIL Image
+                # PIL
                 img = Image.fromarray(frame_rgb)
 
                 img.thumbnail(
@@ -269,7 +264,7 @@ class StorageService:
         max_frames: int = config.MAX_VIDEO_FRAMES
     ) -> list[str]:
         """
-        Extract frames from video for AI analysis.
+        Extract frames from video for AI analysis
 
         Args:
             user_id: User's ID
@@ -285,7 +280,6 @@ class StorageService:
         frames_dir = upload_dir / "frames"
         frames_dir.mkdir(exist_ok = True)
 
-        # Run in thread pool
         loop = asyncio.get_event_loop()
         frame_paths = await loop.run_in_executor(
             None,
@@ -295,7 +289,6 @@ class StorageService:
             max_frames,
         )
 
-        # Return relative paths
         return [
             str(Path(p).relative_to(self.base_path)) for p in frame_paths
         ]
@@ -313,22 +306,24 @@ class StorageService:
         frame_paths = []
 
         try:
-            # Get video properties
             fps = cap.get(cv2.CAP_PROP_FPS)
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-            # Calculate frame interval (1 fps or less)
+            # 1 fps or less
             interval = max(int(fps), 1)
             frames_to_extract = min(total_frames // interval, max_frames)
 
             for i in range(frames_to_extract):
-                # Set frame position
                 frame_pos = i * interval
                 cap.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
 
-                # Read frame
                 ret, frame = cap.read()
                 if ret:
+                    # Rotate portrait frames to landscape for model compatibility
+                    height, width = frame.shape[:2]
+                    if height > width:
+                        frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+
                     # Save frame
                     frame_path = frames_dir / f"frame_{i:04d}.jpg"
                     cv2.imwrite(str(frame_path), frame)
@@ -353,7 +348,6 @@ class StorageService:
         upload_dir = self._get_upload_dir(user_id, upload_id)
 
         if upload_dir.exists():
-            # Remove entire directory
             shutil.rmtree(upload_dir)
             logger.info(f"Deleted upload directory: {upload_dir}")
             return True
@@ -362,10 +356,10 @@ class StorageService:
 
     def get_file_url(self, relative_path: str) -> str:
         """
-        Get URL for serving file.
+        Get URL for serving file
 
-        For local storage, returns path for nginx to serve.
-        For cloud storage, would return CDN URL.
+        For local storage, returns path for nginx to serve
+        For cloud storage, would return CDN URL
 
         Args:
             relative_path: Relative path from storage root
@@ -466,6 +460,18 @@ class StorageService:
         """
         cap = cv2.VideoCapture(str(file_path))
         try:
+            # Get codec fourcc and decode to string
+            fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
+            codec = "".join([chr((fourcc >> 8 * i) & 0xFF) for i in range(4)]).strip().lower()
+
+            # Normalize codec names
+            if codec in ("hvc1", "hev1"):
+                codec = "hevc"
+            elif codec in ("avc1", "h264"):
+                codec = "h264"
+            elif not codec:
+                codec = None
+
             return {
                 "width":
                 int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
@@ -483,6 +489,7 @@ class StorageService:
                 "file_size_mb":
                 round(stats.st_size / (1024 * 1024),
                       2),
+                "codec": codec,
             }
         finally:
             cap.release()

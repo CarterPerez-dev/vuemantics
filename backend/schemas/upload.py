@@ -85,6 +85,10 @@ class UploadResponse(TimestampMixin):
         default = None,
         description = "Path to generated thumbnail"
     )
+    video_codec: str | None = Field(
+        default = None,
+        description = "Video codec (h264, hevc, vp9, av1, etc) - videos only"
+    )
     error_message: str | None = Field(
         default = None,
         description = "Error details if processing failed"
