@@ -8,6 +8,9 @@ from .base import (
     PaginatedResponse,
     TimestampMixin,
 )
+from .common import (
+    AppInfoResponse,
+)
 from .auth import (
     LoginRequest,
     TokenResponse,
@@ -50,6 +53,9 @@ __all__ = [
     "PaginationParams",
     "PaginatedResponse",
     "TimestampMixin",
+
+    # Common
+    "AppInfoResponse",
 
     # Auth
     "LoginRequest",

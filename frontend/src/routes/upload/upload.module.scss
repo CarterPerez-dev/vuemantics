@@ -119,6 +119,38 @@
   object-fit: contain;
 }
 
+.hevcWarning {
+  width: 100%;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: $bg-surface-75;
+  padding: 2rem;
+}
+
+.hevcIcon {
+  width: 64px;
+  height: 64px;
+  color: $text-lighter;
+}
+
+.hevcText {
+  font-size: $font-size-sm;
+  color: $text-light;
+  text-align: center;
+  margin: 0;
+}
+
+.hevcSubtext {
+  font-size: $font-size-xs;
+  font-style: italic;
+  color: $text-lighter;
+  margin: 0;
+}
+
 .fileInfo {
   display: flex;
   align-items: center;

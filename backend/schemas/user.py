@@ -29,20 +29,16 @@ class UserBase(BaseModel):
     """
     email: EmailStr = Field(
         description = "User's email address",
-        examples = ["user@example.com"]
     )
 
 
 class UserCreate(UserBase):
     """
-    User registration request with password validation.
+    User registration request with password validation
     """
     model_config = ConfigDict(
-        extra = "ignore",  # Allow extra fields for MVP
+        extra = "forbid",
         str_strip_whitespace = True,
-        json_schema_extra = {
-            "example": {"email": "newuser@example.com", "password": "MyStr0ng!Pass123"}
-        },
     )
 
     password: str = Field(
@@ -50,7 +46,6 @@ class UserCreate(UserBase):
         f"Password ({MIN_PASSWORD_LENGTH}-{MAX_PASSWORD_LENGTH} chars, must include uppercase, lowercase, number, special char)",
         min_length = MIN_PASSWORD_LENGTH,
         max_length = MAX_PASSWORD_LENGTH,
-        examples = ["MyStr0ng!Pass123"],
     )
 
     @field_validator("password")
@@ -71,17 +66,8 @@ class UserResponse(UserBase, TimestampMixin):
     """
 
     model_config = ConfigDict(
-        extra = "ignore",  # Allow extra fields for MVP
-        from_attributes = True,  # Allow creation from ORM models
-        json_schema_extra = {
-            "example": {
-                "id": "550e8400-e29b-41d4-a716-446655440000",
-                "email": "user@example.com",
-                "is_active": True,
-                "created_at": "2024-01-15T10:30:00Z",
-                "updated_at": "2024-01-15T10:30:00Z",
-            }
-        },
+        extra = "forbid",
+        from_attributes = True,
     )
 
     id: UUID = Field(description = "User's unique identifier")
@@ -93,7 +79,7 @@ class UserUpdate(BaseModel):
     User profile update request
     """
     model_config = ConfigDict(
-        extra = "ignore",  # Allow extra fields for MVP
+        extra = "forbid",
         str_strip_whitespace = True,
     )
 
@@ -112,14 +98,8 @@ class PasswordChangeRequest(BaseModel):
     Password change request
     """
     model_config = ConfigDict(
-        extra = "ignore",  # Allow extra fields for MVP
+        extra = "forbid",
         str_strip_whitespace = True,
-        json_schema_extra = {
-            "example": {
-                "current_password": "OldPass123!",
-                "new_password": "NewStr0ng!Pass456",
-            }
-        },
     )
 
     current_password: str = Field(
@@ -156,7 +136,7 @@ class UserStats(BaseModel):
     User statistics response
     """
     model_config = ConfigDict(
-        extra = "ignore",  # Allow extra fields for MVP
+        extra = "forbid",
     )
 
     total_uploads: int = Field(

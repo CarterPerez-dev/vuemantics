@@ -5,12 +5,16 @@ Health check schemas
 
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import (
+    BaseModel, 
+    ConfigDict, 
+    Field,
+)
 
 
 class HealthStatus(str, Enum):
     """
-    Health status values.
+    Health status values
     """
     HEALTHY = "healthy"
     DEGRADED = "degraded"
@@ -19,11 +23,10 @@ class HealthStatus(str, Enum):
 
 class HealthDetailedResponse(BaseModel):
     """
-    Detailed health check response.
+    Detailed health check response
     """
-
     model_config = ConfigDict(
-        extra = "ignore",
+        extra = "forbid",
         use_enum_values = True,
     )
 
@@ -33,9 +36,9 @@ class HealthDetailedResponse(BaseModel):
     database: HealthStatus = Field(description = "Database health status")
     redis: HealthStatus | None = Field(
         default = None,
-        description = "Redis health status (if configured)"
+        description = "Redis health status"
     )
     ollama: HealthStatus | None = Field(
         default = None,
-        description = "Ollama AI service health status (future)"
+        description = "Ollama AI service health status"
     )

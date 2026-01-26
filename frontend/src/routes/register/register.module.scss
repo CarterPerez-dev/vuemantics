@@ -34,6 +34,26 @@
   padding: $space-8;
 }
 
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  margin-bottom: $space-6;
+  font-size: $font-size-sm;
+  color: $text-light;
+  text-decoration: none;
+  @include transition-fast;
+
+  @include hover {
+    color: $white;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
 .header {
   margin-bottom: $space-6;
 }

@@ -32,28 +32,14 @@ class SearchRequest(BaseModel):
     Semantic search request with advanced filtering options
     """
     model_config = ConfigDict(
-        extra = "ignore",  # Allow extra fields for MVP
+        extra = "forbid",
         str_strip_whitespace = True,
-        json_schema_extra = {
-            "example": {
-                "query": "funny cat playing with toys",
-                "limit": 20,
-                "similarity_threshold": 0.7,
-                "file_types": ["image", "video"],
-                "date_from": "2024-01-01T00:00:00Z",
-                "date_to": "2024-12-31T23:59:59Z",
-            }
-        },
     )
 
     query: str = Field(
         description = "Natural language search query",
         min_length = 1,
         max_length = MAX_QUERY_LENGTH,
-        examples = [
-            "sunset over mountains",
-            "birthday party with friends"
-        ],
     )
 
     limit: int = Field(
@@ -97,7 +83,6 @@ class SearchRequest(BaseModel):
         """
         Clean and validate search query.
         """
-        # Remove excessive whitespace
         cleaned = " ".join(v.split())
 
         if not cleaned:
@@ -113,7 +98,7 @@ class SearchRequest(BaseModel):
         info: ValidationInfo
     ) -> datetime | None:
         """
-        Ensure date_to is after date_from if both provided.
+        Ensure date_to is after date_from if both provided
         """
         if v is not None and "date_from" in info.data:
             date_from = info.data["date_from"]
@@ -124,10 +109,10 @@ class SearchRequest(BaseModel):
 
 class SearchResult(BaseModel):
     """
-    Individual search result with similarity score.
+    Individual search result with similarity score
     """
     model_config = ConfigDict(
-        extra = "ignore",  # Allow extra fields for MVP
+        extra = "forbid",
         from_attributes = True,
     )
 
@@ -149,27 +134,10 @@ class SearchResult(BaseModel):
 
 class SearchResponse(BaseModel):
     """
-    Search response with results and metadata.
+    Search response with results and metadata
     """
     model_config = ConfigDict(
-        extra = "ignore",  # Allow extra fields for MVP
-        json_schema_extra = {
-            "example": {
-                "results": [
-                    {
-                        "upload": {"id": "...", "filename": "cat_video.mp4"},
-                        "similarity_score": 0.92,
-                        "distance": 0.08,
-                        "rank": 1,
-                    }
-                ],
-                "total_found": 42,
-                "returned_count": 20,
-                "search_time_ms": 125.5,
-                "query": "funny cat playing with toys",
-                "query_embedding_generated": True,
-            }
-        },
+        extra = "forbid",
     )
 
     results: list[SearchResult] = Field(
@@ -207,11 +175,10 @@ class SearchResponse(BaseModel):
 
 class SimilarUploadsRequest(BaseModel):
     """
-    Find uploads similar to a specific upload.
+    Find uploads similar to a specific upload
     """
-
     model_config = ConfigDict(
-        extra = "ignore",  # Allow extra fields for MVP
+        extra = "forbid",
     )
 
     upload_id: UUID = Field(
@@ -243,7 +210,7 @@ class SearchHistoryItem(BaseModel):
     Search history entry
     """
     model_config = ConfigDict(
-        extra = "ignore",  # Allow extra fields for MVP
+        extra = "forbid",
         from_attributes = True,
     )
 
@@ -260,3 +227,4 @@ class SearchHistoryItem(BaseModel):
                           Any] | None = Field(
                               description = "Filters used in search"
                           )
+                          

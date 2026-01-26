@@ -4,6 +4,7 @@
 // ===================
 
 import { FiGithub } from 'react-icons/fi'
+import { LuBrain, LuDatabase, LuImage, LuSearch } from 'react-icons/lu'
 import { Link } from 'react-router-dom'
 import { ROUTES } from '@/config'
 import styles from './landing.module.scss'
@@ -27,58 +28,55 @@ export function Component(): React.ReactElement {
 
       <div className={styles.content}>
         <p className={styles.description}>
-          Search your photos and videos using natural language. Powered by AI
+          Search your photos and videos using natural language. Abuses AI
           vision models and vector embeddings for semantic understanding.
         </p>
 
         <div className={styles.sections}>
           <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>AI-Powered Search</h2>
-            <ul className={styles.features}>
-              <li>Natural language queries: "blonde hair", "black jacket"</li>
-              <li>Vision models analyze image/video content</li>
-              <li>Vector embeddings for semantic similarity</li>
-              <li>pgvector for fast similarity search</li>
-              <li>Real-time processing with async queues</li>
-            </ul>
+            <div className={styles.sectionIcon}>
+              <LuSearch />
+            </div>
+            <h2 className={styles.sectionTitle}>Semantic Search</h2>
+            <p className={styles.sectionText}>
+              Natural language queries like "red car" or "funny meme". Vision models analyze image/video content with vector embeddings for semantic similarity using pgvector.
+            </p>
           </section>
 
           <section className={styles.section}>
+            <div className={styles.sectionIcon}>
+              <LuImage />
+            </div>
             <h2 className={styles.sectionTitle}>Media Management</h2>
-            <ul className={styles.features}>
-              <li>Upload images and videos</li>
-              <li>Automatic AI analysis and tagging</li>
-              <li>Smart thumbnail generation</li>
-              <li>Efficient local storage</li>
-              <li>Batch processing support</li>
-            </ul>
+            <p className={styles.sectionText}>
+              Upload images and videos with automatic AI analysis and tagging. Smart thumbnail generation, efficient local storage, and batch processing support.
+            </p>
           </section>
 
           <section className={styles.section}>
+            <div className={styles.sectionIcon}>
+              <LuDatabase />
+            </div>
             <h2 className={styles.sectionTitle}>Technology Stack</h2>
-            <ul className={styles.features}>
-              <li>FastAPI backend with async processing</li>
-              <li>PostgreSQL + pgvector for embeddings</li>
-              <li>OpenAI & Gemini AI models</li>
-              <li>React 19 + TypeScript frontend</li>
-              <li>Redis for caching and queues</li>
-            </ul>
+            <p className={styles.sectionText}>
+              Qwen2.5-VL for vision analysis, bge-m3 for embeddings. PostgreSQL + pgvector for vector search. Ollama for local model inference. React + TypeScript frontend.
+            </p>
           </section>
 
           <section className={styles.section}>
+            <div className={styles.sectionIcon}>
+              <LuBrain />
+            </div>
             <h2 className={styles.sectionTitle}>Coming Soon</h2>
-            <ul className={styles.features}>
-              <li>Open-source local model support</li>
-              <li>Video frame analysis</li>
-              <li>Improved similarity tuning</li>
-              <li>Batch search operations</li>
-            </ul>
+            <p className={styles.sectionText}>
+              MCP Server: Model Context Protocol integration. Let AI assistants query your media collection through standardized tool interfaces.
+            </p>
           </section>
         </div>
 
         <div className={styles.actions}>
-          <Link to={ROUTES.REGISTER} className={styles.button}>
-            Get Started
+          <Link to={ROUTES.LOGIN} className={styles.button}>
+            Login
           </Link>
           <a
             href="/api/docs"

@@ -26,6 +26,7 @@ export const uploadResponseSchema = z.object({
   regeneration_count: z.number().int().nonnegative().default(0),
   last_regenerated_at: z.string().nullable(),
   thumbnail_path: z.string().nullable(),
+  video_codec: z.string().nullable(),
   error_message: z.string().nullable(),
   metadata: z.record(z.string(), z.any()).nullable(),
   hidden: z.boolean().default(false),

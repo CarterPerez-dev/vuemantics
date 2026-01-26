@@ -24,7 +24,7 @@ class PaginationParams(BaseModel):
     Pagination parameters for list endpoints
     """
     model_config = ConfigDict(
-        extra = "ignore",  # Allow extra fields for MVP
+        extra = "forbid",
         str_strip_whitespace = True,
     )
 

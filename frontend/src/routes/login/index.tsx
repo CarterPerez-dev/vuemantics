@@ -4,7 +4,7 @@
 // ===================
 
 import { useState } from 'react'
-import { LuEye, LuEyeOff } from 'react-icons/lu'
+import { LuArrowLeft, LuEye, LuEyeOff } from 'react-icons/lu'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useLogin } from '@/api/hooks'
@@ -46,6 +46,10 @@ export function Component(): React.ReactElement {
   return (
     <div className={styles.page}>
       <div className={styles.card}>
+        <Link to={ROUTES.HOME} className={styles.backButton}>
+          <LuArrowLeft />
+          Back to Home
+        </Link>
         <div className={styles.header}>
           <h1 className={styles.title}>Login</h1>
           <p className={styles.subtitle}>Welcome back</p>

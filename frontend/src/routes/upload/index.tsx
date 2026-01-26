@@ -33,6 +33,7 @@ export function Component(): React.ReactElement {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [videoPoster, setVideoPoster] = useState<string | null>(null)
+  const [thumbnailFailed, setThumbnailFailed] = useState(false)
   const hasShownPendingToast = useRef(false)
 
   const {
@@ -162,6 +163,7 @@ export function Component(): React.ReactElement {
           setPreviewUrl(null)
         }
         setVideoPoster(null)
+        setThumbnailFailed(false)
       },
     })
   }
@@ -174,6 +176,7 @@ export function Component(): React.ReactElement {
       setPreviewUrl(null)
     }
     setVideoPoster(null)
+    setThumbnailFailed(false)
   }
 
   const handleRegenerate = (uploadId: string): void => {
@@ -211,6 +214,9 @@ export function Component(): React.ReactElement {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
         const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8)
         setVideoPoster(thumbnailUrl)
+        setThumbnailFailed(false)
+      } else {
+        setThumbnailFailed(true)
       }
     }
 
@@ -219,6 +225,16 @@ export function Component(): React.ReactElement {
     })
 
     video.addEventListener('seeked', captureFrame, { once: true })
+
+    video.addEventListener('error', () => {
+      setThumbnailFailed(true)
+    })
+
+    setTimeout(() => {
+      if (!videoPoster) {
+        setThumbnailFailed(true)
+      }
+    }, 3000)
 
     video.load()
   }
@@ -246,6 +262,14 @@ export function Component(): React.ReactElement {
                         alt={selectedFile.name}
                         className={styles.previewImg}
                       />
+                    ) : thumbnailFailed ? (
+                      <div className={styles.hevcWarning}>
+                        <TfiFaceSad className={styles.hevcIcon} />
+                        <p className={styles.hevcText}>
+                          Video codec (likely HEVC) cannot be previewed in browser
+                        </p>
+                        <p className={styles.hevcSubtext}>womp womp</p>
+                      </div>
                     ) : (
                       <video
                         src={previewUrl}

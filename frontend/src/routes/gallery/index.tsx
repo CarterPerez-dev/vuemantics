@@ -16,6 +16,7 @@ import {
   LuUpload,
   LuX,
 } from 'react-icons/lu'
+import { TfiFaceSad } from 'react-icons/tfi'
 import {
   useBulkDeleteUploads,
   useBulkHideUploads,
@@ -552,6 +553,18 @@ export function Component(): React.ReactElement {
                   alt={currentUpload.filename}
                   className={styles.modalImg}
                 />
+              ) : currentUpload.video_codec === 'hevc' ? (
+                <div className={styles.hevcWarning}>
+                  <TfiFaceSad className={styles.hevcIcon} />
+                  <p className={styles.hevcText}>
+                    This video uses HEVC codec which cannot be played in most
+                    browsers
+                  </p>
+                  <p className={styles.hevcSubtext}>womp womp</p>
+                  <p className={styles.hevcHint}>
+                    Download the video to play it locally
+                  </p>
+                </div>
               ) : (
                 <video
                   src={currentUpload.file_path}

@@ -32,6 +32,12 @@ API_DESCRIPTION: Final[str] = (
     "Built with FastAPI, PostgreSQL, pgvector, and Ollama."
 )
 
+OPENAPI_VERSION: Final[str] = "3.1.0"
+API_ROOT_PATH: Final[str] = "/api"
+API_DOCS_URL: Final[str] = "/docs"
+API_REDOC_URL: Final[str] = "/redoc"
+API_OPENAPI_URL: Final[str] = "/openapi.json"
+
 
 # Important
 # ======================================================
@@ -46,8 +52,8 @@ IVFFLAT_INDEX_LISTS: Final[int] = 100  # IVFFlat clusters for pgvector
 # AI Model config
 OLLAMA_VISION_TEMPERATURE: Final[float] = 0.3
 OLLAMA_VISION_NUM_PREDICT_IMAGE: Final[int] = 512  # Max tokens for image analysis
-OLLAMA_VISION_NUM_PREDICT_VIDEO: Final[int] = 1024  # Max tokens for video analysis
-OLLAMA_VISION_NUM_CTX: Final[int] = 2048  # Context window
+OLLAMA_VISION_NUM_PREDICT_VIDEO: Final[int] = 2048  # Max tokens for video analysis (videos need detailed descriptions)
+OLLAMA_VISION_NUM_CTX: Final[int] = 8192  # Context window (qwen2.5vl supports up to 128K)
 
 # Text processing limits
 MAX_EMBEDDING_TEXT_LENGTH: Final[int] = 32000  # Max chars for embedding generation
@@ -75,7 +81,7 @@ THUMBNAIL_QUALITY: Final[int] = 85  # JPEG
 THUMBNAIL_FILENAME: Final[str] = "thumb_256.jpg"
 VIDEO_SAMPLE_FPS: Final[float] = 1.0  # Extract 1 frame per second for video analysis
 MAX_VIDEO_FRAMES: Final[int] = 10  # Maximum frames to extract from video
-MAX_VIDEO_FRAMES_FOR_ANALYSIS: Final[int] = 6  # Maximum frames to send to vision model (reduced to avoid context overflow)
+MAX_VIDEO_FRAMES_FOR_ANALYSIS: Final[int] = 10  # Maximum frames to send to vision model (8K context is plenty)
 
 # Description audit configuration
 DESCRIPTION_MIN_LENGTH: Final[int] = 50

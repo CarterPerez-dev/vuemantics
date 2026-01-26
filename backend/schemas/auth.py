@@ -10,29 +10,26 @@ from pydantic import (
     Field,
 )
 
-from config import MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH
-
+from config import (
+    MIN_PASSWORD_LENGTH, 
+    MAX_PASSWORD_LENGTH,
+)
 
 class LoginRequest(BaseModel):
     """
     Login request with email and password
     """
     model_config = ConfigDict(
-        extra = "ignore",  # Allow extra fields for MVP
+        extra = "forbid",
         str_strip_whitespace = True,
-        json_schema_extra = {
-            "example": {"email": "user@example.com", "password": "MyStr0ng!Pass123"}
-        },
     )
 
     email: EmailStr = Field(
         description = "User's email address",
-        examples = ["user@example.com"]
     )
     password: str = Field(
         description = "User's password",
         min_length = 1,
-        examples = ["MyStr0ng!Pass123"]
     )
 
 
@@ -41,14 +38,7 @@ class TokenResponse(BaseModel):
     JWT token pair response
     """
     model_config = ConfigDict(
-        extra = "ignore",
-        json_schema_extra = {
-            "example": {
-                "access_token": "eyJhbGciOiJIUzI1NiIs...",
-                "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
-                "token_type": "bearer",
-            }
-        },
+        extra = "forbid",
     )
 
     access_token: str = Field(
@@ -59,7 +49,7 @@ class TokenResponse(BaseModel):
     )
     token_type: str = Field(
         default = "bearer",
-        description = "Token type (always 'bearer')"
+        description = "Token type ('bearer')"
     )
 
 
@@ -68,13 +58,8 @@ class RefreshRequest(BaseModel):
     Refresh token request
     """
     model_config = ConfigDict(
-        extra = "ignore",
+        extra = "forbid",
         str_strip_whitespace = True,
-        json_schema_extra = {
-            "example": {
-                "refresh_token": "eyJhbGciOiJIUzI1NiIs..."
-            }
-        },
     )
 
     refresh_token: str = Field(
@@ -88,10 +73,9 @@ class PasswordResetRequest(BaseModel):
     Password reset request (future feature)
     """
     model_config = ConfigDict(
-        extra = "ignore",
+        extra = "forbid",
         str_strip_whitespace = True,
     )
-
     email: EmailStr = Field(description = "Email to send reset link")
 
 
@@ -100,7 +84,7 @@ class PasswordResetConfirm(BaseModel):
     Confirm password reset with new password (future feature).
     """
     model_config = ConfigDict(
-        extra = "ignore",
+        extra = "forbid",
         str_strip_whitespace = True,
     )
 
