@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class ProcessingStatus(str, Enum):
     """
-    Processing status states for uploads.
+    Processing status states for uploads
     """
     PENDING = "pending"  # Just uploaded, not processed
     ANALYZING = "analyzing"  # Qwen2.5-VL analyzing media + description audit
@@ -41,7 +41,7 @@ class FileType(str, Enum):
 
 class Upload(BaseModel):
     """
-    Upload model for media files.
+    Upload model for media files
 
     Attributes:
         id: Unique identifier (UUID)
@@ -69,6 +69,7 @@ class Upload(BaseModel):
         super().__init__(**kwargs)
         self.id: UUID = kwargs["id"]  # Uploads from DB always have IDs
         self.user_id: UUID = kwargs["user_id"]
+        self.batch_id: UUID | None = kwargs.get("batch_id")
         self.filename: str = kwargs.get("filename", "")
         self.file_path: str = kwargs.get("file_path", "")
         self.file_type: str = kwargs.get("file_type", "")
@@ -130,6 +131,7 @@ class Upload(BaseModel):
             CREATE TABLE IF NOT EXISTS uploads (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                batch_id UUID REFERENCES upload_batches(id) ON DELETE SET NULL,
 
                 -- File information
                 filename TEXT NOT NULL,
@@ -162,6 +164,7 @@ class Upload(BaseModel):
 
             -- Indexes for performance
             CREATE INDEX IF NOT EXISTS idx_uploads_user_id ON uploads(user_id);
+            CREATE INDEX IF NOT EXISTS idx_uploads_batch_id ON uploads(batch_id);
             CREATE INDEX IF NOT EXISTS idx_uploads_processing_status ON uploads(processing_status);
             CREATE INDEX IF NOT EXISTS idx_uploads_file_type ON uploads(file_type);
             CREATE INDEX IF NOT EXISTS idx_uploads_created_at ON uploads(created_at DESC);
@@ -185,6 +188,7 @@ class Upload(BaseModel):
         metadata: dict[str,
                        Any] | None = None,
         upload_id: UUID | None = None,
+        batch_id: UUID | None = None,
     ) -> Upload:
         """
         Create a new upload record.
@@ -206,16 +210,17 @@ class Upload(BaseModel):
         if upload_id:
             query = """
                 INSERT INTO uploads (
-                    id, user_id, filename, file_path, file_type,
+                    id, user_id, batch_id, filename, file_path, file_type,
                     file_size, mime_type, metadata
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                 RETURNING *
             """
             record = await database.db.fetchrow(
                 query,
                 upload_id,
                 user_id,
+                batch_id,
                 filename,
                 file_path,
                 file_type,
@@ -226,15 +231,16 @@ class Upload(BaseModel):
         else:
             query = """
                 INSERT INTO uploads (
-                    user_id, filename, file_path, file_type,
+                    user_id, batch_id, filename, file_path, file_type,
                     file_size, mime_type, metadata
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 RETURNING *
             """
             record = await database.db.fetchrow(
                 query,
                 user_id,
+                batch_id,
                 filename,
                 file_path,
                 file_type,

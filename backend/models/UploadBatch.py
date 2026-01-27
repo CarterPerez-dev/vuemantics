@@ -1,10 +1,10 @@
 """
 ⒸAngelaMos | 2026
-UploadBatch.py - Batch upload tracking model
+UploadBatch.py
 """
 
-from datetime import datetime
 from typing import Any
+from datetime import datetime
 from uuid import UUID, uuid4
 
 import config
@@ -13,7 +13,9 @@ from models.Base import BaseModel
 
 
 class BatchStatus:
-    """Batch processing status constants"""
+    """
+    Batch processing status constants
+    """
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -25,10 +27,10 @@ class UploadBatch(BaseModel):
     """
     Tracks batches of uploads for bulk processing
 
-    Design for EXTREME robustness:
+    Design for robustness:
     - Database is source of truth (worker crash = resume from DB)
     - Sequential processing (one at a time due to compute limits)
-    - Non-blocking failures (one bad upload doesn't stop batch)
+    - Non blocking failures (one bad upload doesn't stop batch)
     - Retry once per upload (fails twice = permanent failure)
     - WebSocket progress updates for real-time tracking
     - MCP-friendly status queries
@@ -36,24 +38,19 @@ class UploadBatch(BaseModel):
     __tablename__ = "upload_batches"
 
     def __init__(self, **kwargs: Any) -> None:
-        """Initialize upload batch instance"""
+        """
+        Initialize upload batch instance
+        """
         super().__init__(**kwargs)
+        
         self.id: UUID = kwargs.get("id") or uuid4()
         self.user_id: UUID = kwargs["user_id"]
-
-        # Status tracking
         self.status: str = kwargs.get("status", BatchStatus.PENDING)
-
-        # Progress counters
         self.total_uploads: int = kwargs.get("total_uploads", 0)
         self.processed_uploads: int = kwargs.get("processed_uploads", 0)
         self.successful_uploads: int = kwargs.get("successful_uploads", 0)
         self.failed_uploads: int = kwargs.get("failed_uploads", 0)
-
-        # Error tracking
         self.error_message: str | None = kwargs.get("error_message")
-
-        # Timestamps
         self.started_at: datetime | None = kwargs.get("started_at")
         self.completed_at: datetime | None = kwargs.get("completed_at")
 
@@ -100,7 +97,7 @@ class UploadBatch(BaseModel):
         cls,
         user_id: UUID,
         total_uploads: int,
-    ) -> "UploadBatch":
+    ) -> UploadBatch:
         """
         Create a new upload batch
 
@@ -138,7 +135,7 @@ class UploadBatch(BaseModel):
         user_id: UUID,
         limit: int = config.DEFAULT_PAGE_SIZE,
         offset: int = 0,
-    ) -> list["UploadBatch"]:
+    ) -> list[UploadBatch]:
         """
         Find batches for a user
 
@@ -163,7 +160,7 @@ class UploadBatch(BaseModel):
         return cls.from_records(records)
 
     @classmethod
-    async def find_pending(cls, limit: int = 10) -> list["UploadBatch"]:
+    async def find_pending(cls, limit: int = 10) -> list[UploadBatch]:
         """
         Find pending batches for worker to process
 
@@ -200,7 +197,6 @@ class UploadBatch(BaseModel):
         if self.id is None:
             raise ValueError("Cannot update status for unsaved batch")
 
-        # Set timestamps based on status
         started_at_update = "started_at" if status == BatchStatus.PROCESSING else "started_at"
         completed_at_update = "completed_at" if status in (
             BatchStatus.COMPLETED,
@@ -269,11 +265,15 @@ class UploadBatch(BaseModel):
             self.updated_at = row["updated_at"]
 
     def is_complete(self) -> bool:
-        """Check if batch has processed all uploads"""
+        """
+        Check if batch has processed all uploads
+        """
         return self.processed_uploads >= self.total_uploads
 
     def get_progress_percentage(self) -> float:
-        """Get progress as percentage (0-100)"""
+        """
+        Get progress as percentage (0-100)
+        """
         if self.total_uploads == 0:
             return 0.0
         return (self.processed_uploads / self.total_uploads) * 100
@@ -283,3 +283,4 @@ class UploadBatch(BaseModel):
             f"<UploadBatch {self.id} status={self.status} "
             f"{self.processed_uploads}/{self.total_uploads}>"
         )
+        
