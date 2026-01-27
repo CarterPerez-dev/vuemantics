@@ -11,6 +11,8 @@ from core.websocket.messages import (
     UploadProgressPayload,
     UploadCompleted,
     UploadFailed,
+    BatchProgressUpdate,
+    BatchProgressPayload,
 )
 from core.websocket.publisher import UploadProgressPublisher, get_publisher
 

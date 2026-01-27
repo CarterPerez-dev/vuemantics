@@ -86,6 +86,32 @@ class UploadFailed(BaseModel):
     timestamp: datetime = Field(default_factory = datetime.utcnow)
 
 
+class BatchProgressPayload(BaseModel):
+    """
+    Batch processing progress information
+    """
+    batch_id: str = Field(description = "Batch UUID")
+    status: str = Field(description = "Batch status")
+    total: int = Field(description = "Total uploads in batch")
+    processed: int = Field(description = "Uploads processed so far")
+    successful: int = Field(description = "Successfully processed uploads")
+    failed: int = Field(description = "Failed uploads")
+    progress_percentage: float = Field(
+        ge = 0,
+        le = 100,
+        description = "Overall batch progress percentage"
+    )
+
+
+class BatchProgressUpdate(BaseModel):
+    """
+    Batch processing progress update
+    """
+    action: Literal["batch_progress"] = "batch_progress"
+    payload: BatchProgressPayload
+    timestamp: datetime = Field(default_factory = datetime.utcnow)
+
+
 class AuthSuccess(BaseModel):
     """
     WebSocket authentication succeeded
@@ -113,6 +139,7 @@ ServerMessage = (
     UploadProgressUpdate
     | UploadCompleted
     | UploadFailed
+    | BatchProgressUpdate
     | AuthSuccess
     | AuthError
     | Heartbeat
