@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 class SearchService:
     """
-    Handles semantic search functionality.
+    Handles semantic search functionality
 
     Workflow:
     1. Generate embedding for search query using local bge-m3
@@ -59,7 +59,6 @@ class SearchService:
         start_time = time.time()
 
         try:
-            # Generate embedding for search query
             logger.info(
                 f"Generating embedding for query: {request.query[:50]}..."
             )
@@ -67,7 +66,6 @@ class SearchService:
                 request.query
             )
 
-            # Perform vector similarity search
             results = await self._search_uploads(
                 query_embedding = query_embedding,
                 user_id = user_id
@@ -76,13 +74,10 @@ class SearchService:
                 similarity_threshold = request.similarity_threshold,
             )
 
-            # Apply additional filters
             filtered_results = self._apply_filters(results, request)
 
-            # Limit to requested count
             final_results = filtered_results[: request.limit]
 
-            # Format response
             search_time_ms = (time.time() - start_time) * 1000
 
             response = SearchResponse(
@@ -115,21 +110,18 @@ class SearchService:
 
     async def _generate_query_embedding(self, query: str) -> list[float]:
         """
-        Generate embedding vector for search query.
+        Generate embedding vector for search query
 
         Args:
             query: Search query text
 
         Returns:
             1024-dimensional embedding vector
-
-        Raises:
-            QueryEmbeddingError: If embedding generation fails
         """
         try:
             cleaned_query = " ".join(query.split())
 
-            # Generate embedding using local bge-m3 (no enhancement, raw query works better)
+            # (raw query works better)
             embedding = await local_ai_service.create_embedding_for_query(
                 cleaned_query
             )
@@ -167,7 +159,6 @@ class SearchService:
         Returns:
             List of search results with similarity scores
         """
-        # Perform vector search using local embeddings
         upload_results = await Upload.search_by_embedding(
             query_embedding = query_embedding,
             user_id = user_id,
@@ -176,10 +167,9 @@ class SearchService:
             use_local = True,
         )
 
-        # Convert to SearchResult objects
         search_results = []
         for rank, (upload, similarity) in enumerate(upload_results, 1):
-            # Calculate distance (1 - similarity for cosine)
+        
             distance = 1.0 - similarity
 
             result = SearchResult(
@@ -198,7 +188,7 @@ class SearchService:
         request: SearchRequest
     ) -> list[SearchResult]:
         """
-        Apply additional filters to search results.
+        Apply additional filters to search results
 
         Args:
             results: Initial search results
@@ -209,14 +199,12 @@ class SearchService:
         """
         filtered = results
 
-        # Filter by file types
         if request.file_types:
             filtered = [
                 r for r in filtered
                 if r.upload.file_type in request.file_types
             ]
 
-        # Filter by date range
         if request.date_from:
             filtered = [
                 r for r in filtered
@@ -229,7 +217,6 @@ class SearchService:
                 if r.upload.created_at <= request.date_to
             ]
 
-        # Re-rank after filtering
         for rank, result in enumerate(filtered, 1):
             result.rank = rank
 
@@ -280,15 +267,13 @@ class SearchService:
         Returns:
             List of similar uploads ordered by similarity
         """
-        # Search using the upload's embedding
         if upload.embedding_local is None:
             return []
 
-        # Always filter by user_id to only show current user's uploads
         results = await self._search_uploads(
             query_embedding = upload.embedding_local,
             user_id = user_id,
-            limit = limit + 1,  # Get extra to exclude self
+            limit = limit + 1,
             similarity_threshold = config.SIMILAR_UPLOADS_SIMILARITY_THRESHOLD,
         )
 
@@ -332,14 +317,11 @@ class SearchService:
 
         return dict(results)
 
-    async def get_search_suggestions(  # TODO
+    async def get_search_suggestions(  # TODO: make it use search history or popular searches)
         self, partial_query: str, user_id: UUID, limit: int = config.SEARCH_SUGGESTIONS_DEFAULT_LIMIT  # noqa: ARG002
     ) -> list[str]:
         """
-        Get search suggestions based on partial query.
-
-        For MVP, this returns common search patterns.
-        In production, could use search history or popular searches.
+        Get search suggestions based on partial query
 
         Args:
             partial_query: Partial search query
@@ -349,7 +331,7 @@ class SearchService:
         Returns:
             List of suggested queries
         """
-        # MVP: Return template-based suggestions
+        # MVP: Return template based suggestions
         templates = [
             f"{partial_query} photos",
             f"{partial_query} videos",
@@ -361,7 +343,6 @@ class SearchService:
             f"{partial_query} landscape",
         ]
 
-        # Filter relevant templates
         suggestions = [
             t for t in templates if partial_query.lower() in t.lower()
         ]
@@ -390,3 +371,4 @@ class SearchService:
 
 
 search_service = SearchService()
+
