@@ -42,7 +42,7 @@ class UploadBatch(BaseModel):
         Initialize upload batch instance
         """
         super().__init__(**kwargs)
-        
+
         self.id: UUID = kwargs.get("id") or uuid4()
         self.user_id: UUID = kwargs["user_id"]
         self.status: str = kwargs.get("status", BatchStatus.PENDING)
@@ -215,7 +215,12 @@ class UploadBatch(BaseModel):
             RETURNING updated_at, started_at, completed_at
         """
 
-        row = await database.db.fetchrow(query, status, error_message, self.id)
+        row = await database.db.fetchrow(
+            query,
+            status,
+            error_message,
+            self.id
+        )
         if row:
             self.status = status
             self.error_message = error_message
@@ -283,4 +288,3 @@ class UploadBatch(BaseModel):
             f"<UploadBatch {self.id} status={self.status} "
             f"{self.processed_uploads}/{self.total_uploads}>"
         )
-        

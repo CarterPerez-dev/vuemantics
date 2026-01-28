@@ -1,8 +1,7 @@
 """
 ⒸAngelaMos | 2026
-batch_processor.py - Dramatiq worker for processing upload batches
+batch_processor.py
 
-ROBUSTNESS DESIGN:
 - Sequential processing (one upload at a time, limited compute)
 - Database is source of truth (worker crash = resume from DB state)
 - Non-blocking failures (one bad upload doesn't stop the batch)
@@ -18,9 +17,19 @@ from uuid import UUID
 import dramatiq
 
 from core.tasks import broker
-from core.websocket import get_publisher, BatchProgressUpdate, BatchProgressPayload
-from models.Upload import Upload, ProcessingStatus
-from models.UploadBatch import UploadBatch, BatchStatus
+from core.websocket import (
+    get_publisher,
+    BatchProgressUpdate,
+    BatchProgressPayload,
+)
+from models.Upload import (
+    Upload,
+    ProcessingStatus,
+)
+from models.UploadBatch import (
+    UploadBatch,
+    BatchStatus,
+)
 from services.ai.service import LocalAIService
 
 
@@ -28,10 +37,10 @@ logger = logging.getLogger(__name__)
 
 
 @dramatiq.actor(
-    broker=broker,
-    max_retries=0,  # We handle retries manually at the upload level
-    priority=0,  # All batches equal priority (FIFO)
-    time_limit=7 * 24 * 60 * 60 * 1000,  # 7 days
+    broker = broker,
+    max_retries = 0,  # Retries manually at the upload level
+    priority = 0,  # All batches equal priority (FIFO)
+    time_limit = 7 * 24 * 60 * 60 * 1000,  # 7 days
 )
 def process_batch(batch_id: str) -> None:
     """
@@ -48,10 +57,10 @@ def process_batch(batch_id: str) -> None:
     - If worker crashes, batch stays in 'processing' state
       and can be resumed by restarting the worker
     """
-    # Convert string UUID back to UUID
+    # String UUID back to UUID
     batch_uuid = UUID(batch_id)
 
-    # Run async processing in event loop
+    # Async
     asyncio.run(_process_batch_async(batch_uuid))
 
 
@@ -64,35 +73,28 @@ async def _process_batch_async(batch_id: UUID) -> None:
     """
     logger.info(f"Starting batch processing for batch {batch_id}")
 
-    # Load batch from database
     batch = await UploadBatch.find_by_id(batch_id)
     if not batch:
         logger.error(f"Batch {batch_id} not found")
         return
 
-    # Check if already completed
     if batch.status in (BatchStatus.COMPLETED, BatchStatus.CANCELLED):
         logger.info(f"Batch {batch_id} already {batch.status}, skipping")
         return
 
-    # Mark as processing
     await batch.update_status(BatchStatus.PROCESSING)
     logger.info(
         f"Batch {batch_id} marked as processing: "
         f"{batch.total_uploads} uploads to process"
     )
 
-    # Broadcast batch started
     await _publish_batch_progress(batch)
 
-    # Get all uploads for this batch
     query = """
         SELECT * FROM uploads
         WHERE batch_id = $1
         ORDER BY created_at ASC
     """
-
-    import database
     records = await database.db.fetch(query, batch_id)
     uploads = Upload.from_records(records)
 
@@ -102,18 +104,15 @@ async def _process_batch_async(batch_id: UUID) -> None:
             f"but found {len(uploads)}"
         )
 
-    # Initialize AI service
     ai_service = LocalAIService()
 
-    # Process each upload sequentially
     for upload in uploads:
-        # Skip if already completed successfully
         if upload.processing_status == ProcessingStatus.COMPLETED:
             logger.info(
                 f"Upload {upload.id} already completed, skipping "
                 f"({batch.processed_uploads + 1}/{batch.total_uploads})"
             )
-            await batch.increment_progress(successful=True)
+            await batch.increment_progress(successful = True)
             await _publish_batch_progress(batch)
             continue
 
@@ -122,11 +121,9 @@ async def _process_batch_async(batch_id: UUID) -> None:
             f"({batch.processed_uploads + 1}/{batch.total_uploads})"
         )
 
-        # Process upload with retry logic
         success = await _process_upload_with_retry(ai_service, upload)
 
-        # Update batch progress
-        await batch.increment_progress(successful=success)
+        await batch.increment_progress(successful = success)
         await _publish_batch_progress(batch)
 
         logger.info(
@@ -134,7 +131,6 @@ async def _process_batch_async(batch_id: UUID) -> None:
             f"(batch progress: {batch.processed_uploads}/{batch.total_uploads})"
         )
 
-    # Mark batch as complete
     if batch.failed_uploads == 0:
         await batch.update_status(BatchStatus.COMPLETED)
         logger.info(
@@ -149,7 +145,6 @@ async def _process_batch_async(batch_id: UUID) -> None:
             f"{batch.failed_uploads} failed out of {batch.total_uploads}"
         )
 
-    # Final progress broadcast
     await _publish_batch_progress(batch)
 
 
@@ -180,17 +175,14 @@ async def _process_upload_with_retry(
                 f"Processing upload {upload.id} (attempt {attempt}/{max_attempts})"
             )
 
-            # Run AI analysis
             await ai_service.analyze_media(upload.id)
 
-            # Refresh upload to get latest status
             await upload.refresh()
 
             if upload.processing_status == ProcessingStatus.COMPLETED:
                 logger.info(f"Upload {upload.id} processed successfully")
                 return True
 
-            # Status not completed, treat as failure
             logger.warning(
                 f"Upload {upload.id} processing incomplete "
                 f"(status={upload.processing_status})"
@@ -205,7 +197,7 @@ async def _process_upload_with_retry(
         except Exception as e:
             logger.error(
                 f"Error processing upload {upload.id} (attempt {attempt}/{max_attempts}): {e}",
-                exc_info=True,
+                exc_info = True,
             )
 
             if attempt < max_attempts:
@@ -214,7 +206,6 @@ async def _process_upload_with_retry(
                 )
                 continue
 
-    # Failed after all retries
     logger.error(
         f"Upload {upload.id} failed after {max_attempts} attempts, marking as failed"
     )
@@ -222,7 +213,7 @@ async def _process_upload_with_retry(
     try:
         await upload.update_status(
             ProcessingStatus.FAILED,
-            error_message="Failed after retry",
+            error_message = "Failed after retry",
         )
     except Exception as update_err:
         logger.error(
@@ -244,17 +235,19 @@ async def _publish_batch_progress(batch: UploadBatch) -> None:
         await publisher.publish_to_user(
             batch.user_id,
             BatchProgressUpdate(
-                payload=BatchProgressPayload(
-                    batch_id=batch.id,
-                    status=batch.status,
-                    total=batch.total_uploads,
-                    processed=batch.processed_uploads,
-                    successful=batch.successful_uploads,
-                    failed=batch.failed_uploads,
-                    progress_percentage=batch.get_progress_percentage(),
+                payload = BatchProgressPayload(
+                    batch_id = batch.id,
+                    status = batch.status,
+                    total = batch.total_uploads,
+                    processed = batch.processed_uploads,
+                    successful = batch.successful_uploads,
+                    failed = batch.failed_uploads,
+                    progress_percentage = batch.get_progress_percentage(),
                 )
             ),
         )
     except Exception as e:
         # Don't fail batch processing if WebSocket broadcast fails
-        logger.warning(f"Failed to publish batch progress for {batch.id}: {e}")
+        logger.warning(
+            f"Failed to publish batch progress for {batch.id}: {e}"
+        )

@@ -26,6 +26,8 @@ __all__ = [
     "UploadProgressPayload",
     "UploadCompleted",
     "UploadFailed",
+    "BatchProgressUpdate",
+    "BatchProgressPayload",
     "UploadProgressPublisher",
     "get_publisher",
 ]

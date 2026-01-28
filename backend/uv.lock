@@ -299,6 +299,20 @@ wheels = [
 ]
 
 [[package]]
+name = "dramatiq"
+version = "2.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fa/bb/56b5d615c32ec8e136beee243efc54afa099b384c057e896d16268e35e08/dramatiq-2.0.1.tar.gz", hash = "sha256:3caa0587057eee67bd3a0e6d439d78d6cf88b300b5185dad1f4044a0c5f57fc2", size = 104165, upload-time = "2026-01-18T11:31:09.807Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ca/28/4bfc19a3b12177febcb3d28767933c823c056727872a8792a87d6f68df67/dramatiq-2.0.1-py3-none-any.whl", hash = "sha256:0cdfe5fdd1028adf65c6f3b2f0c5e6909053d6e41cf6556ff4def991d2419c89", size = 124391, upload-time = "2026-01-18T11:31:08.803Z" },
+]
+
+[package.optional-dependencies]
+redis = [
+    { name = "redis" },
+]
+
+[[package]]
 name = "ecdsa"
 version = "0.19.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1274,7 +1288,7 @@ wheels = [
 ]
 
 [[package]]
-name = "vuemantics"
+name = "vuemantic"
 version = "1.0.1"
 source = { virtual = "." }
 dependencies = [
@@ -1282,6 +1296,7 @@ dependencies = [
     { name = "alembic" },
     { name = "asyncpg" },
     { name = "bcrypt" },
+    { name = "dramatiq", extra = ["redis"] },
     { name = "fastapi" },
     { name = "gunicorn" },
     { name = "httpx" },
@@ -1319,6 +1334,7 @@ requires-dist = [
     { name = "alembic", specifier = "==1.16.4" },
     { name = "asyncpg", specifier = "==0.30.0" },
     { name = "bcrypt", specifier = "==5.0.0" },
+    { name = "dramatiq", extras = ["redis"], specifier = "==2.0.1" },
     { name = "fastapi", specifier = "==0.116.1" },
     { name = "gunicorn", specifier = "==23.0.0" },
     { name = "httpx", specifier = "==0.28.1" },

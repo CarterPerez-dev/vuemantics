@@ -122,6 +122,15 @@ MAX_QUERY_LENGTH: Final[int] = 500
 MAX_BULK_UPLOAD_DELETE: Final[int] = 100
 MAX_BULK_UPLOAD_UPDATE: Final[int] = 100
 
+# Bulk upload limits
+MAX_BULK_FILES: Final[int] = 1000
+MAX_BULK_SIZE: Final[int] = 10 * 1024 * 1024 * 1024  # 10GB
+
+# Batch pagination defaults
+BATCH_LIST_DEFAULT_LIMIT: Final[int] = 20
+BATCH_LIST_DEFAULT_OFFSET: Final[int] = 0
+BATCH_LIST_MAX_LIMIT: Final[int] = 100
+
 BCRYPT_ROUNDS: Final[int] = 14  # salt rounds
 
 ACCESS_TOKEN_EXPIRE_MINUTES: Final[int] = 30
@@ -215,6 +224,18 @@ class Settings(BaseSettings):
     rate_limit_common: str = Field(
         default = "100/minute",
         description = "Rate limit for common/public endpoints"
+    )
+    rate_limit_bulk_upload: str = Field(
+        default = "5/hour",
+        description = "Rate limit for bulk upload endpoint"
+    )
+    rate_limit_batch_status: str = Field(
+        default = "60/minute",
+        description = "Rate limit for batch status endpoint"
+    )
+    rate_limit_batch_list: str = Field(
+        default = "30/minute",
+        description = "Rate limit for batch list endpoint"
     )
 
     secret_key: str = Field(

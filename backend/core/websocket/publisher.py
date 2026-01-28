@@ -20,7 +20,7 @@ class UploadProgressPublisher:
     """
     Publishes upload progress events via Redis pub/sub
 
-    Handles cross-instance message delivery and local distribution
+    Handles cross instance message delivery and local distribution
     Listens to Redis channels and forwards to connected WebSocket clients
     """
     def __init__(self) -> None:
@@ -109,25 +109,20 @@ class UploadProgressPublisher:
                     if message["type"] != "pmessage":
                         continue
 
-                    # Extract upload_id from channel
                     # Note: decode_responses=True means these are already strings
                     channel = message["channel"]
                     if isinstance(channel, bytes):
                         channel = channel.decode("utf-8")
                     upload_id = channel.split(":", 1)[1]
 
-                    # Parse message payload
                     payload = message["data"]
                     if isinstance(payload, bytes):
                         payload = payload.decode("utf-8")
 
-                    # Get local connection manager
                     manager = get_manager()
 
-                    # Get users subscribed to this upload (on this instance)
                     user_ids = manager.get_upload_subscriber_ids(upload_id)
 
-                    # Forward to each subscribed user
                     for user_id in user_ids:
                         connections = list(
                             manager.user_connections.get(user_id,
@@ -144,7 +139,7 @@ class UploadProgressPublisher:
                                 )
                                 dead_connections.add(ws)
 
-                        # Clean up dead connections
+                        # Garbage c
                         for ws in dead_connections:
                             await manager.disconnect(user_id, ws)
 

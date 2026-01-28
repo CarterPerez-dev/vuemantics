@@ -58,7 +58,7 @@ class UploadProgressPayload(BaseModel):
 
 class UploadProgressUpdate(BaseModel):
     """
-    Real-time progress update message
+    Real time progress update message
     """
     action: Literal["upload_progress"] = "upload_progress"
     payload: UploadProgressPayload

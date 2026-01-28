@@ -169,7 +169,7 @@ class SearchService:
 
         search_results = []
         for rank, (upload, similarity) in enumerate(upload_results, 1):
-        
+
             distance = 1.0 - similarity
 
             result = SearchResult(
@@ -274,7 +274,8 @@ class SearchService:
             query_embedding = upload.embedding_local,
             user_id = user_id,
             limit = limit + 1,
-            similarity_threshold = config.SIMILAR_UPLOADS_SIMILARITY_THRESHOLD,
+            similarity_threshold = config.
+            SIMILAR_UPLOADS_SIMILARITY_THRESHOLD,
         )
 
         # Exclude the source upload from results
@@ -371,4 +372,3 @@ class SearchService:
 
 
 search_service = SearchService()
-
