@@ -14,6 +14,7 @@ from core.redis import close_redis, init_redis, redis_pool
 from core.websocket.manager import get_manager, init_manager
 from core.websocket.publisher import get_publisher, init_publisher
 from database import close_db, db, init_db
+from models.UploadBatch import UploadBatch
 
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,10 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     try:
         await init_db()
         logger.info("Database connection pool initialized")
+
+        # Foreign key dependency
+        await UploadBatch.ensure_table_exists()
+        logger.info("UploadBatch table initialized")
 
         version = await db.fetchval(
             "SELECT extversion FROM pg_extension WHERE extname = 'vector'"
@@ -76,3 +81,4 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
     await close_db()
     logger.info("Database connection pool closed")
+

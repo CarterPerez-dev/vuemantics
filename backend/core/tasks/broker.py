@@ -32,7 +32,7 @@ broker = RedisBroker(
 
 broker.add_middleware(
     Retries(max_retries = 1,
-            retry_when = lambda r, e: True)
+            retry_when = lambda _r, _e: True)
 )
 broker.add_middleware(AgeLimit(max_age = TASK_AGE_LIMIT))
 broker.add_middleware(TimeLimit(time_limit = TASK_TIME_LIMIT))

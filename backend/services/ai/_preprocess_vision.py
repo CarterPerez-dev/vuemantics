@@ -43,7 +43,7 @@ def preprocess_image_for_vision_model(image_data: bytes) -> bytes:
         Preprocessed image bytes (same or different format)
     """
     try:
-        img = Image.open(io.BytesIO(image_data))
+        img: Image.Image = Image.open(io.BytesIO(image_data))
 
         # Handle animated images - extract first frame
         if hasattr(img, 'is_animated') and img.is_animated:

@@ -55,6 +55,37 @@ export const uploadFailedSchema = z.object({
   timestamp: z.string(),
 })
 
+export const batchProgressPayloadSchema = z.object({
+  batch_id: z.string().uuid(),
+  status: z.string(),
+  total: z.number().int().nonnegative(),
+  processed: z.number().int().nonnegative(),
+  successful: z.number().int().nonnegative(),
+  failed: z.number().int().nonnegative(),
+  progress_percentage: z.number().min(0).max(100),
+})
+
+export const batchProgressUpdateSchema = z.object({
+  action: z.literal('batch_progress'),
+  payload: batchProgressPayloadSchema,
+  timestamp: z.string(),
+})
+
+export const fileProgressPayloadSchema = z.object({
+  batch_id: z.string().uuid(),
+  upload_id: z.string().uuid(),
+  file_name: z.string(),
+  file_size: z.number().int().nonnegative(),
+  progress_percentage: z.number().int().min(0).max(100),
+  status: z.enum(['processing', 'completed', 'failed']),
+})
+
+export const fileProgressUpdateSchema = z.object({
+  action: z.literal('file_progress'),
+  payload: fileProgressPayloadSchema,
+  timestamp: z.string(),
+})
+
 export const authSuccessSchema = z.object({
   action: z.literal('auth_success'),
   user_id: z.string(),
@@ -73,6 +104,8 @@ export const serverMessageSchema = z.discriminatedUnion('action', [
   uploadProgressUpdateSchema,
   uploadCompletedSchema,
   uploadFailedSchema,
+  batchProgressUpdateSchema,
+  fileProgressUpdateSchema,
   authSuccessSchema,
   authErrorSchema,
   heartbeatSchema,
@@ -109,6 +142,10 @@ export type UploadProgressPayload = z.infer<typeof uploadProgressPayloadSchema>
 export type UploadProgressUpdate = z.infer<typeof uploadProgressUpdateSchema>
 export type UploadCompleted = z.infer<typeof uploadCompletedSchema>
 export type UploadFailed = z.infer<typeof uploadFailedSchema>
+export type BatchProgressPayload = z.infer<typeof batchProgressPayloadSchema>
+export type BatchProgressUpdate = z.infer<typeof batchProgressUpdateSchema>
+export type FileProgressPayload = z.infer<typeof fileProgressPayloadSchema>
+export type FileProgressUpdate = z.infer<typeof fileProgressUpdateSchema>
 export type AuthSuccess = z.infer<typeof authSuccessSchema>
 export type AuthError = z.infer<typeof authErrorSchema>
 export type Heartbeat = z.infer<typeof heartbeatSchema>

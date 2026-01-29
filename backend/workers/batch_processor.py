@@ -12,15 +12,16 @@ batch_processor.py
 
 import asyncio
 import logging
+import threading
 from uuid import UUID
 
 import dramatiq
 
+import database
 from core.tasks import broker
+from core.redis import redis_pool
 from core.websocket import (
-    get_publisher,
-    BatchProgressUpdate,
-    BatchProgressPayload,
+    init_publisher,
 )
 from models.Upload import (
     Upload,
@@ -32,8 +33,58 @@ from models.UploadBatch import (
 )
 from services.ai.service import LocalAIService
 
+from .batch_helpers import (
+    publish_batch_progress,
+    publish_file_progress,
+    process_upload_with_retry,
+)
+
 
 logger = logging.getLogger(__name__)
+
+# Thread-local storage for event loop and initialization state
+_thread_local = threading.local()
+
+
+def get_or_create_event_loop() -> asyncio.AbstractEventLoop:
+    """
+    Get or create event loop for current thread
+
+    Returns:
+        Event loop instance
+    """
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    return loop
+
+
+async def ensure_worker_initialized() -> None:
+    """
+    Ensure worker thread is initialized (database, Redis, publisher)
+
+    Idempotent - safe to call multiple times, only initializes once per thread
+    """
+    if getattr(_thread_local, 'initialized', False):
+        return
+
+    # Initialize database connection
+    await database.db.connect()
+
+    # Initialize Redis connection pool
+    await redis_pool.connect()
+
+    # Initialize WebSocket publisher (for publishing to Redis only - no listener needed)
+    init_publisher()
+
+    _thread_local.initialized = True
+    logger.info("Worker thread initialized")
 
 
 @dramatiq.actor(
@@ -60,8 +111,11 @@ def process_batch(batch_id: str) -> None:
     # String UUID back to UUID
     batch_uuid = UUID(batch_id)
 
-    # Async
-    asyncio.run(_process_batch_async(batch_uuid))
+    # Get or create event loop for this thread
+    loop = get_or_create_event_loop()
+
+    # Run async processing
+    loop.run_until_complete(_process_batch_async(batch_uuid))
 
 
 async def _process_batch_async(batch_id: UUID) -> None:
@@ -71,6 +125,9 @@ async def _process_batch_async(batch_id: UUID) -> None:
     Args:
         batch_id: UUID of the batch to process
     """
+    # Initialize worker thread (idempotent - only runs once per thread)
+    await ensure_worker_initialized()
+
     logger.info(f"Starting batch processing for batch {batch_id}")
 
     batch = await UploadBatch.find_by_id(batch_id)
@@ -88,7 +145,7 @@ async def _process_batch_async(batch_id: UUID) -> None:
         f"{batch.total_uploads} uploads to process"
     )
 
-    await _publish_batch_progress(batch)
+    await publish_batch_progress(batch)
 
     query = """
         SELECT * FROM uploads
@@ -113,7 +170,7 @@ async def _process_batch_async(batch_id: UUID) -> None:
                 f"({batch.processed_uploads + 1}/{batch.total_uploads})"
             )
             await batch.increment_progress(successful = True)
-            await _publish_batch_progress(batch)
+            await publish_batch_progress(batch)
             continue
 
         logger.info(
@@ -121,10 +178,17 @@ async def _process_batch_async(batch_id: UUID) -> None:
             f"({batch.processed_uploads + 1}/{batch.total_uploads})"
         )
 
-        success = await _process_upload_with_retry(ai_service, upload)
+        # Publish file progress: starting
+        await publish_file_progress(batch, upload, status="processing", progress=0)
+
+        success = await process_upload_with_retry(ai_service, upload, batch)
+
+        # Publish file progress: completed or failed
+        final_status = "completed" if success else "failed"
+        await publish_file_progress(batch, upload, status=final_status, progress=100)
 
         await batch.increment_progress(successful = success)
-        await _publish_batch_progress(batch)
+        await publish_batch_progress(batch)
 
         logger.info(
             f"Upload {upload.id} {'succeeded' if success else 'failed'} "
@@ -145,109 +209,7 @@ async def _process_batch_async(batch_id: UUID) -> None:
             f"{batch.failed_uploads} failed out of {batch.total_uploads}"
         )
 
-    await _publish_batch_progress(batch)
+    await publish_batch_progress(batch)
 
 
-async def _process_upload_with_retry(
-    ai_service: LocalAIService,
-    upload: Upload,
-) -> bool:
-    """
-    Process a single upload with retry logic
 
-    Args:
-        ai_service: AI service instance
-        upload: Upload to process
-
-    Returns:
-        True if successful, False if failed after retry
-
-    Design:
-    - Try once, retry once on failure (max 2 attempts)
-    - Failures don't stop batch processing
-    - Upload marked as failed after 2 attempts
-    """
-    max_attempts = 2
-
-    for attempt in range(1, max_attempts + 1):
-        try:
-            logger.info(
-                f"Processing upload {upload.id} (attempt {attempt}/{max_attempts})"
-            )
-
-            await ai_service.analyze_media(upload.id)
-
-            await upload.refresh()
-
-            if upload.processing_status == ProcessingStatus.COMPLETED:
-                logger.info(f"Upload {upload.id} processed successfully")
-                return True
-
-            logger.warning(
-                f"Upload {upload.id} processing incomplete "
-                f"(status={upload.processing_status})"
-            )
-
-            if attempt < max_attempts:
-                logger.info(
-                    f"Retrying upload {upload.id} (attempt {attempt + 1}/{max_attempts})"
-                )
-                continue
-
-        except Exception as e:
-            logger.error(
-                f"Error processing upload {upload.id} (attempt {attempt}/{max_attempts}): {e}",
-                exc_info = True,
-            )
-
-            if attempt < max_attempts:
-                logger.info(
-                    f"Retrying upload {upload.id} after error (attempt {attempt + 1}/{max_attempts})"
-                )
-                continue
-
-    logger.error(
-        f"Upload {upload.id} failed after {max_attempts} attempts, marking as failed"
-    )
-
-    try:
-        await upload.update_status(
-            ProcessingStatus.FAILED,
-            error_message = "Failed after retry",
-        )
-    except Exception as update_err:
-        logger.error(
-            f"Failed to update status for {upload.id}: {update_err}"
-        )
-
-    return False
-
-
-async def _publish_batch_progress(batch: UploadBatch) -> None:
-    """
-    Publish batch progress update via WebSocket
-
-    Args:
-        batch: UploadBatch instance
-    """
-    try:
-        publisher = get_publisher()
-        await publisher.publish_to_user(
-            batch.user_id,
-            BatchProgressUpdate(
-                payload = BatchProgressPayload(
-                    batch_id = batch.id,
-                    status = batch.status,
-                    total = batch.total_uploads,
-                    processed = batch.processed_uploads,
-                    successful = batch.successful_uploads,
-                    failed = batch.failed_uploads,
-                    progress_percentage = batch.get_progress_percentage(),
-                )
-            ),
-        )
-    except Exception as e:
-        # Don't fail batch processing if WebSocket broadcast fails
-        logger.warning(
-            f"Failed to publish batch progress for {batch.id}: {e}"
-        )

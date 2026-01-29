@@ -108,6 +108,30 @@ async def get_batch_status(
     )
 
 
+@router.post(
+    "/batches/{batch_id}/cancel",
+    status_code = status.HTTP_204_NO_CONTENT,
+    summary = "Cancel batch",
+    description = "Cancel a running batch upload",
+)
+@limiter.limit(config.settings.rate_limit_batch_status)
+async def cancel_batch(
+    request: Request,
+    batch_id: UUID,
+    current_user: Annotated[User,
+                            Depends(get_current_user)],
+) -> None:
+    """
+    Cancel a batch that's currently processing
+    """
+    await bulk_upload_service.cancel_batch(
+        batch_id = batch_id,
+        user_id = current_user.id,
+    )
+
+    logger.info(f"User {current_user.id} cancelled batch {batch_id}")
+
+
 @router.get(
     "/batches",
     response_model = list[BatchStatusResult],

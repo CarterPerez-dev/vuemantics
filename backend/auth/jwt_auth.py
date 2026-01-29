@@ -3,13 +3,13 @@
 jwt_auth.py
 """
 
-from typing import Any, cast
+from typing import Any
 from uuid import UUID
 from datetime import datetime, timedelta, UTC
 
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt  # type: ignore[import-untyped]
+from jose import JWTError, jwt
 
 import config
 from core import (
@@ -46,13 +46,10 @@ def create_access_token(user_id: UUID, token_version: int = 0) -> str:
         "token_version": token_version,
     }
 
-    return cast(
-        str,
-        jwt.encode(
-            payload,
-            config.settings.secret_key,
-            algorithm = config.settings.algorithm
-        )
+    return jwt.encode(
+        payload,
+        config.settings.secret_key,
+        algorithm = config.settings.algorithm
     )
 
 
@@ -70,14 +67,12 @@ def create_refresh_token(user_id: UUID) -> str:
         "type": TokenType.REFRESH,
     }
 
-    return cast(
-        str,
-        jwt.encode(
-            payload,
-            config.settings.secret_key,
-            algorithm = config.settings.algorithm
-        )
+    encoded: str = jwt.encode(
+        payload,
+        config.settings.secret_key,
+        algorithm = config.settings.algorithm
     )
+    return encoded
 
 
 def create_token_pair(user_id: UUID,
@@ -101,14 +96,10 @@ def decode_token(token: str,
     Decode and validate a JWT token
     """
     try:
-        payload = cast(
-            dict[str,
-                 Any],
-            jwt.decode(
-                token,
-                config.settings.secret_key,
-                algorithms = [config.settings.algorithm]
-            )
+        payload: dict[str, Any] = jwt.decode(
+            token,
+            config.settings.secret_key,
+            algorithms = [config.settings.algorithm]
         )
 
         if expected_type and payload.get("type") != expected_type:

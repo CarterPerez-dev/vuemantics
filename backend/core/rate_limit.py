@@ -3,7 +3,7 @@
 Rate limiting configuration.
 """
 
-from jose import jwt  # type: ignore[import-untyped]
+from jose import jwt
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from starlette.requests import Request

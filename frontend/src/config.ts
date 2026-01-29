@@ -19,8 +19,12 @@ export const API_ENDPOINTS = {
     HIDE: (id: string) => `/${API_VERSION}/uploads/${id}/hide`,
     REGENERATE: (id: string) =>
       `/${API_VERSION}/uploads/${id}/regenerate-description`,
+    DOWNLOAD: (id: string) => `/${API_VERSION}/uploads/${id}/download`,
     BULK_DELETE: `/${API_VERSION}/uploads/bulk/delete`,
     BULK_HIDE: `/${API_VERSION}/uploads/bulk/hide`,
+    BULK_UPLOAD: `/${API_VERSION}/uploads/bulk`,
+    BATCH: (batchId: string) => `/${API_VERSION}/uploads/batches/${batchId}`,
+    BATCHES: `/${API_VERSION}/uploads/batches`,
   },
   SEARCH: {
     BASE: `/${API_VERSION}/search`,
@@ -49,6 +53,9 @@ export const QUERY_KEYS = {
     BY_ID: (id: string) => [...QUERY_KEYS.UPLOADS.ALL, 'detail', id] as const,
     METADATA: (id: string) =>
       [...QUERY_KEYS.UPLOADS.ALL, 'metadata', id] as const,
+    BATCHES: () => [...QUERY_KEYS.UPLOADS.ALL, 'batches'] as const,
+    BATCH: (batchId: string) =>
+      [...QUERY_KEYS.UPLOADS.ALL, 'batch', batchId] as const,
   },
   SEARCH: {
     ALL: ['search'] as const,

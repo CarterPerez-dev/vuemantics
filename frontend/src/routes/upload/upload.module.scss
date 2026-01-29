@@ -19,6 +19,78 @@
   gap: 2rem;
 }
 
+.modeToggle {
+  display: flex;
+  gap: $space-2;
+  padding: $space-1;
+  background: $bg-surface-100;
+  border: 1px solid $border-default;
+  border-radius: $radius-md;
+  width: fit-content;
+}
+
+.modeBtn {
+  padding: $space-2 $space-6;
+  background: transparent;
+  border: none;
+  border-radius: $radius-sm;
+  color: $text-lighter;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $duration-fast $ease-out;
+
+  &:hover {
+    color: $text-default;
+    background: $bg-surface-75;
+  }
+
+  &.modeBtnActive {
+    background: $accent-blue;
+    color: $text-default;
+
+    &:hover {
+      filter: brightness(1.2);
+    }
+  }
+}
+
+.bulkInputs {
+  display: flex;
+  gap: $space-4;
+  margin-top: $space-4;
+  align-items: center;
+}
+
+.folderBtn {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-3 $space-5;
+  background: $bg-surface-100;
+  border: 1px solid $border-default;
+  border-radius: $radius-sm;
+  color: $text-default;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $duration-fast $ease-out;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    filter: brightness(1.2);
+    border-color: $border-stronger;
+  }
+}
+
+.fileInputHidden {
+  display: none;
+}
+
 .uploadSection {
   display: flex;
   flex-direction: column;

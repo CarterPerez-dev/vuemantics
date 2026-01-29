@@ -1,0 +1,48 @@
+// ===================
+// © AngelaMos | 2026
+// global-batch-indicator.module.scss
+// ===================
+
+@use '@/styles' as *;
+
+.indicator {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-4;
+  border: none;
+  border-radius: $radius-md;
+  background: rgb(0, 90, 156, 10%);
+  color: $accent-blue;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  @include transition-fast;
+
+  @include hover {
+    background: rgb(0, 90, 156, 20%);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+.text {
+  white-space: nowrap;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}

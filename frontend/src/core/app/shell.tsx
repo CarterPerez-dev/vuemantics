@@ -12,6 +12,7 @@ import { LuChevronLeft, LuChevronRight, LuMenu } from 'react-icons/lu'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useLogout } from '@/api/hooks'
 import { ROUTES } from '@/config'
+import { GlobalBatchIndicator } from '@/core/components'
 import { useUIStore, useUser } from '@/core/lib/stores'
 import styles from './shell.module.scss'
 
@@ -121,6 +122,7 @@ export function Shell(): React.ReactElement {
           </div>
 
           <div className={styles.headerRight}>
+            <GlobalBatchIndicator />
             <div className={styles.avatar}>{avatarLetter}</div>
           </div>
         </header>

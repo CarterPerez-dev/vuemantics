@@ -4,6 +4,8 @@
 // ===================
 
 import {
+  type BatchProgressUpdate,
+  type FileProgressUpdate,
   type ServerMessage,
   serverMessageSchema,
   type UploadCompleted,
@@ -16,6 +18,8 @@ import {
 type ProgressHandler = (data: UploadProgressUpdate) => void
 type CompletedHandler = (data: UploadCompleted) => void
 type FailedHandler = (data: UploadFailed) => void
+type BatchProgressHandler = (data: BatchProgressUpdate) => void
+type FileProgressHandler = (data: FileProgressUpdate) => void
 type ErrorHandler = (error: WebSocketError) => void
 
 interface WebSocketConfig {
@@ -24,6 +28,8 @@ interface WebSocketConfig {
   onProgress?: ProgressHandler
   onCompleted?: CompletedHandler
   onFailed?: FailedHandler
+  onBatchProgress?: BatchProgressHandler
+  onFileProgress?: FileProgressHandler
   onError?: ErrorHandler
   onReconnect?: () => void
 }
@@ -97,6 +103,14 @@ export class VuemanticWebSocket {
 
           case 'upload_failed':
             this.config.onFailed?.(data)
+            break
+
+          case 'batch_progress':
+            this.config.onBatchProgress?.(data)
+            break
+
+          case 'file_progress':
+            this.config.onFileProgress?.(data)
             break
 
           case 'ping':

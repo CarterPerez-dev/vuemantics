@@ -8,6 +8,8 @@ import { WEBSOCKET_ENDPOINTS } from '@/config'
 import { useAccessToken } from '@/core/lib/stores'
 import { VuemanticWebSocket } from './socket.client'
 import type {
+  BatchProgressUpdate,
+  FileProgressUpdate,
   UploadCompleted,
   UploadFailed,
   UploadProgressUpdate,
@@ -19,6 +21,8 @@ interface UseSocketOptions {
   onProgress?: (data: UploadProgressUpdate) => void
   onCompleted?: (data: UploadCompleted) => void
   onFailed?: (data: UploadFailed) => void
+  onBatchProgress?: (data: BatchProgressUpdate) => void
+  onFileProgress?: (data: FileProgressUpdate) => void
   onError?: (error: WebSocketError) => void
 }
 
@@ -29,7 +33,15 @@ interface UseSocketReturn {
 }
 
 export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
-  const { enabled = true, onProgress, onCompleted, onFailed, onError } = options
+  const {
+    enabled = true,
+    onProgress,
+    onCompleted,
+    onFailed,
+    onBatchProgress,
+    onFileProgress,
+    onError,
+  } = options
 
   const [isConnected, setIsConnected] = useState(false)
   const wsRef = useRef<VuemanticWebSocket | null>(null)
@@ -39,6 +51,8 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
   const onProgressRef = useRef(onProgress)
   const onCompletedRef = useRef(onCompleted)
   const onFailedRef = useRef(onFailed)
+  const onBatchProgressRef = useRef(onBatchProgress)
+  const onFileProgressRef = useRef(onFileProgress)
   const onErrorRef = useRef(onError)
 
   useEffect(() => {
@@ -46,6 +60,8 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
     onProgressRef.current = onProgress
     onCompletedRef.current = onCompleted
     onFailedRef.current = onFailed
+    onBatchProgressRef.current = onBatchProgress
+    onFileProgressRef.current = onFileProgress
     onErrorRef.current = onError
   })
 
@@ -80,6 +96,8 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
         onProgress: (data) => onProgressRef.current?.(data),
         onCompleted: (data) => onCompletedRef.current?.(data),
         onFailed: (data) => onFailedRef.current?.(data),
+        onBatchProgress: (data) => onBatchProgressRef.current?.(data),
+        onFileProgress: (data) => onFileProgressRef.current?.(data),
         onError: (error) => {
           onErrorRef.current?.(error)
         },

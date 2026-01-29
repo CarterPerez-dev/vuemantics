@@ -861,7 +861,7 @@ class Upload(BaseModel):
         # Get base dict
         result = super().to_dict(exclude)
 
-        # Don't include full embedding in API responses (too large)
+        # Don't include full embedding in API responses (too large) TODO
         if "embedding_local" not in exclude and self.embedding_local:
             result["has_embedding"] = True
             result.pop("embedding_local", None)

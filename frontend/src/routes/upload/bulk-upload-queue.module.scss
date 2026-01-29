@@ -1,0 +1,282 @@
+// ===================
+// © AngelaMos | 2026
+// bulk-upload-queue.module.scss
+// ===================
+
+@use '@/styles' as *;
+
+.queue {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  background: $bg-surface-100;
+  border: 1px solid $border-default;
+  border-radius: $radius-md;
+  padding: $space-4;
+}
+
+.queueHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+  padding-bottom: $space-3;
+  border-bottom: 1px solid $border-default;
+
+  @media (max-width: $breakpoint-sm) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.queueTitle {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+.queueTitleText {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $text-default;
+}
+
+.queueSubtitle {
+  font-size: $font-size-sm;
+  color: $text-lighter;
+}
+
+.sizeWarning {
+  color: $error-default;
+  font-weight: $font-weight-medium;
+}
+
+.queueActions {
+  display: flex;
+  gap: $space-2;
+}
+
+.clearAllBtn {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-4;
+  background: transparent;
+  border: 1px solid $border-strong;
+  border-radius: $radius-sm;
+  color: $text-default;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $duration-fast $ease-out;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover:not(:disabled) {
+    background: $bg-selection;
+    border-color: $border-stronger;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.uploadAllBtn {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-4;
+  background: $accent-blue;
+  border: 1px solid transparent;
+  border-radius: $radius-sm;
+  color: $text-default;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: filter $duration-fast $ease-out;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.2);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.fileList {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  max-height: 400px;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $bg-surface-75;
+    border-radius: $radius-sm;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $border-strong;
+    border-radius: $radius-sm;
+
+    &:hover {
+      background: $border-stronger;
+    }
+  }
+}
+
+.fileItem {
+  display: grid;
+  grid-template-columns: 60px 1fr auto auto;
+  gap: $space-3;
+  padding: $space-3;
+  background: $bg-surface-75;
+  border: 1px solid $border-default;
+  border-radius: $radius-sm;
+  align-items: center;
+  transition: all $duration-fast $ease-out;
+
+  &:hover {
+    filter: brightness(1.1);
+  }
+
+  &.fileItemInvalid {
+    border-color: $error-default;
+    background: rgba($error-default, 0.05);
+  }
+}
+
+.filePreview {
+  width: 60px;
+  height: 60px;
+  border-radius: $radius-sm;
+  overflow: hidden;
+  background: $bg-surface-100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.previewImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.previewPlaceholder {
+  font-size: $font-size-2xl;
+}
+
+.fileInfo {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  min-width: 0; // Allow text truncation
+}
+
+.fileName {
+  font-size: $font-size-sm;
+  color: $text-default;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fileSize {
+  font-size: $font-size-xs;
+  color: $text-lighter;
+}
+
+.fileStatus {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.statusIconValid {
+  width: 18px;
+  height: 18px;
+  color: rgb(34, 197, 94); // green
+}
+
+.statusIconError {
+  width: 18px;
+  height: 18px;
+  color: $error-default;
+}
+
+.statusLabel {
+  font-size: $font-size-xs;
+  color: $text-lighter;
+  white-space: nowrap;
+
+  &.statusLabelError {
+    color: $error-light;
+  }
+}
+
+.removeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid $border-default;
+  border-radius: $radius-sm;
+  color: $text-default;
+  cursor: pointer;
+  transition: all $duration-fast $ease-out;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover:not(:disabled) {
+    background: $error-default;
+    border-color: $error-default;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.queueFooter {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding-top: $space-3;
+  border-top: 1px solid $border-default;
+}
+
+.warningIcon {
+  width: 18px;
+  height: 18px;
+  color: $error-default;
+  flex-shrink: 0;
+}
+
+.warningText {
+  font-size: $font-size-sm;
+  color: $error-light;
+}

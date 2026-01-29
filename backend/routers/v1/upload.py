@@ -17,6 +17,7 @@ from fastapi import (
     UploadFile,
     status,
 )
+from fastapi.responses import FileResponse
 
 import config
 from auth import (
@@ -301,6 +302,39 @@ async def delete_upload(
     except Exception as e:
         logger.error(f"Failed to delete upload {upload.id}: {e}")
         raise
+
+
+@router.get(
+    "/{upload_id}/download",
+    response_class = FileResponse,
+    summary = "Download original file",
+    description = "Download the original uploaded file",
+)
+async def download_upload(
+    upload: Annotated[Upload,
+                      Depends(verify_upload_ownership)],
+    current_user: Annotated[User,
+                            Depends(get_current_user)],
+) -> FileResponse:
+    """
+    Download the original file for an upload
+
+    Returns the original file with proper Content-Disposition header
+    for browser download
+    """
+    file_path = await storage_service.get_upload_path(
+        current_user.id,
+        upload.id
+    )
+
+    if not file_path or not file_path.exists():
+        raise NotFoundError(f"Upload file not found: {upload.id}")
+
+    return FileResponse(
+        path = str(file_path),
+        filename = upload.filename,
+        media_type = "application/octet-stream",
+    )
 
 
 @router.get(

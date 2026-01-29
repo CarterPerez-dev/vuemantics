@@ -4,7 +4,7 @@ bulk_upload_service.py
 """
 
 import logging
-from uuid import UUID
+from uuid import UUID, uuid4
 from dataclasses import dataclass
 
 from fastapi import UploadFile
@@ -146,20 +146,40 @@ class BulkUploadService:
                     )
                     continue
 
-                result = await storage_service.save_upload(
+                upload_id = uuid4()
+
+                file_content = await file.read()
+                file_size = len(file_content)
+
+                await file.seek(0)
+
+                file_type, extension = await storage_service.validate_file(
+                    filename = file.filename,
+                    mime_type = file.content_type or "application/octet-stream",
+                    file_size = file_size,
+                )
+
+                file_path = await storage_service.save_upload(
+                    file_content = file.file,
                     user_id = user_id,
-                    file = file,
+                    upload_id = upload_id,
+                    extension = extension,
                 )
 
                 upload = await Upload.create(
                     user_id = user_id,
                     batch_id = batch.id,
-                    filename = result.filename,
-                    file_path = result.file_path,
-                    file_type = result.file_type,
-                    file_size = result.file_size,
-                    mime_type = result.mime_type,
-                    metadata = result.metadata,
+                    filename = file.filename,
+                    file_path = file_path,
+                    file_type = file_type,
+                    file_size = file_size,
+                    mime_type = file.content_type or "application/octet-stream",
+                    metadata = {
+                        "original_filename": file.filename,
+                        "upload_source": "bulk",
+                        "batch_id": str(batch.id),
+                    },
+                    upload_id = upload_id,
                 )
 
                 upload_ids.append(str(upload.id))
@@ -173,7 +193,7 @@ class BulkUploadService:
                 )
                 failed_files.append(
                     {
-                        "filename": file.filename,
+                        "filename": file.filename or "unknown",
                         "error": str(e),
                     }
                 )
@@ -184,7 +204,7 @@ class BulkUploadService:
                 )
                 failed_files.append(
                     {
-                        "filename": file.filename,
+                        "filename": file.filename or "unknown",
                         "error": "Internal error during file processing",
                     }
                 )

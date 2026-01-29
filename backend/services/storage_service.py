@@ -334,6 +334,30 @@ class StorageService:
 
         return frame_paths
 
+    async def get_upload_path(self, user_id: UUID, upload_id: UUID) -> Path | None:
+        """
+        Get the path to the original upload file
+
+        Args:
+            user_id: User's ID
+            upload_id: Upload's ID
+
+        Returns:
+            Path to the original file, or None if not found
+        """
+        upload_dir = self._get_upload_dir(user_id, upload_id)
+
+        if not upload_dir.exists():
+            return None
+
+        # Find the original file (should be named original.{extension})
+        original_files = list(upload_dir.glob("original.*"))
+
+        if not original_files:
+            return None
+
+        return original_files[0]
+
     async def delete_upload(self, user_id: UUID, upload_id: UUID) -> bool:
         """
         Delete all files for an upload

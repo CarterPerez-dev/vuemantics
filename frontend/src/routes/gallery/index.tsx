@@ -3,9 +3,10 @@
 // index.tsx
 // ===================
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   LuCheck,
+  LuDownload,
   LuEye,
   LuEyeOff,
   LuFilter,
@@ -29,7 +30,7 @@ import {
   useUploads,
 } from '@/api/hooks'
 import type { SearchResult } from '@/api/types'
-import { useGalleryUIStore } from '@/core/lib/stores'
+import { useGalleryUIStore, useGlobalBatchProgress } from '@/core/lib/stores'
 import { useSocket, useUploadProgress } from '@/core/socket'
 import styles from './gallery.module.scss'
 import { useGalleryHandlers } from './useGalleryHandlers'
@@ -103,6 +104,26 @@ export function Component(): React.ReactElement {
     }
   }, [similarUploadsData])
 
+  // Auto-refresh gallery when batch upload completes
+  const { batchProgress } = useGlobalBatchProgress()
+  const seenCompletedBatches = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    const batches = Object.entries(batchProgress)
+    let shouldRefetch = false
+
+    batches.forEach(([batchId, batch]) => {
+      if (batch.status === 'completed' && !seenCompletedBatches.current.has(batchId)) {
+        seenCompletedBatches.current.add(batchId)
+        shouldRefetch = true
+      }
+    })
+
+    if (shouldRefetch) {
+      refetchUploads()
+    }
+  }, [batchProgress, refetchUploads])
+
   const displayItems = similarResults
     ? similarResults.map((r) => r.upload)
     : searchResults
@@ -118,12 +139,14 @@ export function Component(): React.ReactElement {
     handleSearch,
     handleClearSearch,
     handleFindSimilar,
+    handleDownload,
     toggleSelectMode,
     toggleSelectItem,
     selectAll,
     deselectAll,
     handleBulkDelete,
     handleBulkHide,
+    handleBulkDownload,
   } = useGalleryHandlers({
     deleteMutation,
     toggleHiddenMutation,
@@ -260,6 +283,14 @@ export function Component(): React.ReactElement {
               <span className={styles.selectedCount}>
                 {selectedIds.size} selected
               </span>
+              <button
+                type="button"
+                className={styles.bulkBtn}
+                onClick={handleBulkDownload}
+              >
+                <LuDownload />
+                Download
+              </button>
               <button
                 type="button"
                 className={styles.bulkBtn}
@@ -453,6 +484,17 @@ export function Component(): React.ReactElement {
                       <LuEyeOff />
                     </div>
                   )}
+                  {upload.description_audit_score !== null &&
+                    upload.description_audit_score < 90 && (
+                      <div
+                        className={`${styles.qualityBadge} ${
+                          upload.description_audit_score < 70
+                            ? styles.qualityLow
+                            : styles.qualityMedium
+                        }`}
+                        title={`Description Quality: ${upload.description_audit_score}/100`}
+                      />
+                    )}
                   {!selectMode && upload.has_embedding && (
                     <button
                       type="button"
@@ -655,6 +697,14 @@ export function Component(): React.ReactElement {
                       : 'Regenerate'}
                   </button>
                 )}
+                <button
+                  type="button"
+                  className={styles.actionBtn}
+                  onClick={() => handleDownload(currentUpload)}
+                >
+                  <LuDownload />
+                  Download
+                </button>
                 <button
                   type="button"
                   className={styles.actionBtn}

@@ -3,6 +3,8 @@
 UploadBatch.py
 """
 
+from __future__ import annotations
+
 from typing import Any
 from datetime import datetime
 from uuid import UUID, uuid4
@@ -197,21 +199,14 @@ class UploadBatch(BaseModel):
         if self.id is None:
             raise ValueError("Cannot update status for unsaved batch")
 
-        started_at_update = "started_at" if status == BatchStatus.PROCESSING else "started_at"
-        completed_at_update = "completed_at" if status in (
-            BatchStatus.COMPLETED,
-            BatchStatus.FAILED,
-            BatchStatus.CANCELLED,
-        ) else "completed_at"
-
-        query = f"""
+        query = """
             UPDATE upload_batches
             SET status = $1,
                 error_message = $2,
-                {started_at_update} = COALESCE({started_at_update}, NOW()),
-                {completed_at_update} = CASE WHEN $1 IN ('completed', 'failed', 'cancelled') THEN NOW() ELSE {completed_at_update} END,
+                started_at = COALESCE(started_at, NOW()),
+                completed_at = CASE WHEN $3 IN ('completed', 'failed', 'cancelled') THEN NOW() ELSE completed_at END,
                 updated_at = NOW()
-            WHERE id = $3
+            WHERE id = $4
             RETURNING updated_at, started_at, completed_at
         """
 
@@ -219,6 +214,7 @@ class UploadBatch(BaseModel):
             query,
             status,
             error_message,
+            status,
             self.id
         )
         if row:
@@ -268,6 +264,78 @@ class UploadBatch(BaseModel):
             else:
                 self.failed_uploads = row["failed_uploads"]
             self.updated_at = row["updated_at"]
+
+    async def _insert(self) -> None:
+        """
+        Insert new batch record.
+        """
+        query = """
+            INSERT INTO upload_batches (
+                id, user_id, status, total_uploads, processed_uploads,
+                successful_uploads, failed_uploads, error_message,
+                started_at, completed_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            RETURNING *
+        """
+
+        record = await database.db.fetchrow(
+            query,
+            self.id,
+            self.user_id,
+            self.status,
+            self.total_uploads,
+            self.processed_uploads,
+            self.successful_uploads,
+            self.failed_uploads,
+            self.error_message,
+            self.started_at,
+            self.completed_at,
+        )
+
+        if record is None:
+            raise RuntimeError("Insert query failed to return a record")
+        for key, value in dict(record).items():
+            setattr(self, key, value)
+
+    async def _update(self) -> None:
+        """
+        Update existing batch record.
+        """
+        query = """
+            UPDATE upload_batches
+            SET user_id = $1,
+                status = $2,
+                total_uploads = $3,
+                processed_uploads = $4,
+                successful_uploads = $5,
+                failed_uploads = $6,
+                error_message = $7,
+                started_at = $8,
+                completed_at = $9,
+                updated_at = NOW()
+            WHERE id = $10
+            RETURNING *
+        """
+
+        record = await database.db.fetchrow(
+            query,
+            self.user_id,
+            self.status,
+            self.total_uploads,
+            self.processed_uploads,
+            self.successful_uploads,
+            self.failed_uploads,
+            self.error_message,
+            self.started_at,
+            self.completed_at,
+            self.id,
+        )
+
+        if record is None:
+            raise RuntimeError(f"Update query failed for batch {self.id}")
+        for key, value in dict(record).items():
+            setattr(self, key, value)
 
     def is_complete(self) -> bool:
         """

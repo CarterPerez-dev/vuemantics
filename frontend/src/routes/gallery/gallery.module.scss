@@ -609,6 +609,39 @@
   }
 }
 
+.qualityBadge {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  width: 20px;
+  height: 20px;
+  border-radius: $radius-full;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0, 0, 0, 70%);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 4px rgb(0, 0, 0, 50%);
+
+  &::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: $radius-full;
+  }
+}
+
+.qualityLow::after {
+  background: #ff4444;
+  box-shadow: 0 0 6px rgb(255, 68, 68, 60%);
+}
+
+.qualityMedium::after {
+  background: #ffaa00;
+  box-shadow: 0 0 6px rgb(255, 170, 0, 60%);
+}
+
 .similarBtn {
   position: absolute;
   bottom: 0.5rem;

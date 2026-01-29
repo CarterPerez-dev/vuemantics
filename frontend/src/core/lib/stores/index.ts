@@ -5,6 +5,8 @@
 
 export * from './auth.form.store'
 export * from './auth.store'
+export * from './bulk-upload.ui.store'
 export * from './gallery.ui.store'
+export * from './global-batch-progress.store'
 export * from './shell.ui.store'
 export * from './upload.ui.store'
