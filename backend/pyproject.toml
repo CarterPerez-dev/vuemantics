@@ -42,6 +42,8 @@ dependencies = [
     "ollama==0.6.1",
     "tenacity==8.5.0",
     "dramatiq[redis]==2.0.1",
+    "google-genai>=1.0.0",
+    "numpy>=2.0.0",
 ]
 
 [project.optional-dependencies]
@@ -54,6 +56,8 @@ dev = [
     "pylint==4.0.4",
     "pylint-pydantic==0.4.1",
     "pylint-per-file-ignores==3.2.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
 ]
 
 [tool.hatch.build.targets.wheel]
