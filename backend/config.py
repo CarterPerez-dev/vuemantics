@@ -275,6 +275,24 @@ class Settings(BaseSettings):
         description = "Max concurrent embedding operations"
     )
 
+    gemini_api_key: str = Field(
+        default = "",
+        description = "Google Gemini API key for Gemini Embedding 2"
+    )
+    gemini_embedding_model: str = Field(
+        default = "gemini-embedding-2-preview",
+        description = "Gemini embedding model name"
+    )
+    gemini_embedding_dimensions: int = Field(
+        default = 1536,
+        gt = 0,
+        description = "Gemini embedding output dimensions"
+    )
+    embedding_provider: str = Field(
+        default = "local",
+        description = "Default embedding provider: 'local' or 'gemini' (overridden by DB)"
+    )
+
     upload_path: Path = Field(
         default = Path("./storage/uploads"),
         description = "Base path for uploaded files"
