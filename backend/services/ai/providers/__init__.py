@@ -5,5 +5,13 @@ AI provider implementations
 
 from services.ai.providers.base import AIProvider, ProcessResult
 from services.ai.providers.local import LocalProvider, get_local_provider
+from services.ai.providers.factory import get_provider, set_provider
 
-__all__ = ["AIProvider", "ProcessResult", "LocalProvider", "get_local_provider"]
+__all__ = [
+    "AIProvider",
+    "ProcessResult",
+    "LocalProvider",
+    "get_local_provider",
+    "get_provider",
+    "set_provider",
+]
