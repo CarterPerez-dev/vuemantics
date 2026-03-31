@@ -11,7 +11,7 @@ import logging
 
 from models.Upload import Upload, ProcessingStatus
 from models.UploadBatch import UploadBatch
-from services.ai import LocalAIService
+from services.ai.providers.base import AIProvider
 from services.storage_service import storage_service
 
 from ._publish_file_progress import publish_file_progress
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 async def process_upload_with_retry(
-    ai_service: LocalAIService,
+    provider: AIProvider,
     upload: Upload,
     batch: UploadBatch,
 ) -> bool:
@@ -29,7 +29,7 @@ async def process_upload_with_retry(
     Process a single upload with retry logic
 
     Args:
-        ai_service: AI service instance
+        provider: AIProvider instance (local or gemini)
         upload: Upload to process
         batch: UploadBatch instance for progress updates
 
@@ -117,7 +117,7 @@ async def process_upload_with_retry(
             # Start progress monitor and AI analysis concurrently
             monitor_task = asyncio.create_task(monitor_ai_progress())
             try:
-                await ai_service.analyze_media(upload.id)
+                await provider.process_upload(upload)
             finally:
                 monitor_task.cancel()
                 with contextlib.suppress(asyncio.CancelledError):

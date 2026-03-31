@@ -31,7 +31,7 @@ from models.UploadBatch import (
     UploadBatch,
     BatchStatus,
 )
-from services.ai.service import LocalAIService
+from services.ai.providers.factory import get_provider
 
 from .batch_helpers import (
     publish_batch_progress,
@@ -161,7 +161,8 @@ async def _process_batch_async(batch_id: UUID) -> None:
             f"but found {len(uploads)}"
         )
 
-    ai_service = LocalAIService()
+    provider = await get_provider()
+    logger.info(f"Batch {batch_id} using provider: {provider.provider_name}")
 
     for upload in uploads:
         if upload.processing_status == ProcessingStatus.COMPLETED:
@@ -181,7 +182,7 @@ async def _process_batch_async(batch_id: UUID) -> None:
         # Publish file progress: starting
         await publish_file_progress(batch, upload, status="processing", progress=0)
 
-        success = await process_upload_with_retry(ai_service, upload, batch)
+        success = await process_upload_with_retry(provider, upload, batch)
 
         # Publish file progress: completed or failed
         final_status = "completed" if success else "failed"
