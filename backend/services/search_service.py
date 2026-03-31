@@ -19,7 +19,7 @@ from schemas import (
     SearchResponse,
     SearchResult,
 )
-from services.ai import local_ai_service
+from services.ai.providers.factory import get_provider
 
 
 logger = logging.getLogger(__name__)
@@ -120,18 +120,8 @@ class SearchService:
         """
         try:
             cleaned_query = " ".join(query.split())
-
-            # (raw query works better)
-            embedding = await local_ai_service.create_embedding_for_query(
-                cleaned_query
-            )
-
-            if len(embedding
-                   ) != config.settings.local_embedding_dimensions:
-                raise QueryEmbeddingError(
-                    f"Invalid embedding dimensions: {len(embedding)}"
-                )
-
+            provider = await get_provider()
+            embedding = await provider.generate_query_embedding(cleaned_query)
             return embedding
 
         except Exception as e:
@@ -159,12 +149,18 @@ class SearchService:
         Returns:
             List of search results with similarity scores
         """
+        provider = await get_provider()
+        embedding_column = (
+            "embedding_gemini"
+            if provider.provider_name == "gemini"
+            else "embedding_local"
+        )
         upload_results = await Upload.search_by_embedding(
             query_embedding = query_embedding,
             user_id = user_id,
             limit = limit,
             similarity_threshold = similarity_threshold,
-            use_local = True,
+            embedding_column = embedding_column,
         )
 
         search_results = []
@@ -267,11 +263,18 @@ class SearchService:
         Returns:
             List of similar uploads ordered by similarity
         """
-        if upload.embedding_local is None:
-            return []
+        provider = await get_provider()
+        if provider.provider_name == "gemini":
+            if upload.embedding_gemini is None:
+                return []
+            query_embedding = upload.embedding_gemini
+        else:
+            if upload.embedding_local is None:
+                return []
+            query_embedding = upload.embedding_local
 
         results = await self._search_uploads(
-            query_embedding = upload.embedding_local,
+            query_embedding = query_embedding,
             user_id = user_id,
             limit = limit + 1,
             similarity_threshold = config.
