@@ -71,8 +71,8 @@ class UploadCompleted(BaseModel):
     """
     action: Literal["upload_completed"] = "upload_completed"
     upload_id: str
-    description: str
-    audit_score: int
+    description: str | None = None
+    audit_score: int | None = None
     timestamp: datetime = Field(default_factory = datetime.utcnow)
 
 
@@ -162,6 +162,29 @@ class Heartbeat(BaseModel):
     action: Literal["ping"] = "ping"
 
 
+class ReembedProgress(BaseModel):
+    """
+    Progress update for the background re-embed job
+    """
+    action: Literal["reembed_progress"] = "reembed_progress"
+    processed: int
+    total: int
+    skipped: int
+    failed: int
+    timestamp: datetime = Field(default_factory = datetime.utcnow)
+
+
+class ReembedComplete(BaseModel):
+    """
+    Re-embed job finished
+    """
+    action: Literal["reembed_complete"] = "reembed_complete"
+    processed: int
+    skipped: int
+    failed: int
+    timestamp: datetime = Field(default_factory = datetime.utcnow)
+
+
 ServerMessage = (
     UploadProgressUpdate
     | UploadCompleted
@@ -171,6 +194,8 @@ ServerMessage = (
     | AuthSuccess
     | AuthError
     | Heartbeat
+    | ReembedProgress
+    | ReembedComplete
 )
 
 

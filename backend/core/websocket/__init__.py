@@ -15,6 +15,8 @@ from core.websocket.messages import (
     BatchProgressPayload,
     FileProgressUpdate,
     FileProgressPayload,
+    ReembedProgress,
+    ReembedComplete,
 )
 from core.websocket.publisher import UploadProgressPublisher, get_publisher, init_publisher
 
@@ -32,6 +34,8 @@ __all__ = [
     "BatchProgressPayload",
     "FileProgressUpdate",
     "FileProgressPayload",
+    "ReembedProgress",
+    "ReembedComplete",
     "UploadProgressPublisher",
     "get_publisher",
     "init_publisher",

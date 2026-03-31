@@ -43,8 +43,25 @@ export const uploadProgressUpdateSchema = z.object({
 export const uploadCompletedSchema = z.object({
   action: z.literal('upload_completed'),
   upload_id: z.string().uuid(),
-  description: z.string(),
-  audit_score: z.number().int().min(0).max(100),
+  description: z.string().nullable(),
+  audit_score: z.number().int().min(0).max(100).nullable(),
+  timestamp: z.string(),
+})
+
+export const reembedProgressSchema = z.object({
+  action: z.literal('reembed_progress'),
+  processed: z.number().int().nonnegative(),
+  total: z.number().int().nonnegative(),
+  skipped: z.number().int().nonnegative(),
+  failed: z.number().int().nonnegative(),
+  timestamp: z.string(),
+})
+
+export const reembedCompleteSchema = z.object({
+  action: z.literal('reembed_complete'),
+  processed: z.number().int().nonnegative(),
+  skipped: z.number().int().nonnegative(),
+  failed: z.number().int().nonnegative(),
   timestamp: z.string(),
 })
 
@@ -109,6 +126,8 @@ export const serverMessageSchema = z.discriminatedUnion('action', [
   authSuccessSchema,
   authErrorSchema,
   heartbeatSchema,
+  reembedProgressSchema,
+  reembedCompleteSchema,
 ])
 
 export const authMessageSchema = z.object({
@@ -142,6 +161,8 @@ export type UploadProgressPayload = z.infer<typeof uploadProgressPayloadSchema>
 export type UploadProgressUpdate = z.infer<typeof uploadProgressUpdateSchema>
 export type UploadCompleted = z.infer<typeof uploadCompletedSchema>
 export type UploadFailed = z.infer<typeof uploadFailedSchema>
+export type ReembedProgress = z.infer<typeof reembedProgressSchema>
+export type ReembedComplete = z.infer<typeof reembedCompleteSchema>
 export type BatchProgressPayload = z.infer<typeof batchProgressPayloadSchema>
 export type BatchProgressUpdate = z.infer<typeof batchProgressUpdateSchema>
 export type FileProgressPayload = z.infer<typeof fileProgressPayloadSchema>
