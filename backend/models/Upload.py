@@ -101,6 +101,23 @@ class Upload(BaseModel):
         else:
             self.embedding_local = embedding_local_raw
 
+        # Handle Gemini embedding (1536-dim from Gemini Embedding 2)
+        embedding_gemini_raw = kwargs.get("embedding_gemini")
+        if isinstance(embedding_gemini_raw, str):
+            try:
+                if embedding_gemini_raw.startswith(
+                        "[") and embedding_gemini_raw.endswith("]"):
+                    self.embedding_gemini: list[float] | None = list(
+                        map(float,
+                            embedding_gemini_raw[1 :-1].split(","))
+                    )
+                else:
+                    self.embedding_gemini = None
+            except (ValueError, AttributeError):
+                self.embedding_gemini = None
+        else:
+            self.embedding_gemini = embedding_gemini_raw
+
         self.thumbnail_path: str | None = kwargs.get("thumbnail_path")
         self.video_codec: str | None = kwargs.get("video_codec")
         self.error_message: str | None = kwargs.get("error_message")
@@ -364,18 +381,18 @@ class Upload(BaseModel):
         user_id: UUID | None = None,
         limit: int = config.DEFAULT_PAGE_SIZE,
         similarity_threshold: float = 0.0,
-        use_local: bool = True,
+        embedding_column: str = "embedding_local",
     ) -> list[tuple[Upload,
                     float]]:
         """
         Search uploads by vector similarity.
 
         Args:
-            query_embedding: Query vector (1024-dim bge-m3)
+            query_embedding: Query vector
             user_id: Optional filter by user
             limit: Maximum results
             similarity_threshold: Minimum similarity score (0-1)
-            use_local: If True, search embedding_local, else embedding
+            embedding_column: Column to search ('embedding_local' or 'embedding_gemini')
 
         Returns:
             List of (Upload, similarity_score) tuples
@@ -388,8 +405,6 @@ class Upload(BaseModel):
                       }
         if user_id:
             filters["user_id"] = user_id
-
-        embedding_column = "embedding_local" if use_local else "embedding"
 
         records = await database.db.vector_similarity_search(
             table_name = cls.__tablename__,
@@ -620,6 +635,37 @@ class Upload(BaseModel):
             self.description_audit_score = description_audit_score
             self.updated_at = updated_at
 
+    async def update_gemini_embedding(self, embedding: list[float]) -> None:
+        """
+        Save a Gemini embedding to embedding_gemini column and mark completed.
+        No description is stored — Gemini embeds directly without a text step.
+        """
+        if self.id is None:
+            raise ValueError("Cannot update gemini embedding for unsaved upload")
+
+        query = """
+            UPDATE uploads
+            SET embedding_gemini = $1,
+                processing_status = $2,
+                description = NULL,
+                description_audit_score = NULL,
+                updated_at = NOW()
+            WHERE id = $3
+            RETURNING updated_at
+        """
+        updated_at = await database.db.fetchval(
+            query,
+            embedding,
+            ProcessingStatus.COMPLETED,
+            self.id,
+        )
+        if updated_at:
+            self.embedding_gemini = embedding
+            self.processing_status = ProcessingStatus.COMPLETED
+            self.description = None
+            self.description_audit_score = None
+            self.updated_at = updated_at
+
     async def update_thumbnail(self, thumbnail_path: str) -> None:
         """
         Update thumbnail path
@@ -845,12 +891,22 @@ class Upload(BaseModel):
     @property
     def has_embedding(self) -> bool:
         """
-        Check if upload has an embedding generated.
+        Check if upload has any embedding generated (local or Gemini).
         Used by Pydantic schemas with from_attributes.
         """
-        return self.embedding_local is not None and len(
-            self.embedding_local
-        ) > 0
+        local_ok = self.embedding_local is not None and len(self.embedding_local) > 0
+        gemini_ok = self.embedding_gemini is not None and len(self.embedding_gemini) > 0
+        return local_ok or gemini_ok
+
+    @property
+    def embedding_provider(self) -> str:
+        """
+        Which provider generated this upload's embedding.
+        Returns 'gemini' if Gemini embedding exists, else 'local'.
+        """
+        if self.embedding_gemini is not None and len(self.embedding_gemini) > 0:
+            return "gemini"
+        return "local"
 
     def to_dict(self, exclude: set[str] | None = None) -> dict[str, Any]:
         """
@@ -861,12 +917,15 @@ class Upload(BaseModel):
         # Get base dict
         result = super().to_dict(exclude)
 
-        # Don't include full embedding in API responses (too large) TODO
+        # Don't include full embedding vectors in API responses (too large)
         if "embedding_local" not in exclude and self.embedding_local:
             result["has_embedding"] = True
             result.pop("embedding_local", None)
         else:
             result["has_embedding"] = False
+
+        result.pop("embedding_gemini", None)
+        result["embedding_provider"] = self.embedding_provider
 
         return result
 
