@@ -13,6 +13,7 @@ from . import (
     health,
     upload,
     search,
+    settings,
 )
 
 
@@ -25,6 +26,7 @@ router.include_router(client_config.router, tags = ["config"])
 router.include_router(health.router, tags = ["health"])
 router.include_router(upload.router, tags = ["uploads"])
 router.include_router(search.router, tags = ["search"])
+router.include_router(settings.router, tags = ["settings"])
 
 __all__ = [
     "router",
@@ -35,4 +37,5 @@ __all__ = [
     "health",
     "upload",
     "search",
+    "settings",
 ]
