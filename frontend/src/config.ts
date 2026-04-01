@@ -36,6 +36,10 @@ export const API_ENDPOINTS = {
   CLIENT_CONFIG: `/${API_VERSION}/client-config`,
   CHANGELOG: `/${API_VERSION}/changelog`,
   HEALTH: `/${API_VERSION}/health`,
+  SETTINGS: {
+    PROVIDER: `/${API_VERSION}/settings/provider`,
+    REEMBED: `/${API_VERSION}/settings/reembed`,
+  },
 } as const
 
 export const WEBSOCKET_ENDPOINTS = {
@@ -67,6 +71,10 @@ export const QUERY_KEYS = {
     STATS: () => [...QUERY_KEYS.SEARCH.ALL, 'stats'] as const,
   },
   CLIENT_CONFIG: ['client-config'] as const,
+  SETTINGS: {
+    ALL: ['settings'] as const,
+    PROVIDER: () => [...QUERY_KEYS.SETTINGS.ALL, 'provider'] as const,
+  },
 } as const
 
 export const ROUTES = {

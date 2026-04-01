@@ -23,6 +23,7 @@ export const uploadResponseSchema = z.object({
   description: z.string().nullable(),
   description_audit_score: z.number().nullable(),
   has_embedding: z.boolean(),
+  embedding_provider: z.enum(['local', 'gemini']).default('local'),
   regeneration_count: z.number().int().nonnegative().default(0),
   last_regenerated_at: z.string().nullable(),
   thumbnail_path: z.string().nullable(),
