@@ -14,6 +14,7 @@ interface GalleryUIState {
   filters: UploadListParams
   selectedMediaId: string | null
   findSimilarId: string | null
+  zoom: number
 }
 
 interface GalleryUIActions {
@@ -31,17 +32,20 @@ interface GalleryUIActions {
   setSelectedMediaId: (id: string | null) => void
   setFindSimilarId: (id: string | null) => void
   resetSearchState: () => void
+  setZoom: (zoom: number) => void
 }
 
 type GalleryUIStore = GalleryUIState & GalleryUIActions
 
 const DEFAULT_FILTERS: UploadListParams = {
   page: 1,
-  page_size: 50,
+  page_size: 10000,
   sort_by: 'created_at',
   sort_order: 'desc',
   show_hidden: false,
 }
+
+const DEFAULT_ZOOM = 200
 
 export const useGalleryUIStore = create<GalleryUIStore>()(
   devtools(
@@ -53,6 +57,7 @@ export const useGalleryUIStore = create<GalleryUIStore>()(
         filters: DEFAULT_FILTERS,
         selectedMediaId: null,
         findSimilarId: null,
+        zoom: DEFAULT_ZOOM,
 
         setSelectMode: (mode) =>
           set({ selectMode: mode }, false, 'gallery/setSelectMode'),
@@ -133,6 +138,9 @@ export const useGalleryUIStore = create<GalleryUIStore>()(
 
         resetSearchState: () =>
           set({ findSimilarId: null }, false, 'gallery/resetSearchState'),
+
+        setZoom: (zoom) =>
+          set({ zoom }, false, 'gallery/setZoom'),
       }),
       {
         name: 'gallery-ui-storage',
@@ -153,3 +161,4 @@ export const useSelectedMediaId = (): string | null =>
   useGalleryUIStore((s) => s.selectedMediaId)
 export const useFindSimilarId = (): string | null =>
   useGalleryUIStore((s) => s.findSimilarId)
+export const useZoom = (): number => useGalleryUIStore((s) => s.zoom)

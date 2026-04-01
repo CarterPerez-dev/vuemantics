@@ -1,113 +1,121 @@
 // ===================
-// © AngelaMos | 2025
+// © AngelaMos | 2026
 // login.module.scss
 // ===================
 
 @use '@/styles' as *;
 
 .page {
-  min-height: 100vh;
-  min-height: 100dvh;
-  @include flex-center;
-  background-color: $bg-default;
-  background-image: radial-gradient(
-    circle,
-    $bg-page 1px,
-    transparent 1px
-  );
-  background-size: 22px 22px;
-  padding: $space-4;
-}
-
-.card {
   width: 100%;
-  max-width: 400px;
-  background-color: $black;
-  background-image: radial-gradient(
-    circle,
-    $bg-card 1px,
-    transparent 1px
-  );
-  background-size: 20px 20px;
-  border: 1px solid $border-default;
-  border-radius: $radius-lg;
-  padding: $space-8;
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background-color: $public-bg;
+  color: $public-ink;
+  overflow: hidden;
+  font-family: $font-sans;
 }
 
-.backButton {
-  display: inline-flex;
+.strip {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: $space-2;
-  margin-bottom: $space-6;
-  font-size: $font-size-sm;
-  color: $text-light;
-  text-decoration: none;
-  @include transition-fast;
+  padding: 14px 32px;
+  border-bottom: 1px solid $public-border;
 
-  @include hover {
-    color: $white;
-  }
-
-  svg {
-    width: 16px;
-    height: 16px;
+  span {
+    font-family: $font-sans;
+    font-size: 11px;
+    letter-spacing: $tracking-wider;
+    text-transform: uppercase;
+    font-weight: 400;
+    color: $public-text;
   }
 }
 
-.header {
-  margin-bottom: $space-6;
-}
-
-.title {
-  font-size: $font-size-2xl;
-  font-weight: $font-weight-semibold;
-  color: $white;
-  margin-bottom: $space-2;
-}
-
-.subtitle {
-  font-size: $font-size-sm;
-  color: $text-light;
-}
-
-.form {
-  @include flex-column;
-  gap: $space-5;
+.stripLeft,
+.stripRight {
+  display: flex;
+  gap: 28px;
 }
 
 .field {
-  @include flex-column;
-  gap: $space-2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.document {
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid $public-ink;
+  position: relative;
+}
+
+.accentBar {
+  height: 2px;
+  background-color: $public-accent;
+}
+
+.docHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  border-bottom: 1px solid $public-ink;
+  background-color: $public-surface;
+
+  span {
+    font-family: $font-sans;
+    font-size: 12.5px;
+    letter-spacing: $tracking-wider;
+    text-transform: uppercase;
+    color: $public-text;
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 28px 20px;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .label {
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  color: $white;
+  font-family: $font-sans;
+  font-size: 10.5px;
+  letter-spacing: $tracking-widest;
+  text-transform: uppercase;
+  color: $public-text;
 }
 
 .input {
   width: 100%;
-  height: 48px;
-  padding: 0 $space-4;
+  height: 44px;
+  padding: 0 14px;
   background-color: transparent;
-  border: 1px solid $border-default;
-  border-radius: $radius-md;
-  font-size: $font-size-base;
-  color: $white;
-  @include transition-fast;
+  border: 1px solid $public-border;
+  font-family: $font-sans;
+  font-size: 12px;
+  color: $public-ink;
+  transition: border-color $duration-normal $ease-out;
 
   &::placeholder {
-    color: $text-muted;
+    color: $public-border;
+    font-size: 13.5px;
   }
 
   &:focus {
     outline: none;
-    border-color: $border-strong;
-  }
-
-  &[aria-invalid='true'] {
-    border-color: $error-default;
+    border-color: $public-ink;
   }
 }
 
@@ -116,76 +124,114 @@
   width: 100%;
 }
 
-.eyeButton {
+.toggle {
   position: absolute;
-  right: $space-3;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  border: none;
-  color: $text-muted;
+  padding: 4px;
+  color: $public-border;
   cursor: pointer;
-  padding: $space-1;
-  @include transition-fast;
+  transition: color $duration-normal $ease-out;
 
-  &:hover {
-    color: $white;
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      color: $public-text;
+    }
   }
 
   svg {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
   }
-}
-
-.error {
-  font-size: $font-size-xs;
-  color: $error-default;
 }
 
 .submit {
   width: 100%;
-  height: 48px;
-  margin-top: $space-2;
+  height: 44px;
+  margin-top: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: $white;
-  border: none;
-  border-radius: $radius-md;
-  font-size: $font-size-base;
-  font-weight: $font-weight-medium;
-  color: $black;
+  background-color: $public-ink;
+  color: $public-text-bright;
+  font-family: $font-sans;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: $tracking-widest;
+  text-transform: uppercase;
   cursor: pointer;
-  @include transition-fast;
+  transition: background-color $duration-normal $ease-out;
 
-  @include hover {
-    filter: brightness(0.9);
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background-color: $public-ink-hover;
+    }
   }
 
   &:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
   }
 }
 
-.footer {
-  margin-top: $space-6;
-  text-align: center;
-  font-size: $font-size-sm;
-  color: $text-light;
+.docFooter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-top: 1px solid $public-ink;
+  background-color: $public-surface;
+}
+
+.footerText {
+  font-family: $font-sans;
+  font-size: 10px;
+  letter-spacing: $tracking-wider;
+  text-transform: uppercase;
+  color: $public-text;
 }
 
 .link {
-  color: $text-default;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  @include transition-fast;
+  font-family: $font-sans;
+  font-size: 10px;
+  letter-spacing: $tracking-wider;
+  text-transform: uppercase;
+  color: $public-accent;
+  text-decoration: none;
+  font-weight: 700;
+  transition: color $duration-fast $ease-out;
 
-  @include hover {
-    color: $text-light;
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      color: $public-text-bright;
+    }
+  }
+}
+
+.bottom {
+  display: flex;
+  align-items: center;
+  padding: 14px 32px;
+  border-top: 1px solid $public-border;
+}
+
+.returnLink {
+  font-family: $font-sans;
+  font-size: 11px;
+  letter-spacing: $tracking-wider;
+  text-transform: uppercase;
+  color: $public-text;
+  text-decoration: none;
+  transition: color $duration-normal $ease-out;
+
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      color: $public-text-bright;
+    }
   }
 }

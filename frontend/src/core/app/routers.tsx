@@ -35,6 +35,10 @@ const routes: RouteObject[] = [
             path: ROUTES.GALLERY,
             lazy: () => import('@/routes/gallery'),
           },
+          {
+            path: ROUTES.SETTINGS,
+            lazy: () => import('@/routes/settings'),
+          },
         ],
       },
     ],

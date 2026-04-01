@@ -3,7 +3,6 @@
 // BatchProgressIndicator.tsx
 // ===================
 
-import { LuCheck, LuRefreshCw, LuX } from 'react-icons/lu'
 import styles from './batch-progress-indicator.module.scss'
 
 interface BatchProgress {
@@ -48,66 +47,44 @@ export function BatchProgressIndicator({
     <div className={styles.container}>
       {batches.map(([batchId, progress]) => (
         <div key={batchId} className={styles.batch}>
-          {/* Batch Header */}
-          <div className={styles.header}>
-            <div className={styles.title}>
-              {progress.status === 'processing' && (
-                <>
-                  <LuRefreshCw className={styles.spinnerIcon} />
-                  <span>
-                    Processing {progress.processed}/{progress.total} files
-                  </span>
-                </>
-              )}
-              {progress.status === 'completed' && (
-                <>
-                  <LuCheck className={styles.successIcon} />
-                  <span>Batch completed!</span>
-                </>
-              )}
-              {progress.status === 'failed' && (
-                <>
-                  <LuX className={styles.errorIcon} />
-                  <span>Batch failed</span>
-                </>
-              )}
-            </div>
+          <div className={styles.batchHeader}>
+            <span className={styles.batchLabel}>
+              {progress.status === 'processing' && 'PROCESSING'}
+              {progress.status === 'completed' && 'COMPLETE'}
+              {progress.status === 'failed' && 'FAILED'}
+            </span>
+            <span className={styles.batchCount}>
+              {progress.processed}/{progress.total}
+            </span>
           </div>
 
-          {/* Thick Batch Progress Bar */}
-          <div className={styles.progressBarThick}>
+          <div className={styles.progressBar}>
             <div
-              className={styles.progressFillThick}
+              className={`${styles.progressFill} ${progress.status === 'failed' ? styles.progressError : ''}`}
               style={{ width: `${progress.progressPercentage}%` }}
             />
           </div>
-          <div className={styles.progressLabel}>
-            {progress.progressPercentage}%
+
+          <div className={styles.batchStats}>
+            <span>{progress.progressPercentage}%</span>
+            {progress.successful > 0 && (
+              <span className={styles.statSuccess}>
+                {progress.successful} OK
+              </span>
+            )}
+            {progress.failed > 0 && (
+              <span className={styles.statFailed}>
+                {progress.failed} FAILED
+              </span>
+            )}
           </div>
 
-          {/* Batch Stats */}
-          {(progress.successful > 0 || progress.failed > 0) && (
-            <div className={styles.stats}>
-              <span className={styles.success}>
-                {progress.successful} successful
-              </span>
-              {progress.failed > 0 && (
-                <>
-                  <span className={styles.separator}>|</span>
-                  <span className={styles.failed}>{progress.failed} failed</span>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Current File Progress (Thin Bar) */}
           {currentFile && progress.status === 'processing' && (
-            <div className={styles.fileProgress}>
-              <div className={styles.fileInfo}>
-                <span className={styles.fileLabel}>Currently processing:</span>
+            <div className={styles.currentFile}>
+              <div className={styles.fileRow}>
+                <span className={styles.fileLabel}>CURRENT</span>
                 <span className={styles.fileName}>
-                  {progress.processed}/{progress.total}: {currentFile.fileName} (
-                  {formatBytes(currentFile.fileSize)})
+                  {currentFile.fileName} ({formatBytes(currentFile.fileSize)})
                 </span>
               </div>
               <div className={styles.progressBarThin}>
@@ -116,7 +93,6 @@ export function BatchProgressIndicator({
                   style={{ width: `${currentFile.progress}%` }}
                 />
               </div>
-              <div className={styles.progressLabel}>{currentFile.progress}%</div>
             </div>
           )}
         </div>

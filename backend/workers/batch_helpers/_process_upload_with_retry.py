@@ -9,6 +9,7 @@ import asyncio
 import contextlib
 import logging
 
+import config
 from models.Upload import Upload, ProcessingStatus
 from models.UploadBatch import UploadBatch
 from services.ai.providers.base import AIProvider
@@ -42,7 +43,7 @@ async def process_upload_with_retry(
     - Upload marked as failed after 2 attempts
     - Publishes real-time progress by monitoring AI service stages
     """
-    max_attempts = 2
+    max_attempts = config.PROCESSING_RETRY_ATTEMPTS
 
     for attempt in range(1, max_attempts + 1):
         try:
@@ -70,6 +71,18 @@ async def process_upload_with_retry(
                         f"Thumbnail generation failed for {upload.id}: {thumb_error}"
                     )
                     # Continue processing even if thumbnail fails
+
+            if attempt == 1 and upload.file_type == "video":
+                try:
+                    ext = upload.file_path.split('.')[-1]
+                    playback_path = await storage_service.transcode_hevc(
+                        upload.user_id, upload.id, ext,
+                    )
+                    if playback_path:
+                        await upload.update_file_path(playback_path)
+                        await upload.update_video_codec("hevc")
+                except Exception as tc_err:
+                    logger.warning(f"Transcode failed for {upload.id}: {tc_err}")
 
             # Monitor AI progress with real stages
             async def monitor_ai_progress() -> None:

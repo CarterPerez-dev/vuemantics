@@ -6,7 +6,7 @@ gemini.py
 import asyncio
 import io
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 
 import numpy as np
 from google import genai
@@ -94,7 +94,7 @@ class GeminiProvider:
                     error_message=error_message,
                     description_audit_score=None,
                 ),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(UTC),
             )
             await publisher.publish_progress(str(upload_id), msg)
         except Exception as e:
@@ -164,6 +164,16 @@ class GeminiProvider:
                     raise ValueError(_UNSUPPORTED_VIDEO_MSG)
                 embed_bytes, embed_mime = raw_bytes, upload.mime_type
 
+                try:
+                    from services.storage_service import storage_service
+                    metadata = await storage_service.get_upload_metadata(
+                        upload.user_id, upload_id
+                    )
+                    if metadata and metadata.get("codec"):
+                        await upload.update_video_codec(metadata["codec"])
+                except Exception as codec_err:
+                    logger.warning(f"Codec detection failed for {upload_id}: {codec_err}")
+
             await self._publish_progress(
                 upload_id,
                 ProcessingStatus.EMBEDDING,
@@ -190,7 +200,7 @@ class GeminiProvider:
                 upload_id=str(upload_id),
                 description=None,
                 audit_score=None,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(UTC),
             )
             await get_publisher().publish_progress(str(upload_id), completed_msg)
             logger.info(f"Gemini embedding completed for {upload_id}")
@@ -204,7 +214,7 @@ class GeminiProvider:
             failed_msg = UploadFailed(
                 upload_id=str(upload_id),
                 error_message=str(e)[:500],
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(UTC),
             )
             await get_publisher().publish_progress(str(upload_id), failed_msg)
 

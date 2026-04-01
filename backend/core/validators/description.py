@@ -85,7 +85,7 @@ class DescriptionAuditor:
         alphabetic = sum(1 for c in text if c.isalpha())
         alpha_ratio = alphabetic / len(text)
 
-        if alpha_ratio < 0.3:
+        if alpha_ratio < config.DESCRIPTION_MIN_ALPHA_RATIO:
             score -= 70
             issues.append(
                 f"Complete garbage: only {alpha_ratio:.1%} alphabetic characters"
@@ -97,24 +97,24 @@ class DescriptionAuditor:
         tokens = re.findall(r'[^\s]+', text)
         garbage_tokens = 0
 
-        for token in tokens[:100]:  # Check first 100 tokens
+        for token in tokens[:config.DESCRIPTION_GARBAGE_SAMPLE_SIZE]:
             # Count different character types
             letters = sum(1 for c in token if c.isalpha())
             digits = sum(1 for c in token if c.isdigit())
             special = sum(1 for c in token if not c.isalnum())
 
             # If token has all three types and is short, it's likely garbage
-            if len(token) <= 15 and letters > 0 and digits > 0 and special > 2:
+            if len(token) <= config.DESCRIPTION_GARBAGE_TOKEN_MAX_LEN and letters > 0 and digits > 0 and special > 2:
                 garbage_tokens += 1
 
         garbage_ratio = garbage_tokens / len(tokens) if tokens else 0
 
-        if garbage_ratio > 0.3:
+        if garbage_ratio > config.DESCRIPTION_GARBAGE_RATIO_CRITICAL:
             score -= 80
             issues.append(
                 f"Random character soup detected: {garbage_ratio:.0%} of tokens are garbage"
             )
-        elif garbage_ratio > 0.1:
+        elif garbage_ratio > config.DESCRIPTION_GARBAGE_RATIO_WARNING:
             score -= 50
             issues.append(
                 f"Many random character sequences: {garbage_ratio:.0%} of tokens"
@@ -143,7 +143,7 @@ class DescriptionAuditor:
         capitalized = sum(1 for s in sentences if s and s[0].isupper())
         capital_ratio = capitalized / len(sentences)
 
-        if capital_ratio < 0.5 and len(sentences) > 1:
+        if capital_ratio < config.DESCRIPTION_MIN_CAPITALIZATION_RATIO and len(sentences) > 1:
             score -= 15
             issues.append(
                 f"Poor capitalization: only {capital_ratio:.0%} of sentences capitalized"
@@ -172,16 +172,16 @@ class DescriptionAuditor:
         # Extract only alphabetic "words" (filter out garbage like "4#2>*")
         words = [w for w in text.lower().split() if any(c.isalpha() for c in w)]
 
-        if len(words) < 5:
+        if len(words) < config.DESCRIPTION_MIN_WORDS_TO_CHECK:
             return score, issues
 
         # Filter to only real words (mostly alphabetic)
         real_words = [
             w for w in words
-            if sum(1 for c in w if c.isalpha()) / len(w) > 0.7
+            if sum(1 for c in w if c.isalpha()) / len(w) > config.DESCRIPTION_REAL_WORD_ALPHA_RATIO
         ]
 
-        if len(real_words) < len(words) * 0.5:
+        if len(real_words) < len(words) * config.DESCRIPTION_MIN_REAL_WORDS_RATIO:
             score -= 50
             issues.append(
                 f"Most tokens are not real words ({len(real_words)}/{len(words)})"
@@ -190,17 +190,17 @@ class DescriptionAuditor:
         common_found = sum(1 for w in real_words if w in common_words)
         common_ratio = common_found / len(real_words) if real_words else 0
 
-        if common_ratio < 0.02:
+        if common_ratio < config.DESCRIPTION_COMMON_WORDS_CRITICAL:
             score -= 60
             issues.append(
                 f"Almost no common English words ({common_ratio:.1%} of words)"
             )
-        elif common_ratio < 0.05:
+        elif common_ratio < config.DESCRIPTION_COMMON_WORDS_WARNING:
             score -= 45
             issues.append(
                 f"Very few common English words ({common_ratio:.1%} of words)"
             )
-        elif common_ratio < 0.15:
+        elif common_ratio < config.DESCRIPTION_COMMON_WORDS_LOW:
             score -= 20
             issues.append(
                 f"Few common English words ({common_ratio:.0%} of words)"
@@ -321,7 +321,7 @@ class DescriptionAuditor:
         )
         gibberish_ratio = non_alpha / len(text)
 
-        if gibberish_ratio > 0.5:
+        if gibberish_ratio > config.DESCRIPTION_EXTREME_GIBBERISH_RATIO:
             score -= 60
             issues.append(f"Extreme gibberish ratio: {gibberish_ratio:.1%}")
         elif gibberish_ratio > config.DESCRIPTION_MAX_GIBBERISH_RATIO:

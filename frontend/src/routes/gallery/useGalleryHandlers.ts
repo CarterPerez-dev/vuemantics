@@ -24,7 +24,6 @@ interface GalleryHandlersDeps {
     {
       query: string
       limit: number
-      similarity_threshold: number
     },
     unknown
   >
@@ -183,8 +182,6 @@ export function useGalleryHandlers(deps: GalleryHandlersDeps): GalleryHandlers {
       {
         query: searchQuery,
         limit: clientConfig?.default_page_size ?? 48,
-        similarity_threshold:
-          clientConfig?.search_default_similarity_threshold ?? 0.48,
       },
       { onSuccess: (data) => setSearchResults(data.results) }
     )

@@ -277,8 +277,11 @@ class SearchService:
             query_embedding = query_embedding,
             user_id = user_id,
             limit = limit + 1,
-            similarity_threshold = config.
-            SIMILAR_UPLOADS_SIMILARITY_THRESHOLD,
+            similarity_threshold = (
+                config.SIMILAR_SIMILARITY_THRESHOLD_GEMINI
+                if provider.provider_name == "gemini"
+                else config.SIMILAR_SIMILARITY_THRESHOLD_LOCAL
+            ),
         )
 
         # Exclude the source upload from results

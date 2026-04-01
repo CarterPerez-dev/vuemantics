@@ -24,7 +24,6 @@ from workers.batch_processor import ensure_worker_initialized, get_or_create_eve
 
 logger = logging.getLogger(__name__)
 
-REEMBED_BATCH_SIZE = 50
 
 
 @dramatiq.actor(
@@ -65,7 +64,7 @@ async def _reembed_all_async(user_id: UUID) -> None:
             LIMIT $2 OFFSET $3
             """,
             ProcessingStatus.COMPLETED,
-            REEMBED_BATCH_SIZE,
+            config.REEMBED_BATCH_SIZE,
             offset,
         )
         uploads = Upload.from_records(records)
@@ -111,7 +110,10 @@ async def _reembed_all_async(user_id: UUID) -> None:
                 logger.error(f"Re-embed failed for {upload.id}: {e}")
                 failed += 1
                 try:
-                    await upload.update_status(ProcessingStatus.COMPLETED)
+                    await upload.update_status(
+                        ProcessingStatus.COMPLETED,
+                        error_message=f"Re-embed failed: {e!s}",
+                    )
                 except Exception:
                     pass
 
@@ -123,7 +125,7 @@ async def _reembed_all_async(user_id: UUID) -> None:
             )
             await publisher.publish_to_user(str(user_id), progress_msg)
 
-        offset += REEMBED_BATCH_SIZE
+        offset += config.REEMBED_BATCH_SIZE
 
     complete_msg = ReembedComplete(
         processed=processed,

@@ -37,7 +37,7 @@ export const uploadResponseSchema = z.object({
 
 export const uploadListParamsSchema = z.object({
   page: z.number().int().positive().default(1),
-  page_size: z.number().int().positive().max(100).default(20),
+  page_size: z.number().int().positive().max(10000).default(20),
   file_type: z.enum(['image', 'video']).optional(),
   processing_status: z
     .enum(['pending', 'analyzing', 'embedding', 'completed', 'failed'])

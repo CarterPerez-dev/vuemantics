@@ -27,10 +27,10 @@ class OllamaManager:
             self._ollama_client = AsyncClient(
                 host = config.settings.ollama_host,
                 timeout = httpx.Timeout(
-                    connect = 10.0,
-                    read = 300.0,
-                    write = 60.0,
-                    pool = 30.0
+                    connect = config.OLLAMA_TIMEOUT_CONNECT,
+                    read = config.OLLAMA_TIMEOUT_READ,
+                    write = config.OLLAMA_TIMEOUT_WRITE,
+                    pool = config.OLLAMA_TIMEOUT_POOL,
                 ),
             )
         return self._ollama_client

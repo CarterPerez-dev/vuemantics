@@ -611,7 +611,7 @@ class Upload(BaseModel):
             query = """
                 UPDATE uploads
                 SET description = $1,
-                    embedding = $2,
+                    embedding_gemini = $2,
                     processing_status = $3,
                     description_audit_score = $4,
                     updated_at = NOW()
@@ -630,7 +630,10 @@ class Upload(BaseModel):
 
         if updated_at:
             self.description = description
-            self.embedding_local = embedding_list
+            if use_local:
+                self.embedding_local = embedding_list
+            else:
+                self.embedding_gemini = embedding_list
             self.processing_status = ProcessingStatus.COMPLETED
             self.description_audit_score = description_audit_score
             self.updated_at = updated_at
@@ -691,6 +694,23 @@ class Upload(BaseModel):
         )
         if updated_at:
             self.thumbnail_path = thumbnail_path
+            self.updated_at = updated_at
+
+    async def update_file_path(self, file_path: str) -> None:
+        if self.id is None:
+            raise ValueError("Cannot update file_path for unsaved upload")
+
+        query = """
+            UPDATE uploads
+            SET file_path = $1,
+                updated_at = NOW()
+            WHERE id = $2
+            RETURNING updated_at
+        """
+
+        updated_at = await database.db.fetchval(query, file_path, self.id)
+        if updated_at:
+            self.file_path = file_path
             self.updated_at = updated_at
 
     async def update_video_codec(self, codec: str) -> None:
@@ -917,14 +937,9 @@ class Upload(BaseModel):
         # Get base dict
         result = super().to_dict(exclude)
 
-        # Don't include full embedding vectors in API responses (too large)
-        if "embedding_local" not in exclude and self.embedding_local:
-            result["has_embedding"] = True
-            result.pop("embedding_local", None)
-        else:
-            result["has_embedding"] = False
-
+        result.pop("embedding_local", None)
         result.pop("embedding_gemini", None)
+        result["has_embedding"] = self.has_embedding
         result["embedding_provider"] = self.embedding_provider
 
         return result

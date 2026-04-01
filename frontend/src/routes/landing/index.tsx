@@ -3,10 +3,6 @@
 // index.tsx
 // ===================
 
-import { FiGithub } from 'react-icons/fi'
-import { GiMagnifyingGlass } from 'react-icons/gi'
-import { ImImages } from 'react-icons/im'
-import { SiClaude, SiOllama } from 'react-icons/si'
 import { Link } from 'react-router-dom'
 import { ROUTES } from '@/config'
 import styles from './landing.module.scss'
@@ -14,84 +10,96 @@ import styles from './landing.module.scss'
 export function Component(): React.ReactElement {
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>Vuemantic</h1>
-        <p className={styles.subtitle}>Smart Multimodal Search</p>
-        <a
-          href="https://github.com/CarterPerez-dev/vuemantics"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.github}
-          aria-label="View source on GitHub"
-        >
-          <FiGithub />
-        </a>
+      <header className={styles.strip}>
+        <div className={styles.stripLeft}>
+          <span>MEDIA SEMANTICS</span>
+          <span>ANGELAMOS</span>
+          <span>SERIAL: VM—01</span>
+        </div>
+        <div className={styles.stripRight}>
+          <span>©2026</span>
+          <span>V2.1.4 —</span>
+        </div>
       </header>
 
-      <div className={styles.content}>
-        <div className={styles.sections}>
-          <section className={styles.section}>
-            <div className={styles.sectionIcon}>
-              <GiMagnifyingGlass />
-            </div>
-            <h2 className={styles.sectionTitle}>Semantic Search</h2>
-            <p className={styles.sectionText}>
-              Natural language queries like "red car" or "funny meme". Vision
-              models analyze image/video content with vector embeddings for
-              semantic similarity using pgvector.
-            </p>
-          </section>
+      <main className={styles.field}>
+        <div className={styles.registration}>&gt;&gt;&gt;&gt;</div>
 
-          <section className={styles.section}>
-            <div className={styles.sectionIcon}>
-              <ImImages />
-            </div>
-            <h2 className={styles.sectionTitle}>Media Management</h2>
-            <p className={styles.sectionText}>
-              AI Analysis: Upload images and videos. Vision models extract
-              features, generate descriptions, and create vector embeddings for
-              semantic search.
-            </p>
-          </section>
+        <div className={styles.badge}>VM—01</div>
 
-          <section className={styles.section}>
-            <div className={styles.sectionIcon}>
-              <SiOllama />
-            </div>
-            <h2 className={styles.sectionTitle}>Technology Stack</h2>
-            <p className={styles.sectionText}>
-              Qwen2.5-VL for vision analysis, bge-m3 for embeddings. PostgreSQL +
-              pgvector for vector search. Ollama for local model inference. React
-              + TypeScript frontend.
-            </p>
-          </section>
-
-          <section className={styles.section}>
-            <div className={styles.sectionIcon}>
-              <SiClaude />
-            </div>
-            <h2 className={styles.sectionTitle}>Coming Soon</h2>
-            <p className={styles.sectionText}>
-              MCP Server: Model Context Protocol integration. Let AI assistants
-              query your media collection through standardized tool interfaces.
-            </p>
-          </section>
+        <div className={styles.hero}>
+          <h1 className={styles.title}>
+            VUEMANTIC<span className={styles.reg}> ®</span>
+          </h1>
+          <div className={styles.subtitle}>
+            <span>SEMANTIC</span>
+            <span>MEDIA</span>
+            <span>ANALYSIS</span>
+          </div>
         </div>
 
-        <div className={styles.actions}>
-          <Link to={ROUTES.LOGIN} className={styles.button}>
-            Open Demo
-          </Link>
+        <div className={styles.rule}>
+          <div className={styles.ruleAccent} />
+        </div>
+
+        <div className={styles.lower}>
+          <div className={styles.specsCard}>
+            <div className={styles.specsHeader}>
+              <span>SYSTEM SPECIFICATIONS</span>
+              <span>VM-SYS-01</span>
+            </div>
+            <div className={styles.specsGrid}>
+              <div className={styles.spec}>
+                <span className={styles.specLabel}>VISION MODEL</span>
+                <span className={styles.specValue}>Qwen2.5-VL-7B</span>
+              </div>
+              <div className={styles.spec}>
+                <span className={styles.specLabel}>EMBEDDINGS</span>
+                <span className={styles.specValue}>bge-m3 · 1024d</span>
+              </div>
+              <div className={styles.spec}>
+                <span className={styles.specLabel}>VECTOR STORE</span>
+                <span className={styles.specValue}>pgvector</span>
+              </div>
+              <div className={styles.spec}>
+                <span className={styles.specLabel}>INFERENCE</span>
+                <span className={styles.specValue}>Ollama · Local</span>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.body}>
+            <p>
+              Multimodal vision analysis and vector embedding for semantic search
+              across personal media libraries. Natural language queries.
+              Self-hosted. Offline-capable.
+            </p>
+          </div>
+        </div>
+
+        <div className={styles.ghost} aria-hidden="true">
+          COSINE SIMILARITY
+        </div>
+      </main>
+
+      <footer className={styles.bottom}>
+        <Link to={ROUTES.LOGIN} className={styles.enter}>
+          ENTER SYSTEM
+        </Link>
+        <div className={styles.links}>
           <a
-            href="/api/docs"
+            href="https://github.com/CarterPerez-dev/vuemantics"
             target="_blank"
             rel="noopener noreferrer"
-            className={styles.buttonOutline}
           >
-            API Documentation
+            SOURCE ↗
+          </a>
+          <span className={styles.linkDivider}>|</span>
+          <a href="/api/docs" target="_blank" rel="noopener noreferrer">
+            API DOCS ↗
           </a>
         </div>
-      </div>
+      </footer>
     </div>
   )
 }

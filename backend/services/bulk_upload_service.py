@@ -17,7 +17,7 @@ from core import (
     ValidationError,
 )
 from models.Upload import Upload
-from models.UploadBatch import UploadBatch
+from models.UploadBatch import UploadBatch, BatchStatus
 from services.storage_service import storage_service
 from workers.batch_processor import process_batch
 
@@ -235,6 +235,20 @@ class BulkUploadService:
             upload_ids = upload_ids,
             failed_files = failed_files,
         )
+
+    @staticmethod
+    async def cancel_batch(batch_id: UUID, user_id: UUID) -> None:
+        batch = await UploadBatch.find_by_id(batch_id)
+
+        if not batch or batch.user_id != user_id:
+            raise NotFoundError("Batch not found")
+
+        if batch.status not in (BatchStatus.PENDING, BatchStatus.PROCESSING):
+            raise ValidationError(
+                "Only pending or processing batches can be cancelled"
+            )
+
+        await batch.update_status(BatchStatus.CANCELLED)
 
     @staticmethod
     async def get_batch_status(

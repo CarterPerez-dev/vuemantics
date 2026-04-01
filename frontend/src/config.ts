@@ -83,6 +83,7 @@ export const ROUTES = {
   REGISTER: '/register',
   UPLOAD: '/upload',
   GALLERY: '/gallery',
+  SETTINGS: '/settings',
 } as const
 
 export const STORAGE_KEYS = {

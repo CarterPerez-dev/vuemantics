@@ -5,7 +5,7 @@ service.py
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID
 
@@ -93,7 +93,7 @@ class LocalAIService:
                     error_message = error_message,
                     description_audit_score = audit_score,
                 ),
-                timestamp = datetime.utcnow(),
+                timestamp = datetime.now(UTC),
             )
             await publisher.publish_progress(str(upload_id), progress_msg)
         except Exception as e:
@@ -266,7 +266,7 @@ class LocalAIService:
                 upload_id = str(upload_id),
                 description = description,
                 audit_score = audit_result.score,
-                timestamp = datetime.utcnow(),
+                timestamp = datetime.now(UTC),
             )
             await get_publisher().publish_progress(
                 str(upload_id),
@@ -290,7 +290,7 @@ class LocalAIService:
             failed_msg = UploadFailed(
                 upload_id = str(upload_id),
                 error_message = str(e)[: 500],
-                timestamp = datetime.utcnow(),
+                timestamp = datetime.now(UTC),
             )
             await get_publisher().publish_progress(
                 str(upload_id),

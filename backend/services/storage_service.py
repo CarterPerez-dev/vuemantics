@@ -7,6 +7,7 @@ import asyncio
 import logging
 import os
 import shutil
+import subprocess
 from pathlib import Path
 from typing import BinaryIO
 from uuid import UUID
@@ -394,6 +395,67 @@ class StorageService:
         # For local storage, nginx serves from /files/
         return f"/files/{relative_path}"
 
+    async def transcode_hevc(
+        self,
+        user_id: UUID,
+        upload_id: UUID,
+        extension: str,
+    ) -> str | None:
+        upload_dir = self._get_upload_dir(user_id, upload_id)
+        original_path = upload_dir / f"original.{extension}"
+
+        if not original_path.exists():
+            return None
+
+        cap = cv2.VideoCapture(str(original_path))
+        fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
+        codec = "".join(
+            [chr((fourcc >> 8 * i) & 0xFF) for i in range(4)]
+        ).strip().lower()
+        cap.release()
+
+        if codec not in ("hvc1", "hev1", "hevc"):
+            return None
+
+        playback_path = upload_dir / "playback.mp4"
+        logger.info(f"Transcoding HEVC → H.264 for upload {upload_id}")
+
+        try:
+            result = await asyncio.to_thread(
+                subprocess.run,
+                [
+                    "ffmpeg", "-y",
+                    "-i", str(original_path),
+                    "-c:v", "libx264",
+                    "-preset", "fast",
+                    "-crf", "23",
+                    "-c:a", "aac",
+                    "-movflags", "+faststart",
+                    str(playback_path),
+                ],
+                capture_output=True,
+                timeout=600,
+            )
+
+            if result.returncode != 0:
+                logger.error(f"ffmpeg failed for {upload_id}: {result.stderr.decode()[:500]}")
+                return None
+
+            relative_path = playback_path.relative_to(self.base_path)
+            logger.info(f"Transcode complete for {upload_id}: {relative_path}")
+            return str(relative_path)
+
+        except subprocess.TimeoutExpired:
+            logger.error(f"Transcode timed out for {upload_id}")
+            if playback_path.exists():
+                playback_path.unlink()
+            return None
+        except Exception as e:
+            logger.error(f"Transcode failed for {upload_id}: {e}")
+            if playback_path.exists():
+                playback_path.unlink()
+            return None
+
     async def get_upload_metadata(
         self,
         user_id: UUID,
@@ -491,7 +553,7 @@ class StorageService:
             ).strip().lower()
 
             # Normalize codec names
-            if codec in ("hvc1", "hev1"):
+            if codec in ("hvc1", "hev1", "hevc"):
                 codec = "hevc"
             elif codec in ("avc1", "h264"):
                 codec = "h264"

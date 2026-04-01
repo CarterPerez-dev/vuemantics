@@ -39,6 +39,7 @@ class User(BaseModel):
         self.email: str = kwargs.get("email", "")
         self.password_hash: str = kwargs.get("password_hash", "")
         self.is_active: bool = kwargs.get("is_active", True)
+        self.is_admin: bool = kwargs.get("is_admin", False)
         self.token_version: int = kwargs.get("token_version", 0)
 
     @classmethod
@@ -52,6 +53,7 @@ class User(BaseModel):
                 email VARCHAR(255) UNIQUE NOT NULL,
                 password_hash VARCHAR(255) NOT NULL,
                 is_active BOOLEAN DEFAULT TRUE,
+                is_admin BOOLEAN DEFAULT FALSE,
                 token_version INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT NOW(),
                 updated_at TIMESTAMP DEFAULT NOW()

@@ -6,12 +6,11 @@ factory.py
 import logging
 import time
 
+import config
 import database
 from config import settings
 
 logger = logging.getLogger(__name__)
-
-_CACHE_TTL = 5.0
 
 _cache: dict = {"provider_name": None, "expires_at": 0.0}
 
@@ -46,7 +45,7 @@ async def get_provider():
     else:
         provider_name = await _fetch_provider_from_db()
         _cache["provider_name"] = provider_name
-        _cache["expires_at"] = now + _CACHE_TTL
+        _cache["expires_at"] = now + config.PROVIDER_CACHE_TTL
 
     if provider_name == "gemini":
         from services.ai.providers.gemini import get_gemini_provider

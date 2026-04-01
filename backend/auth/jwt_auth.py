@@ -155,6 +155,14 @@ async def get_current_active_user(
     return current_user
 
 
+async def get_current_admin_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    if not current_user.is_admin:
+        raise AuthorizationError("Admin access required")
+    return current_user
+
+
 async def refresh_access_token(refresh_token: str) -> dict[str, str]:
     """
     Use refresh token to get new access token

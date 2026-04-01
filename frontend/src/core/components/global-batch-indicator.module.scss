@@ -8,41 +8,42 @@
 .indicator {
   display: flex;
   align-items: center;
-  gap: $space-2;
-  padding: $space-2 $space-4;
-  border: none;
-  border-radius: $radius-md;
-  background: rgb(0, 90, 156, 10%);
-  color: $accent-blue;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid $accent;
+  background: transparent;
   cursor: pointer;
-  @include transition-fast;
+  transition: background-color $duration-fast $ease-out;
+  font-family: $font-sans;
 
-  @include hover {
-    background: rgb(0, 90, 156, 20%);
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background: rgba($accent, 0.08);
+    }
   }
 }
 
-.spinner {
-  animation: spin 1s linear infinite;
+.dot {
+  width: 7px;
+  height: 7px;
+  background: $accent;
+  border-radius: $radius-full;
+  animation: pulse 1.5s ease-in-out infinite;
 }
 
 .text {
+  font-size: 12px;
+  letter-spacing: $tracking-wider;
+  color: $accent;
   white-space: nowrap;
 }
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
   }
-
-  to {
-    transform: rotate(360deg);
+  50% {
+    opacity: 0.4;
   }
 }

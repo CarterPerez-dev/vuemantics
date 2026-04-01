@@ -10,6 +10,8 @@ import { VuemanticWebSocket } from './socket.client'
 import type {
   BatchProgressUpdate,
   FileProgressUpdate,
+  ReembedComplete,
+  ReembedProgress,
   UploadCompleted,
   UploadFailed,
   UploadProgressUpdate,
@@ -24,6 +26,8 @@ interface UseSocketOptions {
   onBatchProgress?: (data: BatchProgressUpdate) => void
   onFileProgress?: (data: FileProgressUpdate) => void
   onError?: (error: WebSocketError) => void
+  onReembedProgress?: (data: ReembedProgress) => void
+  onReembedComplete?: (data: ReembedComplete) => void
 }
 
 interface UseSocketReturn {
@@ -41,6 +45,8 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
     onBatchProgress,
     onFileProgress,
     onError,
+    onReembedProgress,
+    onReembedComplete,
   } = options
 
   const [isConnected, setIsConnected] = useState(false)
@@ -54,6 +60,8 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
   const onBatchProgressRef = useRef(onBatchProgress)
   const onFileProgressRef = useRef(onFileProgress)
   const onErrorRef = useRef(onError)
+  const onReembedProgressRef = useRef(onReembedProgress)
+  const onReembedCompleteRef = useRef(onReembedComplete)
 
   useEffect(() => {
     accessTokenRef.current = accessToken
@@ -63,6 +71,8 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
     onBatchProgressRef.current = onBatchProgress
     onFileProgressRef.current = onFileProgress
     onErrorRef.current = onError
+    onReembedProgressRef.current = onReembedProgress
+    onReembedCompleteRef.current = onReembedComplete
   })
 
   const getToken = useCallback((): string | null => {
@@ -102,6 +112,8 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
           onErrorRef.current?.(error)
         },
         onReconnect: () => setIsConnected(true),
+        onReembedProgress: (data) => onReembedProgressRef.current?.(data),
+        onReembedComplete: (data) => onReembedCompleteRef.current?.(data),
       })
     } catch {
       return

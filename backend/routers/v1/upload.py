@@ -92,10 +92,19 @@ async def process_upload_background(
         )
 
         if thumbnail_path:
-            # Update upload record with thumbnail
             upload = await Upload.find_by_id(upload_id)
             if upload:
                 await upload.update_thumbnail(thumbnail_path)
+
+        if file_type == "video":
+            playback_path = await storage_service.transcode_hevc(
+                user_id, upload_id, extension,
+            )
+            if playback_path:
+                upload = await Upload.find_by_id(upload_id)
+                if upload:
+                    await upload.update_file_path(playback_path)
+                    await upload.update_video_codec("hevc")
 
         # Queue for AI processing
         logger.info(f"Starting AI processing for upload {upload_id}")

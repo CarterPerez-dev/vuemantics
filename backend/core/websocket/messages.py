@@ -3,7 +3,7 @@
 messages.py
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Literal
 
@@ -62,7 +62,7 @@ class UploadProgressUpdate(BaseModel):
     """
     action: Literal["upload_progress"] = "upload_progress"
     payload: UploadProgressPayload
-    timestamp: datetime = Field(default_factory = datetime.utcnow)
+    timestamp: datetime = Field(default_factory = lambda: datetime.now(UTC))
 
 
 class UploadCompleted(BaseModel):
@@ -73,7 +73,7 @@ class UploadCompleted(BaseModel):
     upload_id: str
     description: str | None = None
     audit_score: int | None = None
-    timestamp: datetime = Field(default_factory = datetime.utcnow)
+    timestamp: datetime = Field(default_factory = lambda: datetime.now(UTC))
 
 
 class UploadFailed(BaseModel):
@@ -83,7 +83,7 @@ class UploadFailed(BaseModel):
     action: Literal["upload_failed"] = "upload_failed"
     upload_id: str
     error_message: str
-    timestamp: datetime = Field(default_factory = datetime.utcnow)
+    timestamp: datetime = Field(default_factory = lambda: datetime.now(UTC))
 
 
 class BatchProgressPayload(BaseModel):
@@ -109,7 +109,7 @@ class BatchProgressUpdate(BaseModel):
     """
     action: Literal["batch_progress"] = "batch_progress"
     payload: BatchProgressPayload
-    timestamp: datetime = Field(default_factory = datetime.utcnow)
+    timestamp: datetime = Field(default_factory = lambda: datetime.now(UTC))
 
 
 class FileProgressPayload(BaseModel):
@@ -136,7 +136,7 @@ class FileProgressUpdate(BaseModel):
     """
     action: Literal["file_progress"] = "file_progress"
     payload: FileProgressPayload
-    timestamp: datetime = Field(default_factory = datetime.utcnow)
+    timestamp: datetime = Field(default_factory = lambda: datetime.now(UTC))
 
 
 class AuthSuccess(BaseModel):
@@ -171,7 +171,7 @@ class ReembedProgress(BaseModel):
     total: int
     skipped: int
     failed: int
-    timestamp: datetime = Field(default_factory = datetime.utcnow)
+    timestamp: datetime = Field(default_factory = lambda: datetime.now(UTC))
 
 
 class ReembedComplete(BaseModel):
@@ -182,7 +182,7 @@ class ReembedComplete(BaseModel):
     processed: int
     skipped: int
     failed: int
-    timestamp: datetime = Field(default_factory = datetime.utcnow)
+    timestamp: datetime = Field(default_factory = lambda: datetime.now(UTC))
 
 
 ServerMessage = (

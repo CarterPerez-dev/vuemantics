@@ -1,9 +1,8 @@
 // ===================
 // © AngelaMos | 2026
-// index.tsx - WITH BULK UPLOAD SUPPORT
+// index.tsx
 // ===================
 
-import { GiCloudUpload } from 'react-icons/gi'
 import { LuFolderUp } from 'react-icons/lu'
 import { toast } from 'sonner'
 import { useClientConfig, useCreateBulkUpload } from '@/api/hooks'
@@ -23,10 +22,8 @@ const ACCEPTED_TYPES = {
   'image/webp': ['.webp'],
   'image/heic': ['.heic'],
   'image/heif': ['.heif'],
-  // VIDEO UPLOADS DISABLED (uncomment below to re-enable)
-  // 'video/mp4': ['.mp4'],
-  // 'video/webm': ['.webm'],
-  // 'video/quicktime': ['.mov'],
+  'video/mp4': ['.mp4'],
+  'video/quicktime': ['.mov'],
 }
 
 export function Component(): React.ReactElement {
@@ -63,7 +60,6 @@ export function Component(): React.ReactElement {
     },
     onFileProgress: (data) => {
       handleFileProgress(data)
-      // Also update global store for header indicator
       if (data.payload.status === 'processing') {
         setCurrentFile({
           uploadId: data.payload.upload_id,
@@ -105,7 +101,6 @@ export function Component(): React.ReactElement {
     const fileArray = Array.from(files)
     const newQueuedFiles: QueuedFile[] = []
 
-    // Check for duplicates in existing queue
     const existingNames = new Set(fileQueue.map((f) => f.file.name))
 
     fileArray.forEach((file) => {
@@ -125,7 +120,6 @@ export function Component(): React.ReactElement {
         error: isDuplicate ? 'Already in queue' : validation.error,
       }
 
-      // Generate preview for images
       if (file.type.startsWith('image/') && validation.valid) {
         queuedFile.preview = URL.createObjectURL(file)
       }
@@ -150,7 +144,6 @@ export function Component(): React.ReactElement {
     if (e.target.files) {
       processFiles(e.target.files)
     }
-    // Reset input so same files can be selected again
     e.target.value = ''
   }
 
@@ -177,74 +170,78 @@ export function Component(): React.ReactElement {
 
   return (
     <div className={styles.page}>
-      <BatchProgressIndicator
-        batchProgress={batchProgress}
-        currentFile={currentFile}
-      />
+      <div className={styles.pageHeader}>
+        <div className={styles.pageHeaderLeft}>
+          <span className={styles.pageLabel}>MEDIA INTAKE</span>
+          <span className={styles.pageMeta}>UP—01</span>
+        </div>
+        <div className={styles.pageHeaderRight}>
+          <span className={styles.pageMeta}>
+            MAX {clientConfig?.max_upload_size_mb ?? 100}MB / FILE
+          </span>
+          <span className={styles.pageMeta}>1000 FILES / BATCH</span>
+        </div>
+      </div>
+
       <div className={styles.container}>
-        <div className={styles.uploadSection}>
-          <div
-            className={`${styles.dropzone} ${dragActive ? styles.active : ''}`}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-            role="button"
-            tabIndex={0}
-          >
-            <GiCloudUpload className={styles.icon} />
-            <p className={styles.text}>Drag and drop files or folders</p>
-            <p className={styles.subtext}>Upload 1-1000 files at once</p>
-            <div className={styles.bulkInputs}>
+        <BatchProgressIndicator
+          batchProgress={batchProgress}
+          currentFile={currentFile}
+        />
+
+        <div
+          className={`${styles.dropzone} ${dragActive ? styles.dropzoneActive : ''}`}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          role="button"
+          tabIndex={0}
+        >
+          <div className={styles.dropzoneInner}>
+            <span className={styles.dropzoneTitle}>
+              DROP FILES TO BEGIN INTAKE
+            </span>
+            <span className={styles.dropzoneSub}>
+              JPG · PNG · WebP · HEIC · MP4 · MOV
+            </span>
+          </div>
+
+          <div className={styles.dropzoneActions}>
+            <label className={styles.selectBtn}>
+              SELECT FILES
               <input
                 type="file"
-                className={styles.fileInput}
+                className={styles.fileInputHidden}
                 onChange={handleFileSelect}
                 accept={Object.values(ACCEPTED_TYPES).flat().join(',')}
                 multiple
               />
-              <label className={styles.folderBtn}>
-                <LuFolderUp />
-                <span>Upload Folder</span>
-                <input
-                  type="file"
-                  className={styles.fileInputHidden}
-                  onChange={handleFileSelect}
-                  // @ts-expect-error - webkitdirectory is not in types
-                  webkitdirectory=""
-                  directory=""
-                />
-              </label>
-            </div>
-          </div>
-
-          <BulkUploadQueue
-            files={fileQueue}
-            onRemoveFile={removeFile}
-            onClearAll={clearQueue}
-            onUploadAll={handleUploadAll}
-            isUploading={createBulkUpload.isPending}
-            totalSize={totalQueueSize}
-            maxSize={maxFileSizeBytes * 1000} // Generous limit for bulk
-          />
-
-          <div className={styles.info}>
-            <p className={styles.infoText}>
-              Supported formats: Images (JPG, PNG, WebP, HEIC) and Videos (MP4,
-              WebM, MOV)
-            </p>
-            <p className={styles.infoText}>
-              Maximum per file:{' '}
-              <span className={styles.highlight}>
-                {clientConfig?.max_upload_size_mb ?? 100}MB
-              </span>
-            </p>
-            <p className={styles.infoText}>
-              Maximum batch: <span className={styles.highlight}>1000 files</span>{' '}
-              or <span className={styles.highlight}>10GB total</span>
-            </p>
+            </label>
+            <label className={styles.selectBtn}>
+              <LuFolderUp className={styles.folderIcon} />
+              SELECT FOLDER
+              <input
+                type="file"
+                className={styles.fileInputHidden}
+                onChange={handleFileSelect}
+                // @ts-expect-error - webkitdirectory is not in types
+                webkitdirectory=""
+                directory=""
+              />
+            </label>
           </div>
         </div>
+
+        <BulkUploadQueue
+          files={fileQueue}
+          onRemoveFile={removeFile}
+          onClearAll={clearQueue}
+          onUploadAll={handleUploadAll}
+          isUploading={createBulkUpload.isPending}
+          totalSize={totalQueueSize}
+          maxSize={maxFileSizeBytes * 1000}
+        />
       </div>
     </div>
   )

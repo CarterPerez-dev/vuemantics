@@ -3,7 +3,6 @@
 // GlobalBatchIndicator.tsx
 // ===================
 
-import { LuRefreshCw } from 'react-icons/lu'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/config'
 import { useGlobalBatchProgress } from '@/core/lib/stores'
@@ -26,9 +25,9 @@ export function GlobalBatchIndicator(): React.ReactElement | null {
       onClick={() => navigate(ROUTES.UPLOAD)}
       title="View upload progress"
     >
-      <LuRefreshCw className={styles.spinner} />
+      <span className={styles.dot} />
       <span className={styles.text}>
-        {processed}/{total} Processing
+        {processed}/{total}
       </span>
     </button>
   )

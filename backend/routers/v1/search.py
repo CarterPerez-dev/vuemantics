@@ -148,7 +148,11 @@ async def find_similar_uploads(
     Uses the embedding of the specified upload to find
     other semantically similar uploads.
     """
-    if not upload.embedding_local:
+    has_embedding = (
+        upload.embedding_local is not None
+        or upload.embedding_gemini is not None
+    )
+    if not has_embedding:
         raise ValidationError("Upload has not been processed yet")
 
     try:
