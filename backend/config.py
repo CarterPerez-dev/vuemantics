@@ -79,7 +79,7 @@ BATCH_EMBEDDING_MAX_CONCURRENT: Final[int] = 3  # Max parallel embedding generat
 SEARCH_RESULT_MULTIPLIER: Final[int] = 2  # Multiply limit for pre-filtering
 BATCH_SEARCH_MAX_CONCURRENT: Final[int] = 3  # Max parallel searches in batch
 BATCH_SEARCH_DEFAULT_LIMIT: Final[int] = 10  # Default results per query in batch
-SIMILAR_UPLOADS_DEFAULT_LIMIT: Final[int] = 6  # Default similar uploads to return
+SIMILAR_UPLOADS_DEFAULT_LIMIT: Final[int] = 25  # Default similar uploads to return
 SEARCH_SUGGESTIONS_DEFAULT_LIMIT: Final[int] = 5  # Default search suggestions to return
 
 # Processing queue settings

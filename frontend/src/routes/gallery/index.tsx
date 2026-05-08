@@ -3,12 +3,15 @@
 // index.tsx
 // ===================
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   LuCheck,
+  LuChevronLeft,
+  LuChevronRight,
   LuDownload,
   LuEye,
   LuEyeOff,
+  LuMaximize,
   LuRefreshCw,
   LuSearch,
   LuSparkles,
@@ -174,9 +177,46 @@ export function Component(): React.ReactElement {
     subscribeToUpload,
   })
 
-  const currentUpload = selectedMediaId
-    ? (displayItems.find((item) => item.id === selectedMediaId) ?? null)
-    : null
+  const currentIndex = selectedMediaId
+    ? displayItems.findIndex((item) => item.id === selectedMediaId)
+    : -1
+  const currentUpload = currentIndex >= 0 ? displayItems[currentIndex] : null
+  const hasPrev = currentIndex > 0
+  const hasNext = currentIndex >= 0 && currentIndex < displayItems.length - 1
+
+  const goPrev = useCallback(() => {
+    if (currentIndex > 0) {
+      setSelectedMediaId(displayItems[currentIndex - 1].id)
+    }
+  }, [currentIndex, displayItems, setSelectedMediaId])
+
+  const goNext = useCallback(() => {
+    if (currentIndex >= 0 && currentIndex < displayItems.length - 1) {
+      setSelectedMediaId(displayItems[currentIndex + 1].id)
+    }
+  }, [currentIndex, displayItems, setSelectedMediaId])
+
+  useEffect(() => {
+    if (!selectedMediaId) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !document.fullscreenElement) {
+        setSelectedMediaId(null)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [selectedMediaId, setSelectedMediaId])
+
+  const mediaWrapRef = useRef<HTMLDivElement>(null)
+  const toggleFullscreen = useCallback(() => {
+    const el = mediaWrapRef.current
+    if (!el) return
+    if (document.fullscreenElement) {
+      void document.exitFullscreen()
+    } else {
+      void el.requestFullscreen()
+    }
+  }, [])
 
   const isSearching = searchResults !== null
   const isSimilarMode = similarResults !== null
@@ -545,6 +585,30 @@ export function Component(): React.ReactElement {
           role="dialog"
           aria-modal="true"
         >
+          <button
+            type="button"
+            className={`${styles.navBackdrop} ${styles.navBackdropPrev}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              goPrev()
+            }}
+            disabled={!hasPrev}
+            aria-label="Previous"
+          >
+            <LuChevronLeft />
+          </button>
+          <button
+            type="button"
+            className={`${styles.navBackdrop} ${styles.navBackdropNext}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              goNext()
+            }}
+            disabled={!hasNext}
+            aria-label="Next"
+          >
+            <LuChevronRight />
+          </button>
           <div
             className={styles.panelContent}
             onClick={(e) => e.stopPropagation()}
@@ -563,9 +627,10 @@ export function Component(): React.ReactElement {
               </button>
             </div>
 
-            <div className={styles.mediaWrap}>
+            <div className={styles.mediaWrap} ref={mediaWrapRef}>
               {currentUpload.file_type === 'image' ? (
                 <img
+                  key={currentUpload.id}
                   src={currentUpload.file_path}
                   alt={currentUpload.filename}
                   className={styles.mediaImg}
@@ -578,11 +643,38 @@ export function Component(): React.ReactElement {
                 </div>
               ) : (
                 <video
+                  key={currentUpload.id}
                   src={currentUpload.file_path}
                   className={styles.mediaVideo}
                   controls
                 />
               )}
+              <button
+                type="button"
+                className={`${styles.mediaNav} ${styles.mediaNavPrev}`}
+                onClick={goPrev}
+                disabled={!hasPrev}
+                aria-label="Previous"
+              >
+                <LuChevronLeft />
+              </button>
+              <button
+                type="button"
+                className={`${styles.mediaNav} ${styles.mediaNavNext}`}
+                onClick={goNext}
+                disabled={!hasNext}
+                aria-label="Next"
+              >
+                <LuChevronRight />
+              </button>
+              <button
+                type="button"
+                className={styles.mediaExpand}
+                onClick={toggleFullscreen}
+                aria-label="Fullscreen"
+              >
+                <LuMaximize />
+              </button>
             </div>
 
             <div className={styles.panelBody}>

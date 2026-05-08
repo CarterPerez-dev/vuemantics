@@ -181,7 +181,7 @@ export function useGalleryHandlers(deps: GalleryHandlersDeps): GalleryHandlers {
     searchMutation.mutate(
       {
         query: searchQuery,
-        limit: clientConfig?.default_page_size ?? 48,
+        limit: 100,
       },
       { onSuccess: (data) => setSearchResults(data.results) }
     )

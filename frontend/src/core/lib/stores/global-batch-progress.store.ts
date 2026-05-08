@@ -4,7 +4,6 @@
 // ===================
 
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 
 interface BatchProgress {
   status: string
@@ -34,60 +33,51 @@ interface GlobalBatchProgressState {
 }
 
 export const useGlobalBatchProgress = create<GlobalBatchProgressState>()(
-  persist(
-    (set, get) => ({
-      batchProgress: {},
-      currentFile: null,
+  (set, get) => ({
+    batchProgress: {},
+    currentFile: null,
 
-      setBatchProgress: (batchId, progress) => {
-        set((state) => ({
-          batchProgress: {
-            ...state.batchProgress,
-            [batchId]: progress,
-          },
-        }))
+    setBatchProgress: (batchId, progress) => {
+      set((state) => ({
+        batchProgress: {
+          ...state.batchProgress,
+          [batchId]: progress,
+        },
+      }))
 
-        // Auto-clear completed batches after 5 seconds
-        if (progress.status === 'completed' || progress.status === 'failed') {
-          setTimeout(() => {
-            set((state) => {
-              const { [batchId]: _, ...rest } = state.batchProgress
-              return { batchProgress: rest }
-            })
-          }, 5000)
-        }
-      },
+      if (progress.status === 'completed' || progress.status === 'failed') {
+        setTimeout(() => {
+          set((state) => {
+            const { [batchId]: _, ...rest } = state.batchProgress
+            return { batchProgress: rest }
+          })
+        }, 5000)
+      }
+    },
 
-      setCurrentFile: (file) => {
-        set({ currentFile: file })
-      },
+    setCurrentFile: (file) => {
+      set({ currentFile: file })
+    },
 
-      clearBatch: (batchId) => {
-        set((state) => {
-          const { [batchId]: _, ...rest } = state.batchProgress
-          return { batchProgress: rest }
-        })
-      },
+    clearBatch: (batchId) => {
+      set((state) => {
+        const { [batchId]: _, ...rest } = state.batchProgress
+        return { batchProgress: rest }
+      })
+    },
 
-      hasActiveProcessing: () => {
-        const batches = Object.values(get().batchProgress)
-        return batches.some((b) => b.status === 'processing')
-      },
+    hasActiveProcessing: () => {
+      const batches = Object.values(get().batchProgress)
+      return batches.some((b) => b.status === 'processing')
+    },
 
-      getActiveCount: () => {
-        const batches = Object.values(get().batchProgress)
-        const activeBatch = batches.find((b) => b.status === 'processing')
-        return {
-          processed: activeBatch?.processed || 0,
-          total: activeBatch?.total || 0,
-        }
-      },
-    }),
-    {
-      name: 'vuemantics-batch-progress',
-      partialPersist: (state) => ({
-        batchProgress: state.batchProgress,
-      }),
-    }
-  )
+    getActiveCount: () => {
+      const batches = Object.values(get().batchProgress)
+      const activeBatch = batches.find((b) => b.status === 'processing')
+      return {
+        processed: activeBatch?.processed || 0,
+        total: activeBatch?.total || 0,
+      }
+    },
+  })
 )
