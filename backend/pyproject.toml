@@ -1,5 +1,5 @@
 [project]
-name = "vuemantic"
+name = "vuemantics"
 version = "1.0.1"
 description = "A smart camera roll application with vector powered semantic search"
 authors = [{name = "Carter Perez"}]
