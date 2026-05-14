@@ -3,7 +3,7 @@
 messages.py
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Literal
 
@@ -58,11 +58,11 @@ class UploadProgressPayload(BaseModel):
 
 class UploadProgressUpdate(BaseModel):
     """
-    Real-time progress update message
+    Real time progress update message
     """
     action: Literal["upload_progress"] = "upload_progress"
     payload: UploadProgressPayload
-    timestamp: datetime = Field(default_factory = datetime.utcnow)
+    timestamp: datetime = Field(default_factory = lambda: datetime.now(UTC))
 
 
 class UploadCompleted(BaseModel):
@@ -71,9 +71,9 @@ class UploadCompleted(BaseModel):
     """
     action: Literal["upload_completed"] = "upload_completed"
     upload_id: str
-    description: str
-    audit_score: int
-    timestamp: datetime = Field(default_factory = datetime.utcnow)
+    description: str | None = None
+    audit_score: int | None = None
+    timestamp: datetime = Field(default_factory = lambda: datetime.now(UTC))
 
 
 class UploadFailed(BaseModel):
@@ -83,7 +83,60 @@ class UploadFailed(BaseModel):
     action: Literal["upload_failed"] = "upload_failed"
     upload_id: str
     error_message: str
-    timestamp: datetime = Field(default_factory = datetime.utcnow)
+    timestamp: datetime = Field(default_factory = lambda: datetime.now(UTC))
+
+
+class BatchProgressPayload(BaseModel):
+    """
+    Batch processing progress information
+    """
+    batch_id: str = Field(description = "Batch UUID")
+    status: str = Field(description = "Batch status")
+    total: int = Field(description = "Total uploads in batch")
+    processed: int = Field(description = "Uploads processed so far")
+    successful: int = Field(description = "Successfully processed uploads")
+    failed: int = Field(description = "Failed uploads")
+    progress_percentage: float = Field(
+        ge = 0,
+        le = 100,
+        description = "Overall batch progress percentage"
+    )
+
+
+class BatchProgressUpdate(BaseModel):
+    """
+    Batch processing progress update
+    """
+    action: Literal["batch_progress"] = "batch_progress"
+    payload: BatchProgressPayload
+    timestamp: datetime = Field(default_factory = lambda: datetime.now(UTC))
+
+
+class FileProgressPayload(BaseModel):
+    """
+    Individual file processing progress within a batch
+    """
+    batch_id: str = Field(description = "Batch UUID")
+    upload_id: str = Field(description = "Upload UUID")
+    file_name: str = Field(description = "Original filename")
+    file_size: int = Field(description = "File size in bytes")
+    progress_percentage: int = Field(
+        ge = 0,
+        le = 100,
+        description = "Processing progress"
+    )
+    status: Literal["processing", "completed", "failed"] = Field(
+        description = "File processing status"
+    )
+
+
+class FileProgressUpdate(BaseModel):
+    """
+    Per-file progress update message
+    """
+    action: Literal["file_progress"] = "file_progress"
+    payload: FileProgressPayload
+    timestamp: datetime = Field(default_factory = lambda: datetime.now(UTC))
 
 
 class AuthSuccess(BaseModel):
@@ -109,13 +162,40 @@ class Heartbeat(BaseModel):
     action: Literal["ping"] = "ping"
 
 
+class ReembedProgress(BaseModel):
+    """
+    Progress update for the background re-embed job
+    """
+    action: Literal["reembed_progress"] = "reembed_progress"
+    processed: int
+    total: int
+    skipped: int
+    failed: int
+    timestamp: datetime = Field(default_factory = lambda: datetime.now(UTC))
+
+
+class ReembedComplete(BaseModel):
+    """
+    Re-embed job finished
+    """
+    action: Literal["reembed_complete"] = "reembed_complete"
+    processed: int
+    skipped: int
+    failed: int
+    timestamp: datetime = Field(default_factory = lambda: datetime.now(UTC))
+
+
 ServerMessage = (
     UploadProgressUpdate
     | UploadCompleted
     | UploadFailed
+    | BatchProgressUpdate
+    | FileProgressUpdate
     | AuthSuccess
     | AuthError
     | Heartbeat
+    | ReembedProgress
+    | ReembedComplete
 )
 
 

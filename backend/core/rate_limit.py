@@ -3,10 +3,12 @@
 Rate limiting configuration.
 """
 
-from jose import jwt  # type: ignore[import-untyped]
+from jose import jwt
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from starlette.requests import Request
+
+import config
 
 
 def get_identifier(request: Request) -> str:
@@ -35,7 +37,7 @@ def get_identifier(request: Request) -> str:
 
 limiter = Limiter(
     key_func = get_identifier,
-    default_limits = ["1000/hour"],
+    default_limits = [config.RATE_LIMIT_DEFAULT],
     headers_enabled = False,
     in_memory_fallback_enabled = True,
 )

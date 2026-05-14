@@ -9,6 +9,7 @@ from .jwt_auth import (
     decode_token,
     get_current_user,
     get_current_active_user,
+    get_current_admin_user,
     refresh_access_token,
     TokenType,
 )
@@ -22,6 +23,7 @@ __all__ = [
     "decode_token",
     "get_current_user",
     "get_current_active_user",
+    "get_current_admin_user",
     "refresh_access_token",
     "TokenType",
     # Dependencies

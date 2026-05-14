@@ -1,0 +1,12 @@
+@font-face {
+    font-family: 'Quixote';
+    src: url('Quixote-Regular.eot');
+    src: local('Quixote Regular'), local('Quixote-Regular'),
+        url('Quixote-Regular.eot?#iefix') format('embedded-opentype'),
+        url('Quixote-Regular.woff2') format('woff2'),
+        url('Quixote-Regular.woff') format('woff'),
+        url('Quixote-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+

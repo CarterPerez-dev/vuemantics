@@ -1,0 +1,118 @@
+// ===================
+// © AngelaMos | 2026
+// batch-progress-indicator.module.scss
+// ===================
+
+@use '@/styles' as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.batch {
+  border: 1px solid $border-default;
+  display: flex;
+  flex-direction: column;
+}
+
+.batchHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid $border-default;
+  background-color: $bg-surface;
+}
+
+.batchLabel {
+  font-family: $font-sans;
+  font-size: 11px;
+  letter-spacing: $tracking-widest;
+  color: $text-default;
+  font-weight: $font-weight-semibold;
+}
+
+.batchCount {
+  font-family: $font-sans;
+  font-size: 13px;
+  letter-spacing: $tracking-wide;
+  color: $text-secondary;
+  font-variant-numeric: tabular-nums;
+}
+
+.progressBar {
+  height: 4px;
+  background: $bg-raised;
+}
+
+.progressFill {
+  height: 100%;
+  background: $accent;
+  transition: width 200ms $ease-out;
+}
+
+.progressError {
+  background: $error;
+}
+
+.batchStats {
+  display: flex;
+  gap: 16px;
+  padding: 10px 16px;
+  font-family: $font-sans;
+  font-size: 12px;
+  letter-spacing: $tracking-wider;
+  color: $text-muted;
+  font-weight: $font-weight-medium;
+}
+
+.statSuccess {
+  color: $success;
+}
+
+.statFailed {
+  color: $error-light;
+}
+
+.currentFile {
+  padding: 12px 16px;
+  border-top: 1px solid $border-default;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fileRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fileLabel {
+  font-family: $font-sans;
+  font-size: 10px;
+  letter-spacing: $tracking-widest;
+  color: $text-muted;
+}
+
+.fileName {
+  font-family: $font-sans;
+  font-size: 13px;
+  color: $text-secondary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.progressBarThin {
+  height: 3px;
+  background: $bg-raised;
+}
+
+.progressFillThin {
+  height: 100%;
+  background: $text-muted;
+  transition: width 200ms $ease-out;
+}

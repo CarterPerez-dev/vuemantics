@@ -1,0 +1,49 @@
+// ===================
+// © AngelaMos | 2026
+// global-batch-indicator.module.scss
+// ===================
+
+@use '@/styles' as *;
+
+.indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid $accent;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color $duration-fast $ease-out;
+  font-family: $font-sans;
+
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background: rgba($accent, 0.08);
+    }
+  }
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  background: $accent;
+  border-radius: $radius-full;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.text {
+  font-size: 12px;
+  letter-spacing: $tracking-wider;
+  color: $accent;
+  white-space: nowrap;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}

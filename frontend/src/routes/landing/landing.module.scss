@@ -1,161 +1,305 @@
 // ===================
-// © AngelaMos | 2025
+// © AngelaMos | 2026
 // landing.module.scss
 // ===================
 
-@use '@/styles' as *;
+$cream: #999999;
+$cream-dark: #8a8580;
+$ink: #1c1917;
+$ink-light: #292929;
+$stone-500: #000;
+$stone-400: rgba(255, 255, 255, 0.65);
+$stone-300: #706b67;
+$accent: #ea580c;
+
+$sans: 'Barlow', 'Helvetica Neue', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+$display: 'Inter Tight', $sans;
 
 .page {
-  min-height: 100vh;
-  min-height: 100dvh;
-  @include flex-column-center;
-  background-color: $bg-default;
-  background-image: radial-gradient(
-    circle,
-    $bg-landing 1px,
-    transparent 1px
-  );
-  background-size: 20px 20px;
-  padding: $space-10 $space-8 $space-6;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background-color: $cream;
+  color: $ink;
+  overflow: hidden;
+  font-family: $sans;
 }
 
-.header {
-  text-align: center;
-  margin-bottom: $space-8;
+.strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 32px;
+  border-bottom: 1px solid $stone-300;
+
+  span {
+    font-family: $sans;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 400;
+    color: $stone-500;
+  }
+}
+
+.stripLeft,
+.stripRight {
+  display: flex;
+  gap: 28px;
+}
+
+.field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  overflow: hidden;
+}
+
+.registration {
+  position: absolute;
+  top: 44px;
+  left: 48px;
+  font-family: $sans;
+  font-size: 16px;
+  color: $stone-400;
+  letter-spacing: 0.15em;
+  user-select: none;
+}
+
+.badge {
+  position: absolute;
+  top: 36px;
+  right: 48px;
+  padding: 6px 18px;
+  border: 2px solid $accent;
+  font-family: $sans;
+  font-size: 18px;
+  font-weight: 700;
+  color: $accent;
+  letter-spacing: 0.06em;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 28px;
 }
 
 .title {
-  font-size: 4.7rem;
-  font-family: -apple-system-condensed, 'Arial Narrow', Arial, sans-serif;
-  font-weight: $font-weight-semibold;
-  color: $text-default;
-  letter-spacing: $tracking-tight;
-  margin-bottom: $space-4;
+  font-family: $display;
+  font-size: clamp(4.65rem, 14vw, 13.05rem);
+  font-weight: 400;
+  letter-spacing: -0.040em;
+  line-height: 0.88;
+  color: $ink;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.reg {
+  font-size: 0.18em;
+  font-weight: 400;
+  color: $stone-400;
+  vertical-align: 0.6em;
 }
 
 .subtitle {
-  font-size: 1.44rem;
-  color: $text-almost-muted;
-  max-width: 500px;
-  margin-bottom: 32px;
-}
-
-.github {
-  display: inline-flex;
-  color: $text-light;
-  font-size: 2.1rem;
-  @include transition-fast;
-
-  @include hover {
-    &:hover {
-      color: $text-default;
-    }
-  }
-}
-
-.content {
-  max-width: 900px;
-  text-align: center;
-}
-
-.sections {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: $space-5;
-  margin-bottom: $space-8;
-  text-align: left;
-
-  @include breakpoint-down(md) {
-    grid-template-columns: 1fr;
-  }
-}
-
-.section {
-  padding: $space-5;
-  background-color: $bg-landing-card;
-  background-image: radial-gradient(
-    circle,
-    $bg-landing-card-dot 1px,
-    transparent 1px
-  );
-  background-size: 13px 13px;
-  border: 1px solid $border-muted;
-  border-radius: $radius-lg;
-}
-
-.sectionIcon {
-  width: 39px;
-  height: 39px;
-  @include flex-center;
-  background: $bg-surface-200;
-  border-radius: $radius-md;
-  margin-bottom: $space-3;
-  color: $accent-blue;
-
-  svg {
-    width: 20px;
-    height: 20px;
-  }
-}
-
-.sectionTitle {
-  font-size: $font-size-base;
-  font-weight: $font-weight-semibold;
-  color: $text-default;
-  margin-bottom: $space-2;
-}
-
-.sectionText {
-  font-size: $font-size-sm;
-  color: $text-light;
-  line-height: $line-height-relaxed;
-}
-
-.actions {
   display: flex;
-  gap: $space-3;
   justify-content: center;
-  flex-wrap: wrap;
+  gap: clamp(28px, 5vw, 72px);
+  font-size: clamp(12px, 1.1vw, 14px);
+  font-weight: 400;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: $ink;
 }
 
-.button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: $space-3 $space-5;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  color: $white;
-  background-color: $accent-blue;
-  border-radius: $radius-md;
-  text-decoration: none;
-  @include transition-fast;
+.rule {
+  width: 100%;
+  max-width: 720px;
+  height: 1px;
+  background-color: $stone-300;
+  margin-bottom: 36px;
+  position: relative;
+}
 
-  @include hover {
+.ruleAccent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 48px;
+  height: 1px;
+  background-color: $accent;
+}
+
+.lower {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 900px;
+  gap: 48px;
+
+  @media (width < 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 28px;
+  }
+}
+
+.specsCard {
+  border: 1px solid $ink;
+  flex-shrink: 0;
+}
+
+.specsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px;
+  border-bottom: 1px solid $ink;
+  background-color: $cream-dark;
+  gap: 20px;
+
+  span {
+    font-family: $sans;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: $stone-500;
+  }
+}
+
+.specsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.spec {
+  padding: 10px 14px;
+  border-bottom: 1px solid $ink;
+  border-right: 1px solid $ink;
+
+  &:nth-child(2n) {
+    border-right: none;
+  }
+
+  &:nth-child(n + 3) {
+    border-bottom: none;
+  }
+}
+
+.specLabel {
+  display: block;
+  font-family: $sans;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  color: $stone-400;
+  font-weight: 300;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+
+.specValue {
+  display: block;
+  font-family: $sans;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: $ink;
+}
+
+.body {
+  max-width: 300px;
+  text-align: right;
+  align-self: flex-end;
+
+  p {
+    font-size: 14.5px;
+    line-height: 1.70;
+    color: $ink;
+  }
+
+  @media (width < 768px) {
+    max-width: 100%;
+    text-align: left;
+    align-self: flex-start;
+  }
+}
+
+.ghost {
+  position: absolute;
+  bottom: -27.2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: $display;
+  font-size: clamp(6rem, 18vw, 15rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 0.85;
+  color: $ink;
+  opacity: 0.08;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+.bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 32px;
+  border-top: 1px solid $stone-300;
+}
+
+.enter {
+  font-family: $sans;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: $stone-400;
+  background-color: $ink;
+  padding: 10px 28px;
+  text-decoration: none;
+  transition: background-color 150ms ease-out;
+
+  @media (hover: hover) and (pointer: fine) {
     &:hover {
-      filter: brightness(1.1);
+      background-color: $ink-light;
     }
   }
 }
 
-.buttonOutline {
-  display: inline-flex;
+.links {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  padding: $space-3 $space-5;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  color: $text-default;
-  background-color: transparent;
-  border: 1px solid $border-default;
-  border-radius: $radius-md;
-  text-decoration: none;
-  @include transition-fast;
+  gap: 14px;
 
-  @include hover {
-    &:hover {
-      border-color: $border-strong;
-      background-color: $bg-surface-75;
+  a {
+    font-family: $sans;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: $stone-500;
+    text-decoration: none;
+    transition: color 150ms ease-out;
+
+    @media (hover: hover) and (pointer: fine) {
+      &:hover {
+        color: $stone-400;
+      }
     }
   }
+}
+
+.linkDivider {
+  color: $stone-300;
+  font-size: 11px;
 }

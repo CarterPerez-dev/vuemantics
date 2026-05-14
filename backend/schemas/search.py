@@ -19,9 +19,9 @@ from config import (
     DEFAULT_PAGE_SIZE,
     MAX_PAGE_SIZE,
     MAX_QUERY_LENGTH,
-    SEARCH_DEFAULT_SIMILARITY_THRESHOLD,
+    SEARCH_SIMILARITY_THRESHOLD_GEMINI,
     SIMILAR_UPLOADS_DEFAULT_LIMIT,
-    SIMILAR_UPLOADS_SIMILARITY_THRESHOLD,
+    SIMILAR_SIMILARITY_THRESHOLD_GEMINI,
 )
 from models.Upload import FileType
 from schemas.upload import UploadResponse
@@ -50,7 +50,7 @@ class SearchRequest(BaseModel):
     )
 
     similarity_threshold: float = Field(
-        default = SEARCH_DEFAULT_SIMILARITY_THRESHOLD,
+        default = SEARCH_SIMILARITY_THRESHOLD_GEMINI,
         ge = 0.0,
         le = 1.0,
         description = "Minimum similarity score (0-1)"
@@ -193,7 +193,7 @@ class SimilarUploadsRequest(BaseModel):
     )
 
     similarity_threshold: float = Field(
-        default = SIMILAR_UPLOADS_SIMILARITY_THRESHOLD,
+        default = SIMILAR_SIMILARITY_THRESHOLD_GEMINI,
         ge = 0.0,
         le = 1.0,
         description = "Minimum similarity score"

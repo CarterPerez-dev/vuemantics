@@ -12,10 +12,8 @@ from pydantic import (
     ConfigDict,
     Field,
     field_serializer,
-    field_validator,
 )
 
-from config import EMBEDDING_DIMENSIONS
 from models.Upload import FileType, ProcessingStatus
 from schemas import PaginationParams, TimestampMixin
 
@@ -49,16 +47,9 @@ class UploadResponse(TimestampMixin):
         le = 100,
         description = "Description quality score (0-100, higher is better)"
     )
-    embedding_local: list[float] | None = Field(
-        default = None,
-        description =
-        f"{EMBEDDING_DIMENSIONS}-dimensional embedding vector from bge-m3",
-        min_length = EMBEDDING_DIMENSIONS,
-        max_length = EMBEDDING_DIMENSIONS,
-    )
     has_embedding: bool = Field(
         default = False,
-        description = "Whether this upload has an embedding generated"
+        description = "Whether this upload has an embedding for any provider"
     )
     thumbnail_path: str | None = Field(
         default = None,
@@ -90,20 +81,6 @@ class UploadResponse(TimestampMixin):
         default = None,
         description = "Timestamp of last regeneration"
     )
-
-    @field_validator("embedding_local")
-    @classmethod
-    def validate_embedding_dimensions(cls,
-                                      v: list[float] | None
-                                      ) -> list[float] | None:
-        """
-        Ensure embedding has exactly required dimensions.
-        """
-        if v is not None and len(v) != EMBEDDING_DIMENSIONS:
-            raise ValueError(
-                f"Embedding must have exactly {EMBEDDING_DIMENSIONS} dimensions, got {len(v)}"
-            )
-        return v
 
     @field_serializer("file_path")
     def serialize_file_path(self, v: str) -> str:

@@ -11,8 +11,14 @@ from core.websocket.messages import (
     UploadProgressPayload,
     UploadCompleted,
     UploadFailed,
+    BatchProgressUpdate,
+    BatchProgressPayload,
+    FileProgressUpdate,
+    FileProgressPayload,
+    ReembedProgress,
+    ReembedComplete,
 )
-from core.websocket.publisher import UploadProgressPublisher, get_publisher
+from core.websocket.publisher import UploadProgressPublisher, get_publisher, init_publisher
 
 
 __all__ = [
@@ -24,6 +30,13 @@ __all__ = [
     "UploadProgressPayload",
     "UploadCompleted",
     "UploadFailed",
+    "BatchProgressUpdate",
+    "BatchProgressPayload",
+    "FileProgressUpdate",
+    "FileProgressPayload",
+    "ReembedProgress",
+    "ReembedComplete",
     "UploadProgressPublisher",
     "get_publisher",
+    "init_publisher",
 ]

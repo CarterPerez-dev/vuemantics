@@ -1,5 +1,5 @@
 [project]
-name = "vuemantic"
+name = "vuemantics"
 version = "1.0.1"
 description = "A smart camera roll application with vector powered semantic search"
 authors = [{name = "Carter Perez"}]
@@ -41,6 +41,9 @@ dependencies = [
     "gunicorn==23.0.0",
     "ollama==0.6.1",
     "tenacity==8.5.0",
+    "dramatiq[redis]==2.0.1",
+    "google-genai>=1.0.0",
+    "numpy>=2.0.0",
 ]
 
 [project.optional-dependencies]
@@ -53,6 +56,8 @@ dev = [
     "pylint==4.0.4",
     "pylint-pydantic==0.4.1",
     "pylint-per-file-ignores==3.2.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -240,7 +245,7 @@ max-line-length = 95
 [tool.pylint.design]
 max-args = 12
 max-attributes = 20
-max-branches = 20
+max-branches = 25
 max-locals = 20
 max-statements = 69
 

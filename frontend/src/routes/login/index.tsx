@@ -4,7 +4,7 @@
 // ===================
 
 import { useState } from 'react'
-import { LuArrowLeft, LuEye, LuEyeOff } from 'react-icons/lu'
+import { LuEye, LuEyeOff } from 'react-icons/lu'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useLogin } from '@/api/hooks'
@@ -30,8 +30,7 @@ export function Component(): React.ReactElement {
     })
 
     if (!result.success) {
-      const firstError = result.error.issues[0]
-      toast.error(firstError.message)
+      toast.error(result.error.issues[0].message)
       return
     }
 
@@ -45,72 +44,88 @@ export function Component(): React.ReactElement {
 
   return (
     <div className={styles.page}>
-      <div className={styles.card}>
-        <Link to={ROUTES.HOME} className={styles.backButton}>
-          <LuArrowLeft />
-          Back to Home
-        </Link>
-        <div className={styles.header}>
-          <h1 className={styles.title}>Login</h1>
-          <p className={styles.subtitle}>Welcome back</p>
+      <header className={styles.strip}>
+        <div className={styles.stripLeft}>
+          <span>&gt;&gt; ANGELAMOS</span>
         </div>
+        <div className={styles.stripRight}>
+          <span>© 2026</span>
+        </div>
+      </header>
 
-        <form className={styles.form} onSubmit={handleSubmit}>
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="email">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              className={styles.input}
-              placeholder="xxx@example.com"
-              value={loginEmail}
-              onChange={(e) => setLoginEmail(e.target.value)}
-              autoComplete="email"
-            />
+      <main className={styles.field}>
+        <div className={styles.document}>
+          <div className={styles.accentBar} />
+          <div className={styles.docHeader}>
+            <span>IDENTITY VERIFICATION</span>
+            <span>AUTH—01</span>
           </div>
 
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="password">
-              Password
-            </label>
-            <div className={styles.inputWrapper}>
+          <form className={styles.form} onSubmit={handleSubmit}>
+            <div className={styles.formField}>
+              <label className={styles.label} htmlFor="email">
+                IDENTIFICATION
+              </label>
               <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
+                id="email"
+                type="email"
                 className={styles.input}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
+                placeholder="operator@domain.com"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                autoComplete="email"
               />
-              <button
-                type="button"
-                className={styles.eyeButton}
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <LuEyeOff /> : <LuEye />}
-              </button>
             </div>
+
+            <div className={styles.formField}>
+              <label className={styles.label} htmlFor="password">
+                CREDENTIAL
+              </label>
+              <div className={styles.inputWrapper}>
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  className={styles.input}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  className={styles.toggle}
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <LuEyeOff /> : <LuEye />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className={styles.submit}
+              disabled={login.isPending}
+            >
+              {login.isPending ? 'AUTHENTICATING...' : 'AUTHENTICATE'}
+            </button>
+          </form>
+
+          <div className={styles.docFooter}>
+            <span className={styles.footerText}>
+              No clearance?{'  '}
+              <Link to={ROUTES.REGISTER} className={styles.link}>
+                REQUEST ACCESS →
+              </Link>
+            </span>
           </div>
+        </div>
+      </main>
 
-          <button
-            type="submit"
-            className={styles.submit}
-            disabled={login.isPending}
-          >
-            {login.isPending ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-
-        <p className={styles.footer}>
-          Don&apos;t have an account?{' '}
-          <Link to={ROUTES.REGISTER} className={styles.link}>
-            Sign up
-          </Link>
-        </p>
-      </div>
+      <footer className={styles.bottom}>
+        <Link to={ROUTES.HOME} className={styles.returnLink}>
+          ← RETURN
+        </Link>
+      </footer>
     </div>
   )
 }

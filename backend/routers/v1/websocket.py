@@ -78,7 +78,9 @@ async def upload_progress_websocket(websocket: WebSocket) -> None:
                     action = raw_message.get("action")
 
                     if action == "subscribe_upload":
-                        sub_msg = SubscribeUpload.model_validate(raw_message)
+                        sub_msg = SubscribeUpload.model_validate(
+                            raw_message
+                        )
                         await manager.subscribe_upload(
                             user_id,
                             sub_msg.upload_id
@@ -88,7 +90,9 @@ async def upload_progress_websocket(websocket: WebSocket) -> None:
                         )
 
                     elif action == "unsubscribe_upload":
-                        unsub_msg = UnsubscribeUpload.model_validate(raw_message)
+                        unsub_msg = UnsubscribeUpload.model_validate(
+                            raw_message
+                        )
                         await manager.unsubscribe_upload(
                             user_id,
                             unsub_msg.upload_id

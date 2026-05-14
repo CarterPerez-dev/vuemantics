@@ -20,7 +20,7 @@ class UploadProgressPublisher:
     """
     Publishes upload progress events via Redis pub/sub
 
-    Handles cross-instance message delivery and local distribution
+    Handles cross instance message delivery and local distribution
     Listens to Redis channels and forwards to connected WebSocket clients
     """
     def __init__(self) -> None:
@@ -83,6 +83,27 @@ class UploadProgressPublisher:
         except Exception as e:
             logger.error(f"Failed to publish to Redis: {e}")
 
+    async def publish_to_user(
+        self,
+        user_id: str,
+        message: ServerMessage
+    ) -> None:
+        """
+        Publish message directly to a user
+
+        Args:
+            user_id: User's ID
+            message: Message to broadcast
+        """
+        channel = f"user:{user_id}"
+        payload = message.model_dump_json()
+
+        try:
+            await redis_pool.publish(channel, payload)
+            logger.debug(f"Published message to user {user_id}")
+        except Exception as e:
+            logger.error(f"Failed to publish to Redis: {e}")
+
     async def _listen_redis(self) -> None:
         """
         Background task that listens to Redis pub/sub
@@ -92,9 +113,9 @@ class UploadProgressPublisher:
         """
         pubsub = None
         try:
-            pubsub = await redis_pool.psubscribe("upload:*")
+            pubsub = await redis_pool.psubscribe("upload:*", "user:*")
 
-            logger.info("Redis listener started (pattern: upload:*)")
+            logger.info("Redis listener started (patterns: upload:*, user:*)")
 
             while self._running:
                 try:
@@ -109,25 +130,27 @@ class UploadProgressPublisher:
                     if message["type"] != "pmessage":
                         continue
 
-                    # Extract upload_id from channel
                     # Note: decode_responses=True means these are already strings
                     channel = message["channel"]
                     if isinstance(channel, bytes):
                         channel = channel.decode("utf-8")
-                    upload_id = channel.split(":", 1)[1]
 
-                    # Parse message payload
                     payload = message["data"]
                     if isinstance(payload, bytes):
                         payload = payload.decode("utf-8")
 
-                    # Get local connection manager
                     manager = get_manager()
 
-                    # Get users subscribed to this upload (on this instance)
-                    user_ids = manager.get_upload_subscriber_ids(upload_id)
+                    user_ids: list[str]
+                    if channel.startswith("upload:"):
+                        upload_id = channel.split(":", 1)[1]
+                        user_ids = list(manager.get_upload_subscriber_ids(upload_id))
+                    elif channel.startswith("user:"):
+                        user_id = channel.split(":", 1)[1]
+                        user_ids = [user_id]
+                    else:
+                        continue
 
-                    # Forward to each subscribed user
                     for user_id in user_ids:
                         connections = list(
                             manager.user_connections.get(user_id,
@@ -144,7 +167,7 @@ class UploadProgressPublisher:
                                 )
                                 dead_connections.add(ws)
 
-                        # Clean up dead connections
+                        # Garbage c
                         for ws in dead_connections:
                             await manager.disconnect(user_id, ws)
 

@@ -19,8 +19,12 @@ export const API_ENDPOINTS = {
     HIDE: (id: string) => `/${API_VERSION}/uploads/${id}/hide`,
     REGENERATE: (id: string) =>
       `/${API_VERSION}/uploads/${id}/regenerate-description`,
+    DOWNLOAD: (id: string) => `/${API_VERSION}/uploads/${id}/download`,
     BULK_DELETE: `/${API_VERSION}/uploads/bulk/delete`,
     BULK_HIDE: `/${API_VERSION}/uploads/bulk/hide`,
+    BULK_UPLOAD: `/${API_VERSION}/uploads/bulk`,
+    BATCH: (batchId: string) => `/${API_VERSION}/uploads/batches/${batchId}`,
+    BATCHES: `/${API_VERSION}/uploads/batches`,
   },
   SEARCH: {
     BASE: `/${API_VERSION}/search`,
@@ -32,6 +36,10 @@ export const API_ENDPOINTS = {
   CLIENT_CONFIG: `/${API_VERSION}/client-config`,
   CHANGELOG: `/${API_VERSION}/changelog`,
   HEALTH: `/${API_VERSION}/health`,
+  SETTINGS: {
+    PROVIDER: `/${API_VERSION}/settings/provider`,
+    REEMBED: `/${API_VERSION}/settings/reembed`,
+  },
 } as const
 
 export const WEBSOCKET_ENDPOINTS = {
@@ -49,6 +57,9 @@ export const QUERY_KEYS = {
     BY_ID: (id: string) => [...QUERY_KEYS.UPLOADS.ALL, 'detail', id] as const,
     METADATA: (id: string) =>
       [...QUERY_KEYS.UPLOADS.ALL, 'metadata', id] as const,
+    BATCHES: () => [...QUERY_KEYS.UPLOADS.ALL, 'batches'] as const,
+    BATCH: (batchId: string) =>
+      [...QUERY_KEYS.UPLOADS.ALL, 'batch', batchId] as const,
   },
   SEARCH: {
     ALL: ['search'] as const,
@@ -60,6 +71,10 @@ export const QUERY_KEYS = {
     STATS: () => [...QUERY_KEYS.SEARCH.ALL, 'stats'] as const,
   },
   CLIENT_CONFIG: ['client-config'] as const,
+  SETTINGS: {
+    ALL: ['settings'] as const,
+    PROVIDER: () => [...QUERY_KEYS.SETTINGS.ALL, 'provider'] as const,
+  },
 } as const
 
 export const ROUTES = {
@@ -68,6 +83,7 @@ export const ROUTES = {
   REGISTER: '/register',
   UPLOAD: '/upload',
   GALLERY: '/gallery',
+  SETTINGS: '/settings',
 } as const
 
 export const STORAGE_KEYS = {

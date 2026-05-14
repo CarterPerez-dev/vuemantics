@@ -43,10 +43,12 @@ API_REDOC_URL: Final[str] = "/redoc"
 API_OPENAPI_URL: Final[str] = "/openapi.json"
 
 
-# Important
+# Important — thresholds per provider (different embedding spaces, different score ranges)
 # ======================================================
-SEARCH_DEFAULT_SIMILARITY_THRESHOLD: Final[float] = 0.48  # Default for search queries
-SIMILAR_UPLOADS_SIMILARITY_THRESHOLD: Final[float] = 0.48  # Threshold for "find similar"
+SEARCH_SIMILARITY_THRESHOLD_LOCAL: Final[float] = 0.48
+SEARCH_SIMILARITY_THRESHOLD_GEMINI: Final[float] = 0.295
+SIMILAR_SIMILARITY_THRESHOLD_LOCAL: Final[float] = 0.48
+SIMILAR_SIMILARITY_THRESHOLD_GEMINI: Final[float] = 0.295
 # ======================================================
 
 
@@ -54,6 +56,11 @@ EMBEDDING_DIMENSIONS: Final[int] = 1024  # bge-m3 dimensions
 IVFFLAT_INDEX_LISTS: Final[int] = 100  # IVFFlat clusters for pgvector
 
 # AI Model config
+OLLAMA_TIMEOUT_CONNECT: Final[float] = 10.0
+OLLAMA_TIMEOUT_READ: Final[float] = 300.0  # 5 min — vision on large videos
+OLLAMA_TIMEOUT_WRITE: Final[float] = 60.0
+OLLAMA_TIMEOUT_POOL: Final[float] = 30.0
+
 OLLAMA_VISION_TEMPERATURE: Final[float] = 0.3
 OLLAMA_VISION_NUM_PREDICT_IMAGE: Final[int] = 512  # Max tokens for image analysis
 OLLAMA_VISION_NUM_PREDICT_VIDEO: Final[int] = 2048  # Max tokens for video analysis (videos need detailed descriptions)
@@ -72,12 +79,12 @@ BATCH_EMBEDDING_MAX_CONCURRENT: Final[int] = 3  # Max parallel embedding generat
 SEARCH_RESULT_MULTIPLIER: Final[int] = 2  # Multiply limit for pre-filtering
 BATCH_SEARCH_MAX_CONCURRENT: Final[int] = 3  # Max parallel searches in batch
 BATCH_SEARCH_DEFAULT_LIMIT: Final[int] = 10  # Default results per query in batch
-SIMILAR_UPLOADS_DEFAULT_LIMIT: Final[int] = 6  # Default similar uploads to return
+SIMILAR_UPLOADS_DEFAULT_LIMIT: Final[int] = 25  # Default similar uploads to return
 SEARCH_SUGGESTIONS_DEFAULT_LIMIT: Final[int] = 5  # Default search suggestions to return
 
 # Processing queue settings
 PROCESSING_BATCH_SIZE: Final[int] = 5  # Process 5 uploads at a time
-PROCESSING_RETRY_ATTEMPTS: Final[int] = 3  # Retry failed processing 3 times
+PROCESSING_RETRY_ATTEMPTS: Final[int] = 2  # Try once, retry once — if it fails twice it ain't working
 PENDING_UPLOADS_LIMIT: Final[int] = 10  # Max pending uploads to fetch for processing
 
 # File processing constants
@@ -95,13 +102,32 @@ DESCRIPTION_MAX_CONSECUTIVE_REPEATS: Final[int] = 3  # Flag if 4+ same words in 
 DESCRIPTION_MAX_GIBBERISH_RATIO: Final[float] = 0.30  # 30% non alpha max
 DESCRIPTION_AUDIT_PASS_THRESHOLD: Final[int] = 60  # Score must be >= 60 to pass
 
+# Garbage detection thresholds
+DESCRIPTION_MIN_ALPHA_RATIO: Final[float] = 0.3  # Below this = "complete garbage"
+DESCRIPTION_GARBAGE_SAMPLE_SIZE: Final[int] = 100  # Tokens to check for garbage
+DESCRIPTION_GARBAGE_TOKEN_MAX_LEN: Final[int] = 15  # Mixed-char tokens longer than this get a pass
+DESCRIPTION_GARBAGE_RATIO_CRITICAL: Final[float] = 0.3  # Above this = severe penalty
+DESCRIPTION_GARBAGE_RATIO_WARNING: Final[float] = 0.1  # Above this = moderate penalty
+DESCRIPTION_EXTREME_GIBBERISH_RATIO: Final[float] = 0.5  # Above this = extreme gibberish
+
+# Sentence structure thresholds
+DESCRIPTION_MIN_CAPITALIZATION_RATIO: Final[float] = 0.5  # Min capitalized sentences
+
+# Common words / real words thresholds
+DESCRIPTION_MIN_WORDS_TO_CHECK: Final[int] = 5  # Min words before running common-words check
+DESCRIPTION_REAL_WORD_ALPHA_RATIO: Final[float] = 0.7  # Token alpha ratio to count as "real word"
+DESCRIPTION_MIN_REAL_WORDS_RATIO: Final[float] = 0.5  # Min ratio of real words in text
+DESCRIPTION_COMMON_WORDS_CRITICAL: Final[float] = 0.02  # Almost no common words
+DESCRIPTION_COMMON_WORDS_WARNING: Final[float] = 0.05  # Very few common words
+DESCRIPTION_COMMON_WORDS_LOW: Final[float] = 0.15  # Few common words
+
 # Audit penalties (deducted from 100)
 AUDIT_PENALTY_BAD_TOKEN: Final[int] = 50
-AUDIT_PENALTY_TOO_SHORT: Final[int] = 30
+AUDIT_PENALTY_TOO_SHORT: Final[int] = 35
 AUDIT_PENALTY_TOO_LONG: Final[int] = 20
-AUDIT_PENALTY_LOW_DIVERSITY: Final[int] = 40
-AUDIT_PENALTY_CONSECUTIVE_REPEATS: Final[int] = 35
-AUDIT_PENALTY_HIGH_GIBBERISH: Final[int] = 25
+AUDIT_PENALTY_LOW_DIVERSITY: Final[int] = 45
+AUDIT_PENALTY_CONSECUTIVE_REPEATS: Final[int] = 40
+AUDIT_PENALTY_HIGH_GIBBERISH: Final[int] = 30
 
 
 
@@ -109,8 +135,19 @@ AUDIT_PENALTY_HIGH_GIBBERISH: Final[int] = 25
 FILE_UPLOAD_CHUNK_SIZE: Final[int] = 1024 * 1024  # 1MB
 
 DEFAULT_PAGE_SIZE: Final[int] = 50
-MAX_PAGE_SIZE: Final[int] = 100
+MAX_PAGE_SIZE: Final[int] = 10000
 DEFAULT_QUERY_LIMIT: Final[int] = 100  # Default limit for db queries
+
+PROVIDER_CACHE_TTL: Final[float] = 5.0  # Seconds to cache active provider from DB
+REEMBED_BATCH_SIZE: Final[int] = 50  # Uploads per DB fetch during re-embed
+RATE_LIMIT_DEFAULT: Final[str] = "1000/hour"  # Fallback rate limit
+
+GEMINI_COST_PER_IMAGE: Final[float] = 0.00012
+GEMINI_COST_PER_VIDEO_FRAME: Final[float] = 0.00079
+GEMINI_COST_PER_AUDIO_SECOND: Final[float] = 0.00016
+GEMINI_COST_PER_TEXT_1M_TOKENS: Final[float] = 0.20
+GEMINI_EMBEDDING_MAX_VIDEO_FRAMES: Final[int] = 32
+GEMINI_EMBEDDING_MAX_VIDEO_DURATION: Final[int] = 120
 
 SEARCH_CACHE_TTL: Final[int] = 300  # 5 minutes
 USER_CACHE_TTL: Final[int] = 60  # 1 minute
@@ -121,6 +158,15 @@ MAX_QUERY_LENGTH: Final[int] = 500
 
 MAX_BULK_UPLOAD_DELETE: Final[int] = 100
 MAX_BULK_UPLOAD_UPDATE: Final[int] = 100
+
+# Bulk upload limits
+MAX_BULK_FILES: Final[int] = 1000
+MAX_BULK_SIZE: Final[int] = 10 * 1024 * 1024 * 1024  # 10GB
+
+# Batch pagination defaults
+BATCH_LIST_DEFAULT_LIMIT: Final[int] = 20
+BATCH_LIST_DEFAULT_OFFSET: Final[int] = 0
+BATCH_LIST_MAX_LIMIT: Final[int] = 100
 
 BCRYPT_ROUNDS: Final[int] = 14  # salt rounds
 
@@ -201,11 +247,11 @@ class Settings(BaseSettings):
     )
 
     rate_limit_upload: str = Field(
-        default = "100/minute",
+        default = "500/minute",
         description = "Rate limit for upload endpoints"
     )
     rate_limit_search: str = Field(
-        default = "60/minute",
+        default = "500/minute",
         description = "Rate limit for search endpoints"
     )
     rate_limit_auth: str = Field(
@@ -213,8 +259,20 @@ class Settings(BaseSettings):
         description = "Rate limit for auth endpoints"
     )
     rate_limit_common: str = Field(
-        default = "100/minute",
+        default = "500/minute",
         description = "Rate limit for common/public endpoints"
+    )
+    rate_limit_bulk_upload: str = Field(
+        default = "500/hour",
+        description = "Rate limit for bulk upload endpoint"
+    )
+    rate_limit_batch_status: str = Field(
+        default = "300/minute",
+        description = "Rate limit for batch status endpoint"
+    )
+    rate_limit_batch_list: str = Field(
+        default = "300/minute",
+        description = "Rate limit for batch list endpoint"
     )
 
     secret_key: str = Field(
@@ -254,12 +312,30 @@ class Settings(BaseSettings):
         description = "Max concurrent embedding operations"
     )
 
+    gemini_api_key: str = Field(
+        default = "",
+        description = "Google Gemini API key for Gemini Embedding 2"
+    )
+    gemini_embedding_model: str = Field(
+        default = "gemini-embedding-2-preview",
+        description = "Gemini embedding model name"
+    )
+    gemini_embedding_dimensions: int = Field(
+        default = 1536,
+        gt = 0,
+        description = "Gemini embedding output dimensions"
+    )
+    embedding_provider: str = Field(
+        default = "local",
+        description = "Default embedding provider: 'local' or 'gemini' (overridden by DB)"
+    )
+
     upload_path: Path = Field(
         default = Path("./storage/uploads"),
         description = "Base path for uploaded files"
     )
     max_upload_size: int = Field(
-        default = 104_857_600,  # 100MB
+        default = 5_368_709_120,  # 5GB
         gt = 0,
         description = "Maximum upload file size in bytes",
     )

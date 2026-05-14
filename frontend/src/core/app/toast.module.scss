@@ -1,5 +1,5 @@
 // ===================
-// © AngelaMos | 2025
+// © AngelaMos | 2026
 // toast.module.scss
 // ===================
 
@@ -7,46 +7,27 @@
 
 :global {
   [data-sonner-toaster] {
-    --normal-bg: #{$bg-surface-100};
-    --normal-border: #{$border-default};
-    --normal-text: #{$text-default};
-
-    --success-bg: #{$bg-surface-100};
-    --success-border: #{$border-default};
-    --success-text: #{$text-default};
-
-    --error-bg: #{$bg-surface-100};
-    --error-border: #{$error-default};
-    --error-text: #{$text-default};
-
-    --warning-bg: #{$bg-surface-100};
-    --warning-border: #{$border-default};
-    --warning-text: #{$text-default};
-
-    --info-bg: #{$bg-surface-100};
-    --info-border: #{$border-default};
-    --info-text: #{$text-default};
-
     font-family: $font-sans;
   }
 
   [data-sonner-toast] {
-    border-radius: $radius-md;
-    padding: $space-3 $space-4;
-    font-size: $font-size-sm;
+    border-radius: 0;
+    padding: 12px 18px;
+    font-size: 14px;
     border: 1px solid $border-default;
-    background: $bg-surface-100;
+    background: $bg-surface;
     color: $text-default;
     cursor: pointer;
     user-select: none;
 
     [data-title] {
       font-weight: $font-weight-medium;
+      font-size: 14px;
     }
 
     [data-description] {
-      color: $text-light;
-      font-size: $font-size-xs;
+      color: $text-secondary;
+      font-size: 13px;
     }
 
     [data-close-button] {
@@ -55,15 +36,21 @@
       padding: 0;
       cursor: pointer;
       color: $text-muted;
-      @include transition-fast;
+      transition: color $duration-fast $ease-out;
 
-      @include hover {
-        color: $text-default;
+      @media (hover: hover) and (pointer: fine) {
+        &:hover {
+          color: $text-default;
+        }
       }
     }
   }
 
   [data-sonner-toast][data-type='error'] {
-    border-color: $error-default;
+    border-color: $error;
+  }
+
+  [data-sonner-toast][data-type='success'] {
+    border-left: 2px solid $success;
   }
 }

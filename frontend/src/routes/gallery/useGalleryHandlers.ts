@@ -5,6 +5,8 @@
 
 import type { UseMutationResult } from '@tanstack/react-query'
 import type { SearchResult, UploadResponse } from '@/api/types'
+import { apiClient } from '@/core/api'
+import { API_ENDPOINTS } from '@/config'
 
 interface GalleryHandlersDeps {
   // Mutations
@@ -22,7 +24,6 @@ interface GalleryHandlersDeps {
     {
       query: string
       limit: number
-      similarity_threshold: number
     },
     unknown
   >
@@ -76,6 +77,7 @@ interface GalleryHandlers {
   handleDelete: (id: string) => void
   handleToggleHidden: (id: string, currentlyHidden: boolean) => void
   handleRegenerate: (uploadId: string) => void
+  handleDownload: (upload: UploadResponse) => Promise<void>
 
   // Search Operations
   handleSearch: (e: React.FormEvent) => void
@@ -89,6 +91,7 @@ interface GalleryHandlers {
   deselectAll: () => void
   handleBulkDelete: () => void
   handleBulkHide: (hidden: boolean) => void
+  handleBulkDownload: () => void
 }
 
 export function useGalleryHandlers(deps: GalleryHandlersDeps): GalleryHandlers {
@@ -143,6 +146,30 @@ export function useGalleryHandlers(deps: GalleryHandlersDeps): GalleryHandlers {
     })
   }
 
+  const handleDownload = async (upload: UploadResponse): Promise<void> => {
+    try {
+      const response = await apiClient.get(
+        API_ENDPOINTS.UPLOADS.DOWNLOAD(upload.id),
+        {
+          responseType: 'blob',
+        }
+      )
+
+      const blob = new Blob([response.data])
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = upload.filename
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error(`Failed to download ${upload.filename}:`, error)
+    }
+  }
+
   // Search Operations
   const handleSearch = (e: React.FormEvent): void => {
     e.preventDefault()
@@ -154,9 +181,7 @@ export function useGalleryHandlers(deps: GalleryHandlersDeps): GalleryHandlers {
     searchMutation.mutate(
       {
         query: searchQuery,
-        limit: clientConfig?.default_page_size ?? 48,
-        similarity_threshold:
-          clientConfig?.search_default_similarity_threshold ?? 0.48,
+        limit: 100,
       },
       { onSuccess: (data) => setSearchResults(data.results) }
     )
@@ -221,10 +246,39 @@ export function useGalleryHandlers(deps: GalleryHandlersDeps): GalleryHandlers {
     )
   }
 
+  const handleBulkDownload = async (): Promise<void> => {
+    if (selectedIds.size === 0) return
+
+    for (const uploadId of selectedIdsArray) {
+      const upload = displayItems.find((item) => item.id === uploadId)
+      if (!upload) continue
+
+      try {
+        const response = await apiClient.get(API_ENDPOINTS.UPLOADS.DOWNLOAD(uploadId), {
+          responseType: 'blob',
+        })
+
+        const blob = new Blob([response.data])
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = upload.filename
+        link.style.display = 'none'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+      } catch (error) {
+        console.error(`Failed to download ${upload.filename}:`, error)
+      }
+    }
+  }
+
   return {
     handleDelete,
     handleToggleHidden,
     handleRegenerate,
+    handleDownload,
     handleSearch,
     handleClearSearch,
     handleFindSimilar,
@@ -234,5 +288,6 @@ export function useGalleryHandlers(deps: GalleryHandlersDeps): GalleryHandlers {
     deselectAll,
     handleBulkDelete,
     handleBulkHide,
+    handleBulkDownload,
   }
 }

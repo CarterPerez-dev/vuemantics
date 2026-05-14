@@ -1,5 +1,5 @@
 // ===================
-// © AngelaMos | 2025
+// © AngelaMos | 2026
 // _reset.scss
 // ===================
 
@@ -98,7 +98,7 @@ input[type='tel'],
 input[type='url'],
 textarea,
 select {
-  font-size: $font-size-sm;
+  font-size: 1rem;
   appearance: none;
 }
 
@@ -128,7 +128,7 @@ textarea:not([rows]) {
 }
 
 :focus-visible {
-  outline: 2px solid $border-strong;
+  outline: 1px solid $border-strong;
   outline-offset: 2px;
 }
 
@@ -142,7 +142,7 @@ textarea:not([rows]) {
 
 [disabled] {
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 dialog {
@@ -174,8 +174,8 @@ summary {
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -184,7 +184,6 @@ summary {
 
 ::-webkit-scrollbar-thumb {
   background: $border-default;
-  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {

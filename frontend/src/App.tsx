@@ -4,7 +4,7 @@
 // ===========================
 
 import { QueryClientProvider } from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+// import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { useEffect } from 'react'
 import { RouterProvider } from 'react-router-dom'
 import { Toaster, toast } from 'sonner'
@@ -37,14 +37,15 @@ export default function App(): React.ReactElement {
           theme="dark"
           toastOptions={{
             style: {
-              background: 'hsl(0, 0%, 12.2%)',
-              border: '1px solid hsl(0, 0%, 18%)',
-              color: 'hsl(0, 0%, 98%)',
+              background: '#8a8580',
+              border: '1px solid #706b67',
+              color: '#000',
+              borderRadius: '0',
             },
           }}
         />
       </div>
-      <ReactQueryDevtools initialIsOpen={false} />
+      {/* <ReactQueryDevtools initialIsOpen={false} /> */}
     </QueryClientProvider>
   )
 }

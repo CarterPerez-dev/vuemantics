@@ -8,6 +8,10 @@ import { WEBSOCKET_ENDPOINTS } from '@/config'
 import { useAccessToken } from '@/core/lib/stores'
 import { VuemanticWebSocket } from './socket.client'
 import type {
+  BatchProgressUpdate,
+  FileProgressUpdate,
+  ReembedComplete,
+  ReembedProgress,
   UploadCompleted,
   UploadFailed,
   UploadProgressUpdate,
@@ -19,7 +23,11 @@ interface UseSocketOptions {
   onProgress?: (data: UploadProgressUpdate) => void
   onCompleted?: (data: UploadCompleted) => void
   onFailed?: (data: UploadFailed) => void
+  onBatchProgress?: (data: BatchProgressUpdate) => void
+  onFileProgress?: (data: FileProgressUpdate) => void
   onError?: (error: WebSocketError) => void
+  onReembedProgress?: (data: ReembedProgress) => void
+  onReembedComplete?: (data: ReembedComplete) => void
 }
 
 interface UseSocketReturn {
@@ -29,7 +37,17 @@ interface UseSocketReturn {
 }
 
 export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
-  const { enabled = true, onProgress, onCompleted, onFailed, onError } = options
+  const {
+    enabled = true,
+    onProgress,
+    onCompleted,
+    onFailed,
+    onBatchProgress,
+    onFileProgress,
+    onError,
+    onReembedProgress,
+    onReembedComplete,
+  } = options
 
   const [isConnected, setIsConnected] = useState(false)
   const wsRef = useRef<VuemanticWebSocket | null>(null)
@@ -39,14 +57,22 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
   const onProgressRef = useRef(onProgress)
   const onCompletedRef = useRef(onCompleted)
   const onFailedRef = useRef(onFailed)
+  const onBatchProgressRef = useRef(onBatchProgress)
+  const onFileProgressRef = useRef(onFileProgress)
   const onErrorRef = useRef(onError)
+  const onReembedProgressRef = useRef(onReembedProgress)
+  const onReembedCompleteRef = useRef(onReembedComplete)
 
   useEffect(() => {
     accessTokenRef.current = accessToken
     onProgressRef.current = onProgress
     onCompletedRef.current = onCompleted
     onFailedRef.current = onFailed
+    onBatchProgressRef.current = onBatchProgress
+    onFileProgressRef.current = onFileProgress
     onErrorRef.current = onError
+    onReembedProgressRef.current = onReembedProgress
+    onReembedCompleteRef.current = onReembedComplete
   })
 
   const getToken = useCallback((): string | null => {
@@ -80,10 +106,14 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
         onProgress: (data) => onProgressRef.current?.(data),
         onCompleted: (data) => onCompletedRef.current?.(data),
         onFailed: (data) => onFailedRef.current?.(data),
+        onBatchProgress: (data) => onBatchProgressRef.current?.(data),
+        onFileProgress: (data) => onFileProgressRef.current?.(data),
         onError: (error) => {
           onErrorRef.current?.(error)
         },
         onReconnect: () => setIsConnected(true),
+        onReembedProgress: (data) => onReembedProgressRef.current?.(data),
+        onReembedComplete: (data) => onReembedCompleteRef.current?.(data),
       })
     } catch {
       return

@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class ProcessingStatus(str, Enum):
     """
-    Processing status states for uploads.
+    Processing status states for uploads
     """
     PENDING = "pending"  # Just uploaded, not processed
     ANALYZING = "analyzing"  # Qwen2.5-VL analyzing media + description audit
@@ -41,7 +41,7 @@ class FileType(str, Enum):
 
 class Upload(BaseModel):
     """
-    Upload model for media files.
+    Upload model for media files
 
     Attributes:
         id: Unique identifier (UUID)
@@ -69,6 +69,7 @@ class Upload(BaseModel):
         super().__init__(**kwargs)
         self.id: UUID = kwargs["id"]  # Uploads from DB always have IDs
         self.user_id: UUID = kwargs["user_id"]
+        self.batch_id: UUID | None = kwargs.get("batch_id")
         self.filename: str = kwargs.get("filename", "")
         self.file_path: str = kwargs.get("file_path", "")
         self.file_type: str = kwargs.get("file_type", "")
@@ -100,6 +101,23 @@ class Upload(BaseModel):
         else:
             self.embedding_local = embedding_local_raw
 
+        # Handle Gemini embedding (1536-dim from Gemini Embedding 2)
+        embedding_gemini_raw = kwargs.get("embedding_gemini")
+        if isinstance(embedding_gemini_raw, str):
+            try:
+                if embedding_gemini_raw.startswith(
+                        "[") and embedding_gemini_raw.endswith("]"):
+                    self.embedding_gemini: list[float] | None = list(
+                        map(float,
+                            embedding_gemini_raw[1 :-1].split(","))
+                    )
+                else:
+                    self.embedding_gemini = None
+            except (ValueError, AttributeError):
+                self.embedding_gemini = None
+        else:
+            self.embedding_gemini = embedding_gemini_raw
+
         self.thumbnail_path: str | None = kwargs.get("thumbnail_path")
         self.video_codec: str | None = kwargs.get("video_codec")
         self.error_message: str | None = kwargs.get("error_message")
@@ -130,6 +148,7 @@ class Upload(BaseModel):
             CREATE TABLE IF NOT EXISTS uploads (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                batch_id UUID REFERENCES upload_batches(id) ON DELETE SET NULL,
 
                 -- File information
                 filename TEXT NOT NULL,
@@ -162,6 +181,7 @@ class Upload(BaseModel):
 
             -- Indexes for performance
             CREATE INDEX IF NOT EXISTS idx_uploads_user_id ON uploads(user_id);
+            CREATE INDEX IF NOT EXISTS idx_uploads_batch_id ON uploads(batch_id);
             CREATE INDEX IF NOT EXISTS idx_uploads_processing_status ON uploads(processing_status);
             CREATE INDEX IF NOT EXISTS idx_uploads_file_type ON uploads(file_type);
             CREATE INDEX IF NOT EXISTS idx_uploads_created_at ON uploads(created_at DESC);
@@ -185,6 +205,7 @@ class Upload(BaseModel):
         metadata: dict[str,
                        Any] | None = None,
         upload_id: UUID | None = None,
+        batch_id: UUID | None = None,
     ) -> Upload:
         """
         Create a new upload record.
@@ -206,16 +227,17 @@ class Upload(BaseModel):
         if upload_id:
             query = """
                 INSERT INTO uploads (
-                    id, user_id, filename, file_path, file_type,
+                    id, user_id, batch_id, filename, file_path, file_type,
                     file_size, mime_type, metadata
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                 RETURNING *
             """
             record = await database.db.fetchrow(
                 query,
                 upload_id,
                 user_id,
+                batch_id,
                 filename,
                 file_path,
                 file_type,
@@ -226,15 +248,16 @@ class Upload(BaseModel):
         else:
             query = """
                 INSERT INTO uploads (
-                    user_id, filename, file_path, file_type,
+                    user_id, batch_id, filename, file_path, file_type,
                     file_size, mime_type, metadata
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 RETURNING *
             """
             record = await database.db.fetchrow(
                 query,
                 user_id,
+                batch_id,
                 filename,
                 file_path,
                 file_type,
@@ -358,18 +381,18 @@ class Upload(BaseModel):
         user_id: UUID | None = None,
         limit: int = config.DEFAULT_PAGE_SIZE,
         similarity_threshold: float = 0.0,
-        use_local: bool = True,
+        embedding_column: str = "embedding_local",
     ) -> list[tuple[Upload,
                     float]]:
         """
         Search uploads by vector similarity.
 
         Args:
-            query_embedding: Query vector (1024-dim bge-m3)
+            query_embedding: Query vector
             user_id: Optional filter by user
             limit: Maximum results
             similarity_threshold: Minimum similarity score (0-1)
-            use_local: If True, search embedding_local, else embedding
+            embedding_column: Column to search ('embedding_local' or 'embedding_gemini')
 
         Returns:
             List of (Upload, similarity_score) tuples
@@ -382,8 +405,6 @@ class Upload(BaseModel):
                       }
         if user_id:
             filters["user_id"] = user_id
-
-        embedding_column = "embedding_local" if use_local else "embedding"
 
         records = await database.db.vector_similarity_search(
             table_name = cls.__tablename__,
@@ -590,7 +611,7 @@ class Upload(BaseModel):
             query = """
                 UPDATE uploads
                 SET description = $1,
-                    embedding = $2,
+                    embedding_gemini = $2,
                     processing_status = $3,
                     description_audit_score = $4,
                     updated_at = NOW()
@@ -609,9 +630,43 @@ class Upload(BaseModel):
 
         if updated_at:
             self.description = description
-            self.embedding_local = embedding_list
+            if use_local:
+                self.embedding_local = embedding_list
+            else:
+                self.embedding_gemini = embedding_list
             self.processing_status = ProcessingStatus.COMPLETED
             self.description_audit_score = description_audit_score
+            self.updated_at = updated_at
+
+    async def update_gemini_embedding(self, embedding: list[float]) -> None:
+        """
+        Save a Gemini embedding to embedding_gemini column and mark completed.
+        No description is stored — Gemini embeds directly without a text step.
+        """
+        if self.id is None:
+            raise ValueError("Cannot update gemini embedding for unsaved upload")
+
+        query = """
+            UPDATE uploads
+            SET embedding_gemini = $1,
+                processing_status = $2,
+                description = NULL,
+                description_audit_score = NULL,
+                updated_at = NOW()
+            WHERE id = $3
+            RETURNING updated_at
+        """
+        updated_at = await database.db.fetchval(
+            query,
+            embedding,
+            ProcessingStatus.COMPLETED,
+            self.id,
+        )
+        if updated_at:
+            self.embedding_gemini = embedding
+            self.processing_status = ProcessingStatus.COMPLETED
+            self.description = None
+            self.description_audit_score = None
             self.updated_at = updated_at
 
     async def update_thumbnail(self, thumbnail_path: str) -> None:
@@ -639,6 +694,23 @@ class Upload(BaseModel):
         )
         if updated_at:
             self.thumbnail_path = thumbnail_path
+            self.updated_at = updated_at
+
+    async def update_file_path(self, file_path: str) -> None:
+        if self.id is None:
+            raise ValueError("Cannot update file_path for unsaved upload")
+
+        query = """
+            UPDATE uploads
+            SET file_path = $1,
+                updated_at = NOW()
+            WHERE id = $2
+            RETURNING updated_at
+        """
+
+        updated_at = await database.db.fetchval(query, file_path, self.id)
+        if updated_at:
+            self.file_path = file_path
             self.updated_at = updated_at
 
     async def update_video_codec(self, codec: str) -> None:
@@ -839,12 +911,22 @@ class Upload(BaseModel):
     @property
     def has_embedding(self) -> bool:
         """
-        Check if upload has an embedding generated.
+        Check if upload has any embedding generated (local or Gemini).
         Used by Pydantic schemas with from_attributes.
         """
-        return self.embedding_local is not None and len(
-            self.embedding_local
-        ) > 0
+        local_ok = self.embedding_local is not None and len(self.embedding_local) > 0
+        gemini_ok = self.embedding_gemini is not None and len(self.embedding_gemini) > 0
+        return local_ok or gemini_ok
+
+    @property
+    def embedding_provider(self) -> str:
+        """
+        Which provider generated this upload's embedding.
+        Returns 'gemini' if Gemini embedding exists, else 'local'.
+        """
+        if self.embedding_gemini is not None and len(self.embedding_gemini) > 0:
+            return "gemini"
+        return "local"
 
     def to_dict(self, exclude: set[str] | None = None) -> dict[str, Any]:
         """
@@ -855,12 +937,10 @@ class Upload(BaseModel):
         # Get base dict
         result = super().to_dict(exclude)
 
-        # Don't include full embedding in API responses (too large)
-        if "embedding_local" not in exclude and self.embedding_local:
-            result["has_embedding"] = True
-            result.pop("embedding_local", None)
-        else:
-            result["has_embedding"] = False
+        result.pop("embedding_local", None)
+        result.pop("embedding_gemini", None)
+        result["has_embedding"] = self.has_embedding
+        result["embedding_provider"] = self.embedding_provider
 
         return result
 

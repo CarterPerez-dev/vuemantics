@@ -9,7 +9,7 @@ import { uploadResponseSchema } from './upload.types'
 export const searchRequestSchema = z.object({
   query: z.string().min(1).max(500),
   limit: z.number().int().positive().max(100).default(20),
-  similarity_threshold: z.number().min(0).max(1).default(0.25),
+  similarity_threshold: z.number().min(0).max(1).default(0.10),
   file_types: z
     .array(z.enum(['image', 'video']))
     .nullable()

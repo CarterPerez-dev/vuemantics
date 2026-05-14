@@ -108,6 +108,32 @@ services:
     networks:
       - multimodal-dev
 
+  worker:
+    build:
+      context: .
+      dockerfile: infra/dev/docker/fastapi.dev
+    container_name: ${APP_NAME:-vuemantics}-worker
+    volumes:
+      - ./backend:/app
+      - /app/.venv
+      - ./storage:/storage
+    env_file:
+      - ./.env
+    environment:
+      - PYTHONUNBUFFERED=1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    command: uv run dramatiq workers.batch_processor --processes 1 --threads 1
+    networks:
+      - multimodal-dev
+
   frontend:
     build:
       context: ./frontend
